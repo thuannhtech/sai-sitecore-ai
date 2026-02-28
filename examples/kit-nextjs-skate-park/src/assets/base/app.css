@@ -16,6 +16,7 @@ body {
   background: var(--color-bg-basic-color);
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
   height: auto !important;
+
   &.on-page-editor {
     background: var(--color-page-bg-editor) !important;
   }
@@ -25,6 +26,7 @@ a {
   color: var(--color-text-basic);
   cursor: pointer;
   font-size: 0.85em;
+
   &:hover {
     color: var(--color-text-basic-active);
   }
@@ -92,8 +94,6 @@ ul li {
 #footer,
 .sc-jss-empty-placeholder {
   width: 100%;
-  display: flex;
-  flex-wrap: wrap;
   position: relative;
 }
 

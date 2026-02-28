@@ -1,4 +1,4 @@
-.prod-mode {
+/* .prod-mode {
   #header {
     @apply flex max-mobile-large:pb-0 max-mobile-large:flex-col-reverse;
   }
@@ -16,4 +16,4 @@ header {
       }
     }
   }
-}
+} */
