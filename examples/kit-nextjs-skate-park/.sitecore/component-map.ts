@@ -13,6 +13,7 @@ import * as PartialDesignDynamicPlaceholder from 'src/components/partial-design-
 import * as PageContent from 'src/components/page-content/PageContent';
 import * as Navigation from 'src/components/navigation/Navigation';
 import * as MenuHeaderBar from 'src/components/MenuHeaderBar/MenuHeaderBar';
+import * as MenuHeader from 'src/components/MenuHeader/MenuHeader';
 import * as LinkList from 'src/components/link-list/LinkList';
 import * as Image from 'src/components/image/Image';
 import * as ContentBlock from 'src/components/content-block/ContentBlock';
@@ -32,6 +33,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['PageContent', { ...PageContent }],
   ['Navigation', { ...Navigation, componentType: 'client' }],
   ['MenuHeaderBar', { ...MenuHeaderBar }],
+  ['MenuHeader', { ...MenuHeader }],
   ['LinkList', { ...LinkList }],
   ['Image', { ...Image }],
   ['ContentBlock', { ...ContentBlock }],

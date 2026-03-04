@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import React from 'react';
 
 interface Fields {
-    LogoIcon: ImageField;
+    Image: ImageField;
     Languages: Field<string>;
 }
 
@@ -22,9 +22,8 @@ export const Default: React.FC<MenuHeaderBarProps> = ({ params, fields }) => {
     return (
         <div className="header-bar">
             <a className="header-bar_logo" id="home-page-link-logo">
-                <ContentSdkImage
-                    field={fields.LogoIcon}
-                />
+                <ContentSdkImage field={fields.Image} loading="eager"
+                    fetchPriority="high" />
             </a>
             <div className="top-search-right-bar">
                 <button type="button" className="global-search_btn_v2">
@@ -40,13 +39,11 @@ export const Default: React.FC<MenuHeaderBarProps> = ({ params, fields }) => {
 };
 
 export const MenuHeaderBarSearchWithoutLanguageSelector: React.FC<MenuHeaderBarProps> = ({ params, fields }) => {
-    const t = useTranslations("sai-sitecore");
-
     return (
         <div className="header-bar">
             <a className="header-bar_logo" id="home-page-link-logo">
                 <ContentSdkImage
-                    field={fields.LogoIcon}
+                    field={fields.Image}
                 />
             </a>
         </div>

@@ -46,13 +46,14 @@ export default async function Page({ params, searchParams }: PageProps) {
   if (!page) {
     notFound();
   }
-
   // Fetch the component data from Sitecore (Likely will be deprecated)
   const componentProps = await client.getComponentData(
     page.layout,
     {},
     components
   );
+  // Pass the fetched component data into the page object so it's accessible everywhere
+  (page as any).componentProps = componentProps;
 
   return (
     <NextIntlClientProvider>
@@ -72,8 +73,8 @@ export const generateStaticParams = async () => {
     const defaultSite = scConfig.defaultSite;
     const allowedSites = defaultSite
       ? sites
-          .filter((site: SiteInfo) => site.name === defaultSite)
-          .map((site: SiteInfo) => site.name)
+        .filter((site: SiteInfo) => site.name === defaultSite)
+        .map((site: SiteInfo) => site.name)
       : sites.map((site: SiteInfo) => site.name);
 
     return await client.getAppRouterStaticParams(

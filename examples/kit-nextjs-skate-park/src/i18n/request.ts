@@ -20,7 +20,6 @@ export default getRequestConfig(async ({ requestLocale }: GetRequestConfigParams
     locale,
     site: parsedSite,
   });
-  console.log(messages)
   return {
     locale,
     messages,
