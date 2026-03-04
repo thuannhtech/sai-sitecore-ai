@@ -11,6 +11,8 @@ import components from ".sitecore/component-map";
 import Providers from "src/Providers";
 import { NextIntlClientProvider } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
+import { ComponentPropsCollection } from "@sitecore-content-sdk/nextjs";
+import { Page as PageData } from "@sitecore-content-sdk/nextjs";
 
 type PageProps = {
   params: Promise<{
@@ -20,6 +22,10 @@ type PageProps = {
     [key: string]: string | string[] | undefined;
   }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+type PageWithComponentProps = PageData & {
+  componentProps: ComponentPropsCollection;
 };
 
 export default async function Page({ params, searchParams }: PageProps) {
@@ -52,12 +58,15 @@ export default async function Page({ params, searchParams }: PageProps) {
     {},
     components
   );
-  // Pass the fetched component data into the page object so it's accessible everywhere
-  (page as any).componentProps = componentProps;
+
+  const enrichedPage: PageWithComponentProps = {
+    ...page,
+    componentProps,
+  };
 
   return (
     <NextIntlClientProvider>
-      <Providers page={page} componentProps={componentProps}>
+      <Providers page={page} componentProps={enrichedPage}>
         <Layout page={page} />
       </Providers>
     </NextIntlClientProvider>
