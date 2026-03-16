@@ -11,8 +11,9 @@ import * as RichText from 'src/components/rich-text/RichText';
 import * as Promo from 'src/components/promo/Promo';
 import * as PartialDesignDynamicPlaceholder from 'src/components/partial-design-dynamic-placeholder/PartialDesignDynamicPlaceholder';
 import * as PageContent from 'src/components/page-content/PageContent';
+import * as NextMenuHeader from 'src/components/NextMenuHeaderBar/NextMenuHeader';
+import * as NextMenuHeaderBar from 'src/components/NextMenuHeader/NextMenuHeaderBar';
 import * as Navigation from 'src/components/navigation/Navigation';
-import * as MenuHeaderBar from 'src/components/MenuHeaderBar/MenuHeaderBar';
 import * as MenuHeader from 'src/components/MenuHeader/MenuHeader';
 import * as LinkList from 'src/components/link-list/LinkList';
 import * as Image from 'src/components/image/Image';
@@ -31,9 +32,10 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['Promo', { ...Promo }],
   ['PartialDesignDynamicPlaceholder', { ...PartialDesignDynamicPlaceholder }],
   ['PageContent', { ...PageContent }],
+  ['NextMenuHeader', { ...NextMenuHeader }],
+  ['NextMenuHeaderBar', { ...NextMenuHeaderBar }],
   ['Navigation', { ...Navigation, componentType: 'client' }],
-  ['MenuHeaderBar', { ...MenuHeaderBar }],
-  ['MenuHeader', { ...MenuHeader }],
+  ['MenuHeader', { ...MenuHeader, componentType: 'client' }],
   ['LinkList', { ...LinkList }],
   ['Image', { ...Image }],
   ['ContentBlock', { ...ContentBlock }],
