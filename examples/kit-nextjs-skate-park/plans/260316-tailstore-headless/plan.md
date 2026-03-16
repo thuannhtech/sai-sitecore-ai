@@ -15,7 +15,7 @@ Chuyển đổi Tailstore HTML sang Next.js App sử dụng Sitecore JSS và Ord
 
 | Phase | Name | Status | Progress |
 |-------|------|--------|----------|
-| 01 | Environment & Base SDK | ⬜ Pending | 0% |
+| 01 | Environment & Base SDK | ✅ Complete | 100% |
 | 02 | Homepage Construction (Full UI) | ⬜ Pending | 0% |
 | 03 | Blog Development (List & Detail) | ⬜ Pending | 0% |
 | 04 | Shop & Product Catalog | ⬜ Pending | 0% |

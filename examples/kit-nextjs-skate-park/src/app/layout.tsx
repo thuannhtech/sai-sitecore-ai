@@ -9,6 +9,8 @@ const roboto = Roboto({
   variable: "--font-roboto", // optional CSS variable for easier usage
 });
 
+import { OrderCloudProvider } from "@/providers/OrderCloudProvider";
+
 export default function RootLayout({
   children,
 }: {
@@ -16,7 +18,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={roboto.variable}>
-      <body>{children}</body>
+      <body>
+        <OrderCloudProvider>
+          {children}
+        </OrderCloudProvider>
+      </body>
     </html>
   );
 }

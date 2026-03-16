@@ -20,7 +20,7 @@
   },
   "conventions": {
     "naming_prefix": "Tailstore*",
-    "pattern”: "Atomic Design"
+    "pattern": "Atomic Design"
   },
   "decisions": [
     {
