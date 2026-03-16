@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "schema_version": "1.1.0",
+    "awf_version": "3.3.0",
+    "last_updated": "2026-03-16"
+  },
+  "project": {
+    "name": "Tailstore Headless E-commerce",
+    "type": "Sitecore JSS + OrderCloud",
+    "status": "Planning Completed"
+  },
+  "tech_stack": {
+    "frontend": "Next.js 15 (App Router)",
+    "styling": "Tailwind CSS",
+    "cms": "Sitecore XM Cloud (Content SDK)",
+    "commerce": "OrderCloud SDK",
+    "forms": "Sitecore Forms"
+  },
+  "decisions": [
+    {
+      "topic": "Project Strategy",
+      "decision": "Home-Page-First vertically",
+      "reason": "To allow early content authoring and demo."
+    },
+    {
+      "topic": "Blog Integration",
+      "decision": "Use Sitecore Page items as source",
+      "reason": "DRY principle and better SEO/Navigation."
+    },
+    {
+      "topic": "Newsletter",
+      "decision": "Integrate with Sitecore Forms",
+      "reason": "Standardized data collection and validation."
+    }
+  ],
+  "mapping_file": "docs/HOMEPAGE_MAPPING.md"
+}
