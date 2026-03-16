@@ -21,4 +21,4 @@ Thiết lập môi trường phát triển, cài đặt các SDK cần thiết v
 - [ ] Log được Product List từ OrderCloud Sandbox ra Console.
 
 ---
-Next Phase: [Phase 02: Atomic Core](phase-02-atoms.md)
+Next Phase: [Phase 02: Homepage Construction](phase-02-homepage.md)

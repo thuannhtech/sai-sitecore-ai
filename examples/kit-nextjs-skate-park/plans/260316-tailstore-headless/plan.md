@@ -16,10 +16,11 @@ Chuyển đổi Tailstore HTML sang Next.js App sử dụng Sitecore JSS và Ord
 | Phase | Name | Status | Progress |
 |-------|------|--------|----------|
 | 01 | Environment & Base SDK | ⬜ Pending | 0% |
-| 02 | Home UI Kit (Atoms & Molecules) | ⬜ Pending | 0% |
-| 03 | Home Page Assembly & Data | ⬜ Pending | 0% |
-| 04 | Sitecore JSS (Home Integration) | ⬜ Pending | 0% |
-| 05 | Checkout & Auth Flow | ⬜ Pending | 0% |
+| 02 | Homepage Construction (Full UI) | ⬜ Pending | 0% |
+| 03 | Blog Development (List & Detail) | ⬜ Pending | 0% |
+| 04 | Shop & Product Catalog | ⬜ Pending | 0% |
+| 05 | Checkout & Braintree Payment | ⬜ Pending | 0% |
+| 06 | Sitecore JSS Integration | ⬜ Pending | 0% |
 
 ## Quick Commands
 - Bắt đầu Phase 1: `/code phase-01`
