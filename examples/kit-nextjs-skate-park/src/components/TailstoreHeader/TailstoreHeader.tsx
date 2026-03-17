@@ -25,7 +25,10 @@ interface TailstoreHeaderItem {
   Icon: ImageField;
   IsLogo: Field<boolean>;
   IsMainMenu: Field<boolean>;
-  IsRightMenu: Field<boolean>;
+  IsSearchIcon: Field<boolean>;
+  IsCartIcon: Field<boolean>;
+  LoginButton: LinkField;
+  RegisterButton: LinkField;
 }
 
 interface Fields {
@@ -44,8 +47,12 @@ export const Default: React.FC<TailstoreHeaderProps> = ({ fields }) => {
   // Phân loại items để render đúng chỗ dựa trên cấu trúc i.fields.Field
   const logoItem = items.find(i => i.fields.IsLogo?.value)?.fields;
   const mainMenuItems = items.filter(i => i.fields.IsMainMenu?.value).map(i => i.fields);
-  const rightMenuItems = items.filter(i => i.fields.IsRightMenu?.value).map(i => i.fields);
-  debugger
+
+  const registerItem = items.find(i => i.fields.RegisterButton?.value?.href)?.fields;
+  const loginItem = items.find(i => i.fields.LoginButton?.value?.href)?.fields;
+  const cartItem = items.find(i => i.fields.IsCartIcon?.value)?.fields;
+  const searchItem = items.find(i => i.fields.IsSearchIcon?.value)?.fields;
+
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -70,38 +77,34 @@ export const Default: React.FC<TailstoreHeaderProps> = ({ fields }) => {
   return (
     <header
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+        "sticky top-0 z-50 transition-all duration-300 text-white",
         isScrolled ? "bg-gray-dark shadow-lg py-2" : "bg-gray-dark py-4"
       )}
     >
       <div className="container mx-auto px-4 flex justify-between items-center">
         {/* Logo */}
         {logoItem ? (
-          <ContentSdkLink field={logoItem.Link} className="flex items-center">
-            <div className="relative h-12 w-32 md:h-14 md:w-40 transition-transform hover:scale-105">
+          <ContentSdkLink field={logoItem.Link} className="flex items-center" {...({ locale: undefined } as any)}>
+            <div className="relative">
               <ContentSdkImage
                 field={logoItem.Icon}
-                className="object-contain"
+                className="h-14 w-auto mr-4 object-contain"
               />
             </div>
           </ContentSdkLink>
         ) : (
           <Link href="/" className="flex items-center">
-            <div className="relative h-12 w-32 md:h-14 md:w-40 transition-transform hover:scale-105">
-              <Image
-                src="/assets/images/template-white-logo.png"
-                alt="Tailstore Logo"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
+            <img
+              src="/assets/images/template-white-logo.png"
+              alt="Tailstore Logo"
+              className="h-14 w-auto mr-4"
+            />
           </Link>
         )}
 
         {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center space-x-8">
-          <ul className="flex items-center space-x-6">
+        <nav className="hidden lg:flex flex-grow justify-center">
+          <ul className="flex justify-center space-x-4">
             {mainMenuItems.map((item, index) => (
               <li
                 key={index}
@@ -109,12 +112,12 @@ export const Default: React.FC<TailstoreHeaderProps> = ({ fields }) => {
               >
                 <ContentSdkLink
                   field={item.Link}
+                  {...({ locale: undefined } as any)}
                   className={cn(
-                    "text-white font-semibold flex items-center gap-1 hover:text-secondary transition-colors py-2",
+                    "text-white font-semibold flex items-center gap-1 hover:text-secondary transition-colors",
                     pathname === item.Link?.value?.href && "text-secondary"
                   )}
                 >
-                  <Text field={item.Name} />
                 </ContentSdkLink>
               </li>
             ))}
@@ -122,79 +125,82 @@ export const Default: React.FC<TailstoreHeaderProps> = ({ fields }) => {
         </nav>
 
         {/* Desktop Actions */}
-        <div className="hidden lg:flex items-center space-x-5">
-          {isSearchOpen ? (
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 200, opacity: 1 }}
-              className="relative"
-            >
-              <input
-                autoFocus
-                type="text"
-                placeholder="Search..."
-                className="bg-white/10 text-white border border-white/20 rounded-full px-4 py-1 w-full focus:outline-none focus:border-secondary transition-all"
-                onBlur={() => setIsSearchOpen(false)}
+        <div className="hidden lg:flex items-center space-x-4 relative">
+          <div className="flex items-center space-x-4">
+            {registerItem && (
+              <ContentSdkLink
+                field={registerItem.RegisterButton}
+                className="bg-primary border border-primary hover:bg-transparent text-white hover:text-primary font-semibold px-4 py-2 rounded-full inline-block transition-all"
               />
-              <Search className="absolute right-3 top-1.5 w-4 h-4 text-white/50" />
-            </motion.div>
-          ) : (
-            <button
-              onClick={() => setIsSearchOpen(true)}
-              className="text-white hover:text-secondary transition-all hover:scale-110"
-            >
-              <Search className="w-6 h-6" />
-            </button>
-          )}
-
-          <div className="flex items-center space-x-2 border-l border-white/20 pl-5">
-            {isAuthenticated ? (
-              <div className="flex items-center space-x-4">
-                <Link href="/account" className="text-white hover:text-secondary transition-colors">
-                  <User className="w-6 h-6" />
-                </Link>
-                <button onClick={() => logout()} className="text-white hover:text-secondary transition-colors">
-                  <LogOut className="w-6 h-6" />
-                </button>
-              </div>
-            ) : (
-              <>
-                <Link
-                  href="/register"
-                  className="bg-primary text-white px-5 py-2 rounded-full font-bold border border-primary hover:bg-transparent hover:text-primary transition-all text-sm"
-                >
-                  Register
-                </Link>
-                <Link
-                  href="/login"
-                  className="bg-transparent text-white px-5 py-2 rounded-full font-bold border border-white hover:bg-white hover:text-gray-dark transition-all text-sm"
-                >
-                  Login
-                </Link>
-              </>
+            )}
+            {loginItem && (
+              <ContentSdkLink
+                field={loginItem.LoginButton}
+                className="bg-primary border border-primary hover:bg-transparent text-white hover:text-primary font-semibold px-4 py-2 rounded-full inline-block transition-all"
+              />
             )}
           </div>
 
+          {/* <div className="flex items-center space-x-4">
+            <Link href="/account" className="text-white hover:text-secondary transition-colors">
+              <User className="w-6 h-6" />
+            </Link>
+            <button onClick={() => logout()} className="text-white hover:text-secondary transition-colors">
+              <LogOut className="w-6 h-6" />
+            </button>
+          </div> */}
+
           {/* Cart Icon */}
-          <Link href="/cart" className="relative group">
-            <div className="p-2 transition-transform group-hover:scale-110">
-              <ShoppingCart className="w-6 h-6 text-white group-hover:text-secondary" />
-              <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold border-2 border-gray-dark">
-                0
-              </span>
-            </div>
-            {/* Quick Cart Tooltip could go here */}
-          </Link>
+          {cartItem && (
+            <ContentSdkLink field={cartItem.Link} className="relative group" {...({ locale: undefined } as any)}>
+              <div className="p-2 transition-transform group-hover:scale-110">
+                <ShoppingCart className="w-6 h-6 text-white group-hover:text-secondary" />
+                <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold border-2 border-gray-dark">
+                  0
+                </span>
+              </div>
+            </ContentSdkLink>
+          )}
+
+          {searchItem && (
+            <>
+              {isSearchOpen ? (
+                <motion.div
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{ width: 200, opacity: 1 }}
+                  className="relative"
+                >
+                  <input
+                    autoFocus
+                    type="text"
+                    placeholder="Search..."
+                    className="bg-white/10 text-white border border-white/20 rounded-full px-4 py-1 w-full focus:outline-none focus:border-secondary transition-all"
+                    onBlur={() => setIsSearchOpen(false)}
+                  />
+                  <Search className="absolute right-3 top-1.5 w-4 h-4 text-white/50" />
+                </motion.div>
+              ) : (
+                <button
+                  onClick={() => setIsSearchOpen(true)}
+                  className="text-white hover:text-secondary transition-all hover:scale-110"
+                >
+                  <Search className="w-6 h-6" />
+                </button>
+              )}
+            </>
+          )}
         </div>
 
         {/* Mobile Toggle */}
         <div className="lg:hidden flex items-center space-x-4">
-          <Link href="/cart" className="relative p-2">
-            <ShoppingCart className="w-6 h-6 text-white" />
-            <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold">
-              0
-            </span>
-          </Link>
+          {cartItem && (
+            <ContentSdkLink field={cartItem.Link} className="relative p-2" {...({ locale: undefined } as any)}>
+              <ShoppingCart className="w-6 h-6 text-white" />
+              <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold">
+                0
+              </span>
+            </ContentSdkLink>
+          )}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="text-white p-2"
@@ -233,6 +239,7 @@ export const Default: React.FC<TailstoreHeaderProps> = ({ fields }) => {
                       <ContentSdkLink
                         field={item.Link}
                         className="text-2xl font-bold text-white hover:text-secondary transition-colors"
+                        {...({ locale: undefined } as any)}
                       >
                         <Text field={item.Name} />
                       </ContentSdkLink>
@@ -252,18 +259,20 @@ export const Default: React.FC<TailstoreHeaderProps> = ({ fields }) => {
                 </button>
               ) : (
                 <>
-                  <Link
-                    href="/login"
-                    className="w-full bg-white text-gray-dark font-bold py-4 rounded-xl flex items-center justify-center"
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    href="/register"
-                    className="w-full border border-primary text-primary font-bold py-4 rounded-xl flex items-center justify-center"
-                  >
-                    Create Account
-                  </Link>
+                  {loginItem && (
+                    <ContentSdkLink
+                      field={loginItem.LoginButton}
+                      className="w-full bg-white text-gray-dark font-bold py-4 rounded-xl flex items-center justify-center"
+                      {...({ locale: undefined } as any)}
+                    />
+                  )}
+                  {registerItem && (
+                    <ContentSdkLink
+                      field={registerItem.RegisterButton}
+                      className="w-full border border-primary text-primary font-bold py-4 rounded-xl flex items-center justify-center"
+                      {...({ locale: undefined } as any)}
+                    />
+                  )}
                 </>
               )}
             </div>

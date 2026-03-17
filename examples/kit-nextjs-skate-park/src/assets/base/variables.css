@@ -1,8 +1,20 @@
 @theme {
+  --font-manrope: 'Manrope', 'sans-serif';
   --font-roboto: 'Roboto', 'sans-serif';
-  /* // abstract/vars /_colors: */
 
+  /* // Tailstore colors */
+  --color-primary: #ff0042;
+  --color-secondary: #ffcd00;
+  --color-gray-lighter: #FAF7F3;
+  --color-gray-light: #323232;
+  --color-gray-dark: #010717;
+  --color-gray-txt: #4c4d56;
+  --color-gray-line: #E5E5E5;
+
+  /* // abstract/vars /_colors: */
   --color-main-color: #27272a;
+
+
 
   /* //Backgrounds colors */
   --color-bg-basic-color: #ffffff;
