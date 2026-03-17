@@ -26,6 +26,9 @@
     "@sitecore-content-sdk/nextjs": "^1.0.0",
     "axios": "^1.13.6",
     "braintree-web-drop-in-react": "^1.2.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.37.0",
+    "lucide-react": "^0.577.0",
     "next": "^15.5.10",
     "next-intl": "^4.3.5",
     "ordercloud-javascript-sdk": "^12.0.0",
@@ -33,7 +36,8 @@
     "react-dom": "^19.2.4",
     "rsc-env": "0.0.2",
     "swiper": "^12.1.2",
-    "tailwind-bootstrap-grid": "^6.0.0"
+    "tailwind-bootstrap-grid": "^6.0.0",
+    "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

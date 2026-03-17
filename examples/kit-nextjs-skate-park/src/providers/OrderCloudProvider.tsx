@@ -7,6 +7,8 @@ interface OrderCloudContextType {
   isAuthenticated: boolean;
   isAnonymous: boolean;
   token: string | null;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => void;
 }
 
 const OrderCloudContext = createContext<OrderCloudContextType | undefined>(undefined);
@@ -38,15 +40,32 @@ export const OrderCloudProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     initAuth();
   }, []);
 
-  console.log("token", token)
+  const login = async (username: string, password: string) => {
+    try {
+      const scope = (process.env.NEXT_PUBLIC_ORDERCLOUD_SCOPE?.split(',') as ApiRole[]) || ['FullAccess' as ApiRole];
+      const auth = await Auth.Login(username, password, process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID!, scope);
+      setToken(auth.access_token);
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
+  };
 
+  const logout = () => {
+    Tokens.RemoveAccessToken();
+    setToken(null);
+    // Optionally trigger a refresh or redirect
+    window.location.reload();
+  };
 
   return (
     <OrderCloudContext.Provider
       value={{
         isAuthenticated: !!token,
-        isAnonymous: true, // Simplified for Phase 1
-        token
+        isAnonymous: !token, // Adjust as needed
+        token,
+        login,
+        logout
       }}
     >
       {children}
