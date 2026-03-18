@@ -1,0 +1,228 @@
+.component.menu-folder {
+    font-family: Arial, Helvetica, sans-serif;
+    position: relative;
+    z-index: 100;
+    background: #fff;
+    width: 100%;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+/* ── Level 1 – horizontal bar ───────────────────────── */
+.menu-folder .menu-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.menu-folder .menu-list.level-1 {
+    display: flex;
+    align-items: center;
+    gap: 36px;
+    flex-wrap: wrap;
+    padding: 0;
+}
+
+.menu-folder .menu-item {
+    position: relative;
+}
+
+.menu-folder .menu-item__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+/* Fix cho chế độ Edit của Sitecore: Xóa bỏ box layout của thẻ span wrapper để không làm vỡ cấu trúc CSS */
+.menu-folder .menu-link-wrapper>span {
+    display: contents !important;
+}
+
+.menu-folder .menu-list.level-1>.menu-item>.menu-item__title a {
+    text-decoration: none;
+    color: #222;
+    font-size: 14px;
+    padding: 14px 0;
+    display: block;
+    white-space: nowrap;
+    font-weight: 400;
+    transition: color 0.2s;
+}
+
+.menu-folder .menu-list.level-1>.menu-item:hover>.menu-item__title a {
+    color: #003087;
+}
+
+/* ── Chevron ────────────────────────────────────────── */
+.menu-folder .menu-arrow {
+    width: 11px;
+    height: 11px;
+    color: #222;
+    transition: transform 0.2s ease, color 0.2s;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.menu-folder .menu-list.level-1>.menu-item:hover>.menu-item__title>.menu-arrow {
+    transform: rotate(180deg);
+    color: #003087;
+}
+
+/* ── Dropdowns – level 2+ ───────────────────────────── */
+.menu-folder .menu-item>.menu-list:not(.level-1) {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #f4f6f8;
+    /* Soft blue-grey background from the design */
+    min-width: 240px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    /* Smoother shadow */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+    border-radius: 0 0 4px 4px;
+    display: flex;
+    flex-direction: column;
+    z-index: 200;
+    padding: 8px 0;
+}
+
+.menu-folder .menu-item:hover>.menu-list:not(.level-1) {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* ── Fly-out sub-menus level 3+ ─────────────────────── */
+.menu-folder .menu-item>.menu-list:not(.level-1)>.menu-item>.menu-list {
+    top: -8px;
+    left: 100%;
+    transform: translateX(6px);
+    border-radius: 4px;
+}
+
+.menu-folder .menu-item>.menu-list:not(.level-1)>.menu-item:hover>.menu-list {
+    transform: translateX(0);
+}
+
+/* ── Dropdown rows ──────────────────────────────────── */
+.menu-folder .menu-list:not(.level-1)>.menu-item {
+    border-bottom: 1px solid #f2f2f2;
+}
+
+.menu-folder .menu-list:not(.level-1)>.menu-item:last-child {
+    border-bottom: none;
+}
+
+.menu-folder .menu-list:not(.level-1)>.menu-item>.menu-item__title {
+    justify-content: space-between;
+    padding: 0;
+}
+
+.menu-folder .menu-list:not(.level-1)>.menu-item>.menu-item__title a {
+    padding: 12px 20px;
+    font-size: 14px;
+    width: 100%;
+    color: #444;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+}
+
+.menu-folder .menu-list:not(.level-1)>.menu-item:hover>.menu-item__title {
+    background: #f8f9fc;
+}
+
+.menu-folder .menu-list:not(.level-1)>.menu-item:hover>.menu-item__title a {
+    color: #003087;
+}
+
+/* Arrow points right for fly-out sub-menus */
+.menu-folder .menu-list:not(.level-1)>.menu-item>.menu-item__title>.menu-arrow {
+    transform: rotate(-90deg);
+    margin-right: 14px;
+}
+
+.menu-folder .menu-item--empty {
+    color: #999;
+    font-style: italic;
+    padding: 16px 0;
+}
+
+@media (max-width: 991px) {
+    .menu-folder .menu-list.level-1 {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        padding: 16px 20px;
+    }
+
+    .menu-folder .menu-list.level-1>.menu-item {
+        width: 100%;
+        border-bottom: 1px solid #f2f2f2;
+    }
+
+    .menu-folder .menu-list.level-1>.menu-item:last-child {
+        border-bottom: none;
+    }
+
+    .menu-folder .menu-list.level-1>.menu-item>.menu-item__title {
+        justify-content: space-between;
+    }
+
+    .menu-folder .menu-list.level-1>.menu-item>.menu-item__title a {
+        padding: 16px 0;
+        width: 100%;
+    }
+
+    /* Flatten all sub-menus logically in mobile view */
+    .menu-folder .menu-item>.menu-list:not(.level-1) {
+        position: relative;
+        top: 0;
+        left: 0;
+        background: transparent;
+        min-width: 100%;
+        box-shadow: none;
+        opacity: 1;
+        visibility: visible;
+        transform: none !important;
+        border-radius: 0;
+        display: block;
+        padding: 0 0 8px 16px;
+        margin: 0;
+        border: none;
+    }
+
+    .menu-folder .menu-list:not(.level-1)>.menu-item {
+        border-bottom: none;
+    }
+
+    .menu-folder .menu-list:not(.level-1)>.menu-item>.menu-item__title a {
+        padding: 8px 0;
+        font-size: 14px;
+    }
+
+    .menu-folder .menu-list:not(.level-1)>.menu-item:hover>.menu-item__title {
+        background: transparent;
+    }
+
+    /* Reset the fly-outs into pure deep indentations */
+    .menu-folder .menu-item>.menu-list:not(.level-1)>.menu-item>.menu-list {
+        padding: 0 0 8px 16px;
+        top: 0;
+        left: 0;
+        transform: none !important;
+    }
+
+    /* Adjust arrows to point down normally in mobile */
+    .menu-folder .menu-list:not(.level-1)>.menu-item>.menu-item__title>.menu-arrow {
+        transform: rotate(0) !important;
+        margin-right: 0;
+    }
+
+    /* Stop the hover arrow spin to act like a static accordion lacking JS */
+    .menu-folder .menu-list.level-1>.menu-item:hover>.menu-item__title>.menu-arrow {
+        transform: rotate(0) !important;
+    }
+}

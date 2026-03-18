@@ -13,14 +13,17 @@ import * as PartialDesignDynamicPlaceholder from 'src/components/partial-design-
 import * as PageContent from 'src/components/page-content/PageContent';
 import * as NextMenuHeader from 'src/components/NextMenuHeaderBar/NextMenuHeader';
 import * as NextMenuHeaderBar from 'src/components/NextMenuHeader/NextMenuHeaderBar';
+import * as NewBannerSlider from 'src/components/NewBannerSlider/NewBannerSlider';
 import * as Navigation from 'src/components/navigation/Navigation';
 import * as MenuHeader from 'src/components/MenuHeader/MenuHeader';
+import * as Menu from 'src/components/Menu/Menu';
 import * as LinkList from 'src/components/link-list/LinkList';
 import * as Image from 'src/components/image/Image';
 import * as ContentBlock from 'src/components/content-block/ContentBlock';
 import * as Container from 'src/components/container/Container';
 import * as ColumnSplitter from 'src/components/column-splitter/ColumnSplitter';
 import * as BannerSlider from 'src/components/BannerSlider/BannerSlider';
+import * as BannerSlideItem from 'src/components/BannerSlideItem/BannerSlideItem';
 
 export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['BYOCWrapper', BYOCServerWrapper],
@@ -35,14 +38,17 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['PageContent', { ...PageContent }],
   ['NextMenuHeader', { ...NextMenuHeader }],
   ['NextMenuHeaderBar', { ...NextMenuHeaderBar }],
+  ['NewBannerSlider', { ...NewBannerSlider, componentType: 'client' }],
   ['Navigation', { ...Navigation, componentType: 'client' }],
   ['MenuHeader', { ...MenuHeader }],
+  ['Menu', { ...Menu, componentType: 'client' }],
   ['LinkList', { ...LinkList }],
   ['Image', { ...Image }],
   ['ContentBlock', { ...ContentBlock }],
   ['Container', { ...Container }],
   ['ColumnSplitter', { ...ColumnSplitter }],
   ['BannerSlider', { ...BannerSlider, componentType: 'client' }],
+  ['BannerSlideItem', { ...BannerSlideItem }],
 ]);
 
 export default componentMap;
