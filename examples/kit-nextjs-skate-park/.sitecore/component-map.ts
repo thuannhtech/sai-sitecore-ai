@@ -23,8 +23,11 @@ import * as Image from 'src/components/image/Image';
 import * as ContentBlock from 'src/components/content-block/ContentBlock';
 import * as Container from 'src/components/container/Container';
 import * as ColumnSplitter from 'src/components/column-splitter/ColumnSplitter';
+import * as BlogDetailtypes from 'src/components/Blog/BlogDetail.types';
+import * as BlogDetail from 'src/components/Blog/BlogDetail';
 import * as BannerSlider from 'src/components/BannerSlider/BannerSlider';
 import * as BannerSlideItem from 'src/components/BannerSlideItem/BannerSlideItem';
+import * as BannerImage from 'src/components/BannerImage/BannerImage';
 
 export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['BYOCWrapper', BYOCServerWrapper],
@@ -48,8 +51,10 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['ContentBlock', { ...ContentBlock }],
   ['Container', { ...Container }],
   ['ColumnSplitter', { ...ColumnSplitter }],
+  ['BlogDetail', { ...BlogDetailtypes, ...BlogDetail }],
   ['BannerSlider', { ...BannerSlider, componentType: 'client' }],
   ['BannerSlideItem', { ...BannerSlideItem, componentType: 'client' }],
+  ['BannerImage', { ...BannerImage }],
 ]);
 
 export default componentMap;
