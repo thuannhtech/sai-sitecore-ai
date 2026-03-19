@@ -1,3 +1,5 @@
+"use client";
+
 import {
     ImageField,
     Image

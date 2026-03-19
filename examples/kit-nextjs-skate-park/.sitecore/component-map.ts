@@ -15,6 +15,7 @@ import * as NextMenuHeader from 'src/components/NextMenuHeaderBar/NextMenuHeader
 import * as NextMenuHeaderBar from 'src/components/NextMenuHeader/NextMenuHeaderBar';
 import * as NewBannerSlider from 'src/components/NewBannerSlider/NewBannerSlider';
 import * as Navigation from 'src/components/navigation/Navigation';
+import * as MenuHeaderSitecoreAiGeneratedVariant from 'src/components/MenuHeader/MenuHeader.SitecoreAiGeneratedVariant';
 import * as MenuHeader from 'src/components/MenuHeader/MenuHeader';
 import * as Menu from 'src/components/Menu/Menu';
 import * as LinkList from 'src/components/link-list/LinkList';
@@ -40,7 +41,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['NextMenuHeaderBar', { ...NextMenuHeaderBar }],
   ['NewBannerSlider', { ...NewBannerSlider, componentType: 'client' }],
   ['Navigation', { ...Navigation, componentType: 'client' }],
-  ['MenuHeader', { ...MenuHeader }],
+  ['MenuHeader', { ...MenuHeaderSitecoreAiGeneratedVariant, ...MenuHeader }],
   ['Menu', { ...Menu, componentType: 'client' }],
   ['LinkList', { ...LinkList }],
   ['Image', { ...Image }],
@@ -48,7 +49,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['Container', { ...Container }],
   ['ColumnSplitter', { ...ColumnSplitter }],
   ['BannerSlider', { ...BannerSlider, componentType: 'client' }],
-  ['BannerSlideItem', { ...BannerSlideItem }],
+  ['BannerSlideItem', { ...BannerSlideItem, componentType: 'client' }],
 ]);
 
 export default componentMap;
