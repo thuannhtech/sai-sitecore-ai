@@ -1,0 +1,195 @@
+/* ============================================
+   MultiPromo Component
+   ============================================ */
+
+.multi-promo {
+  padding: 40px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* ── Header ───────────────────────────────── */
+.multi-promo__header {
+  margin-bottom: 32px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.multi-promo__title-wrapper {
+  margin-bottom: 8px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.multi-promo__title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #222;
+  margin: 0;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.multi-promo__description-wrapper {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.multi-promo__description {
+  font-size: 15px;
+  color: #747474;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Swiper / Carousel ────────────────────── */
+.multi-promo__swiper {
+  padding: 0 4px 16px !important;
+}
+
+.multi-promo__swiper .swiper-button-prev,
+.multi-promo__swiper .swiper-button-next {
+  color: #222;
+  background: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  top: 38%;
+}
+
+.multi-promo__swiper .swiper-button-prev::after,
+.multi-promo__swiper .swiper-button-next::after {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* ── Card (Item) ──────────────────────────── */
+.multi-promo__item {
+  display: flex;
+  flex-direction: column;
+}
+
+.multi-promo__item-image-link {
+  text-decoration: none;
+  display: block;
+}
+
+.multi-promo__item-image-wrapper {
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  background-color: #f5f5f5;
+  aspect-ratio: 4 / 3;
+}
+
+.multi-promo__item-image-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.multi-promo__item-image-link:hover .multi-promo__item-image-wrapper img {
+  transform: scale(1.05);
+}
+
+.multi-promo__item-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #222;
+  margin: 0 0 8px;
+  line-height: 1.35;
+}
+
+.multi-promo__item-description {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+
+.multi-promo__item-description p {
+  margin: 0;
+}
+
+.multi-promo__item-link {
+  font-size: 13px;
+  color: #15909c;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: auto;
+  transition: color 0.2s ease;
+}
+
+.multi-promo__item-link:hover {
+  color: #0e6b74;
+  text-decoration: underline;
+}
+
+/* ── Edit Grid (Experience Editor) ───────── */
+.multi-promo__edit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.multi-promo__edit-grid-item {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Empty State ──────────────────────────── */
+.multi-promo--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  border: 2px dashed #d2d2d2;
+  border-radius: 8px;
+  color: #aaa;
+  font-size: 14px;
+}
+
+/* ── Accessibility ────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* ── Responsive ───────────────────────────── */
+@media (max-width: 768px) {
+  .multi-promo {
+    padding: 24px 16px;
+  }
+
+  .multi-promo__title {
+    font-size: 22px;
+  }
+
+  .multi-promo__edit-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .multi-promo__edit-grid {
+    grid-template-columns: 1fr;
+  }
+}

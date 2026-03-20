@@ -15,6 +15,9 @@ import * as NextMenuHeader from 'src/components/NextMenuHeaderBar/NextMenuHeader
 import * as NextMenuHeaderBar from 'src/components/NextMenuHeader/NextMenuHeaderBar';
 import * as NewBannerSlider from 'src/components/NewBannerSlider/NewBannerSlider';
 import * as Navigation from 'src/components/navigation/Navigation';
+import * as MultiPromoItemdev from 'src/components/multi-promo/MultiPromoItem.dev';
+import * as MultiPromo from 'src/components/multi-promo/MultiPromo';
+import * as multipromoprops from 'src/components/multi-promo/multi-promo.props';
 import * as MenuHeaderSitecoreAiGeneratedVariant from 'src/components/MenuHeader/MenuHeader.SitecoreAiGeneratedVariant';
 import * as MenuHeader from 'src/components/MenuHeader/MenuHeader';
 import * as Menu from 'src/components/Menu/Menu';
@@ -44,6 +47,9 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['NextMenuHeaderBar', { ...NextMenuHeaderBar }],
   ['NewBannerSlider', { ...NewBannerSlider, componentType: 'client' }],
   ['Navigation', { ...Navigation, componentType: 'client' }],
+  ['MultiPromoItem', { ...MultiPromoItemdev }],
+  ['MultiPromo', { ...MultiPromo, componentType: 'client' }],
+  ['multi-promo', { ...multipromoprops }],
   ['MenuHeader', { ...MenuHeaderSitecoreAiGeneratedVariant, ...MenuHeader }],
   ['Menu', { ...Menu, componentType: 'client' }],
   ['LinkList', { ...LinkList }],

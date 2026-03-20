@@ -1,12 +1,11 @@
 "use client";
 import React from 'react';
-import { Field, LinkField, Text, Link } from '@sitecore-content-sdk/nextjs';
+import { LinkField, Link } from '@sitecore-content-sdk/nextjs';
 
 interface MenuFields {
   Link?: LinkField;
-  ShowInMenu?: Field<boolean>;
-  Title?: Field<string>;
 }
+
 
 interface MenuItem {
   url: string | { path: string };
@@ -43,71 +42,37 @@ const NavigationMenu = ({ allItems, currentNodes, level, isEditing, getChildren 
       {currentNodes.map((item: any, index: number) => {
         const menu = item.fields as MenuFields;
 
-        // Bỏ qua item nếu ShowInMenu false (trừ phi đang ở chế độ Edit)
-        // if (!isEditing && menu?.ShowInMenu && menu.ShowInMenu.value === false) {
-        //   return null;
-        // }
-
         const currentUrl = getUrlStr(item.url);
         const children = getChildren(allItems, currentUrl);
         const hasChildren = children.length > 0;
         const classNames = `menu-item rel-level${level} ${hasChildren ? "has-children" : ""}`.trim();
 
-        // Folders may not have a populated Title field. Use Url-based fallback name.
-        let folderFallback = "Folder";
+        // Lấy text hiển thị từ Link field text, fallback về URL segment
+        const linkText = menu?.Link?.value?.text?.trim();
+        let fallbackText = "Menu Item";
         if (currentUrl) {
           const parts = currentUrl.split('/');
-          folderFallback = parts[parts.length - 1].replace(/-/g, " ") || "Folder";
-          // Viết hoa chữ cái đầu tiên cho đẹp
-          folderFallback = folderFallback.charAt(0).toUpperCase() + folderFallback.slice(1);
+          fallbackText = parts[parts.length - 1].replace(/-/g, " ") || "Menu Item";
+          fallbackText = fallbackText.charAt(0).toUpperCase() + fallbackText.slice(1);
         }
-
-        const hasTitle = menu?.Title?.value && menu.Title.value.trim().length > 0;
-
-        let TitleComponent = null;
-        if (isEditing) {
-          if (menu?.Title) {
-            // Fix lỗi "[No text in field]": Bơm tên thư mục vào nếu field Title bị rỗng lúc render
-            const mockTitle = (!menu.Title.value || menu.Title.value.trim() === '')
-              ? { ...menu.Title, value: folderFallback }
-              : menu.Title;
-            TitleComponent = <Text field={mockTitle as any} />;
-          } else {
-            // Thư mục gốc không có Field Title
-            TitleComponent = <>{folderFallback}</>;
-          }
-        } else {
-          // Ở chế độ xem bình thường, nếu có Title thì dùng Text, còn lại dùng Fallback
-          TitleComponent = hasTitle ? <Text field={menu?.Title as any} /> : <>{folderFallback}</>;
-        }
+        const displayText = linkText || fallbackText;
 
         return (
           <li key={item.id || index} className={classNames}>
             <div className="menu-item__title">
               <div className="menu-link-wrapper">
-                {isEditing ? (
-                  // BẮT BUỘC TÁCH RIÊNG: Để tránh lỗi Sitecore tự xóa Title lúc Save (Nesting Edit Bug),
-                  // ta sẽ thiết kế một cụm UI gồm 2 phần độc lập cho Editor:
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <a href={menu?.Link?.value?.href || '#'} onClick={(e) => e.preventDefault()}>
-                      {TitleComponent}
-                    </a>
-
-                    {/* Chỉ render nút cho phép sửa đường dẫn Link nếu field Link tồn tại */}
-                    {menu && 'Link' in menu && menu.Link !== undefined && (
-                      <Link field={menu.Link} style={{ backgroundColor: '#f0f0f0', border: '1px dashed #999', padding: '2px 6px', fontSize: '11px', borderRadius: '4px', textDecoration: 'none', color: '#333' }}>
-                        [Edit Link]
-                      </Link>
-                    )}
-                  </div>
-                ) : menu?.Link?.value?.href ? (
-                  <Link field={menu.Link}>
-                    {TitleComponent}
+                {menu?.Link && 'Link' in menu ? (
+                  // Dùng Link component của Sitecore — tự xử lý cả edit/view mode
+                  <Link
+                    field={menu.Link}
+                    onClick={isEditing ? (e: React.MouseEvent) => e.preventDefault() : undefined}
+                  >
+                    {!linkText ? <span>{displayText}</span> : undefined}
                   </Link>
                 ) : (
-                  // Fallback khi không có Link
-                  <a href="#">
-                    {TitleComponent}
+                  // Fallback khi không có Link field
+                  <a href={menu?.Link?.value?.href || '#'}>
+                    <span>{displayText}</span>
                   </a>
                 )}
               </div>
@@ -141,6 +106,7 @@ const NavigationMenu = ({ allItems, currentNodes, level, isEditing, getChildren 
     </ul>
   );
 };
+
 
 // Component Chính
 export const Default = (props: Props) => {
