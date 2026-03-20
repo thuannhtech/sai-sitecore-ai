@@ -1,6 +1,7 @@
 import { Field, ImageField, RichTextField } from '@sitecore-content-sdk/nextjs';
+import { ComponentProps } from 'lib/component-props';
 
-export interface BlogDetailProps {
+export interface BlogDetailProps extends ComponentProps {
     fields: {
         Title: Field<string>;
         Content: RichTextField;

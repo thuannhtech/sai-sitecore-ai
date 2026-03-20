@@ -9,37 +9,56 @@ import { BlogDetailProps } from './BlogDetail.types';
 
 const BlogDetail = (props: BlogDetailProps) => {
     const { fields } = props;
+    const isEditing = props?.page?.mode?.isEditing ?? false;
 
     return (
-        <article className="blog-detail max-w-3xl mx-auto px-4 py-8">
+        <article className="blog-detail mx-auto py-8" style={{ maxWidth: '1200px', padding: "20px" }}>
 
             {/* Title */}
-            <h1 className="text-3xl font-bold mb-4">
+            <h1 className="text-3xl font-bold mb-5">
                 <Text field={fields.Title} />
             </h1>
 
-            {/* Meta */}
-            <div className="meta text-sm text-gray-500 flex gap-4 mb-4">
+            {/* Meta Row */}
+            <div className="meta flex flex-wrap items-center gap-3 text-md text-gray-500 mb-6">
+
+                {/* Author */}
                 {fields.Author && (
-                    <span>
-                        By <Text field={fields.Author} />
+                    <span className="flex items-center gap-1">
+                        ✍️ <Text field={fields.Author} />
                     </span>
                 )}
-            </div>
 
-            {/* Categories */}
-            {fields.Categories?.value?.length > 0 && (
-                <div className="categories flex flex-wrap gap-2 mb-6">
-                    {fields.Categories.value.map((cat, idx) => (
-                        <span
-                            key={idx}
-                            className="bg-gray-200 text-gray-700 px-2 py-1 rounded text-xs"
-                        >
-                            {typeof cat === 'string' ? cat : cat}
-                        </span>
-                    ))}
-                </div>
-            )}
+                {/* Divider */}
+                {fields.Author && fields.PublishDate?.value && (
+                    <span className="hidden sm:inline">•</span>
+                )}
+
+                {/* Publish Date */}
+                {fields.PublishDate?.value && (
+                    <span className="flex items-center gap-1">
+                        🗓️ {new Date(fields.PublishDate.value).toLocaleDateString('en-US', {
+                            day: '2-digit',
+                            month: 'long',
+                            year: 'numeric',
+                        })}
+                    </span>
+                )}
+
+                {/* Categories */}
+                {fields.Categories?.value?.length > 0 && (
+                    <div className="flex flex-wrap gap-2 ml-2">
+                        {fields.Categories.value.map((cat, idx) => (
+                            <span
+                                key={idx}
+                                className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs"
+                            >
+                                {typeof cat === 'string' ? cat : cat}
+                            </span>
+                        ))}
+                    </div>
+                )}
+            </div>
 
             {/* Image */}
             {fields.Image && (
@@ -49,7 +68,7 @@ const BlogDetail = (props: BlogDetailProps) => {
             )}
 
             {/* Content */}
-            <div className="content prose max-w-none">
+            <div className="content prose max-w-none" style={{ fontSize: '16px' }}>
                 <RichText field={fields.Content} />
             </div>
         </article>
