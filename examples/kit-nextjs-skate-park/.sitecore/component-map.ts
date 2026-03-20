@@ -6,6 +6,7 @@ import { Form } from '@sitecore-content-sdk/nextjs';
 // end of built-in components
 import * as TitleAndText from 'src/components/TitleAndText/TitleAndText';
 import * as Title from 'src/components/title/Title';
+import * as TailstoreHeroSlider from 'src/components/TailstoreHeroSlider/TailstoreHeroSlider';
 import * as TailstoreHeader from 'src/components/TailstoreHeader/TailstoreHeader';
 import * as TailstoreFooter from 'src/components/TailstoreFooter/TailstoreFooter';
 import * as RowSplitter from 'src/components/row-splitter/RowSplitter';
@@ -20,7 +21,6 @@ import * as MenuHeader from 'src/components/MenuHeader/MenuHeader';
 import * as LinkList from 'src/components/link-list/LinkList';
 import * as Image from 'src/components/image/Image';
 import * as TailstorePromoBanner from 'src/components/home/TailstorePromoBanner';
-import * as TailstoreHeroSlider from 'src/components/home/TailstoreHeroSlider';
 import * as TailstoreCategoryBanners from 'src/components/home/TailstoreCategoryBanners';
 import * as ContentBlock from 'src/components/content-block/ContentBlock';
 import * as Container from 'src/components/container/Container';
@@ -32,6 +32,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['Form', { ...Form, componentType: 'client' }],
   ['TitleAndText', { ...TitleAndText }],
   ['Title', { ...Title }],
+  ['TailstoreHeroSlider', { ...TailstoreHeroSlider, componentType: 'client' }],
   ['TailstoreHeader', { ...TailstoreHeader, componentType: 'client' }],
   ['TailstoreFooter', { ...TailstoreFooter, componentType: 'client' }],
   ['RowSplitter', { ...RowSplitter }],
@@ -46,7 +47,6 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['LinkList', { ...LinkList }],
   ['Image', { ...Image }],
   ['TailstorePromoBanner', { ...TailstorePromoBanner, componentType: 'client' }],
-  ['TailstoreHeroSlider', { ...TailstoreHeroSlider, componentType: 'client' }],
   ['TailstoreCategoryBanners', { ...TailstoreCategoryBanners, componentType: 'client' }],
   ['ContentBlock', { ...ContentBlock }],
   ['Container', { ...Container }],

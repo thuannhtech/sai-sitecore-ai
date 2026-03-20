@@ -84,6 +84,6 @@ export const config = {
    */
   matcher: [
     '/',
-    '/((?!api/|sitemap|robots|_next/|healthz|sitecore/api/|-/|favicon.ico|sc_logo.svg).*)',
+    '/((?!api/|sitemap|robots|_next/|healthz|sitecore/api/|-/|assets/|favicon.ico|sc_logo.svg).*)',
   ],
 };
