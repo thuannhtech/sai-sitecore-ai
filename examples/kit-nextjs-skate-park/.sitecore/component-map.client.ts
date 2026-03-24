@@ -8,6 +8,7 @@ import * as Navigation from 'src/components/navigation/Navigation';
 import * as MultiPromoItemdev from 'src/components/multi-promo/MultiPromoItem.dev';
 import * as MultiPromo from 'src/components/multi-promo/MultiPromo';
 import * as Menu from 'src/components/Menu/Menu';
+import * as BlogListing from 'src/components/BlogListing/BlogListing';
 import * as BannerSlider from 'src/components/BannerSlider/BannerSlider';
 import * as BannerSlideItem from 'src/components/BannerSlideItem/BannerSlideItem';
 
@@ -20,6 +21,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['MultiPromoItem', { ...MultiPromoItemdev }],
   ['MultiPromo', { ...MultiPromo }],
   ['Menu', { ...Menu }],
+  ['BlogListing', { ...BlogListing }],
   ['BannerSlider', { ...BannerSlider }],
   ['BannerSlideItem', { ...BannerSlideItem }],
 ]);

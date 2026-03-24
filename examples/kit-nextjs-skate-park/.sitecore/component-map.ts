@@ -26,6 +26,8 @@ import * as Image from 'src/components/image/Image';
 import * as ContentBlock from 'src/components/content-block/ContentBlock';
 import * as Container from 'src/components/container/Container';
 import * as ColumnSplitter from 'src/components/column-splitter/ColumnSplitter';
+import * as BlogListingtypes from 'src/components/BlogListing/BlogListing.types';
+import * as BlogListing from 'src/components/BlogListing/BlogListing';
 import * as BlogDetailtypes from 'src/components/Blog/BlogDetail.types';
 import * as BlogDetail from 'src/components/Blog/BlogDetail';
 import * as BannerSlider from 'src/components/BannerSlider/BannerSlider';
@@ -57,6 +59,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['ContentBlock', { ...ContentBlock }],
   ['Container', { ...Container }],
   ['ColumnSplitter', { ...ColumnSplitter }],
+  ['BlogListing', { ...BlogListingtypes, ...BlogListing, componentType: 'client' }],
   ['BlogDetail', { ...BlogDetailtypes, ...BlogDetail }],
   ['BannerSlider', { ...BannerSlider, componentType: 'client' }],
   ['BannerSlideItem', { ...BannerSlideItem, componentType: 'client' }],
