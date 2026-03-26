@@ -1,24 +1,141 @@
-footer {
-  @apply max-mobile-large:pt-0;
+/* ================================================================
+   Footer Component
+   Dark-blue footer with navigation columns, social icons, copyright
+   ================================================================ */
 
-  .container-dark-background {
-    @apply bg-bg-dark-gray;
+/* ================================================================
+   Footer Component (Brother Style Design)
+   ================================================================ */
+
+/* ================================================================
+   Footer Component (Brother Style Design)
+   ================================================================ */
+
+/* ================================================================
+   Footer Component (Brother Style Design - 3 Rows)
+   ================================================================ */
+
+.footer {
+  background-color: #002795;
+  /* Brother brand blue */
+  color: #fff;
+  font-family: var(--font-inter), 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  padding: 60px 0 40px;
+}
+
+.footer__container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ── Main Footer Sections ───────────────────────────────────── */
+.footer__main-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 40px;
+}
+
+/* Nav Column Styling - Supports both FooterNavigationColumn and LinkList */
+.footer-nav-column__title,
+.footer__column h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #fff;
+}
+
+.footer-nav-column__list,
+.footer__column ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer-nav-column__link,
+.footer__column ul a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 13px;
+  transition: opacity 0.2s;
+}
+
+.footer-nav-column__link:hover,
+.footer__column ul a:hover {
+  text-decoration: underline;
+  opacity: 0.8;
+}
+
+/* Specific handling for placeholders that could contain multiple nav columns */
+.footer__column>.footer-nav-column {
+  margin-bottom: 30px;
+}
+
+/* ── Final Row: Social + Copyright ─────────────────────────── */
+.footer__row--final {
+  margin-top: 50px;
+  padding-top: 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.footer__final-flex {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.footer__social-icons {
+  display: flex;
+  gap: 50px;
+}
+
+.footer__social-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: #fff;
+  border-radius: 50%;
+  color: #002795;
+  transition: transform 0.2s ease;
+  text-decoration: none;
+}
+
+.footer__social-item:hover {
+  transform: scale(1.1);
+}
+
+.footer__social-item svg {
+  width: 20px;
+  height: 20px;
+}
+
+.footer__copyright-text {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+  text-align: center;
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 991px) {
+  .footer__main-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .footer {
+    padding-top: 40px;
   }
 
-  .contacts {
-    @apply text-[14px];
-
-    a {
-      @apply text-text-white;
-    }
-
-    p,
-    span {
-      @apply text-text-white;
-    }
-  }
-
-  .indent-inner {
-    @apply p-[65px] max-mobile-large:p-[40px_0];
+  .footer__main-row {
+    grid-template-columns: 1fr;
+    gap: 30px;
   }
 }

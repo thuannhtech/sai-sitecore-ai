@@ -26,7 +26,7 @@ export const Default: React.FC<MultiPromoProps> = (props) => {
   const getSlidesPerView = (): number => {
     if (numColumns === '4') return 4;
     if (numColumns === '3') return 3;
-    return 3;
+    return 4; // Default to 4 as requested
   };
 
   const wrapperClasses = [

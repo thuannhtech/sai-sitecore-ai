@@ -1,5 +1,6 @@
 .banner-slider-section {
     width: 100%;
+    padding: 30px;
     /* max-width: 1440px; */
     margin: 0 auto;
     overflow: hidden;
@@ -17,7 +18,8 @@
 }
 
 .banner-slide__img,
-.banner-slide__link img {
+.banner-slide__link img,
+.banner-slide__image {
     width: 100%;
     height: auto;
     max-height: 500px;
@@ -25,6 +27,8 @@
     object-fit: cover;
     object-position: center;
     border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    /* Default border color */
 }
 
 /* ── Style riêng cho chế độ Edit ── */
