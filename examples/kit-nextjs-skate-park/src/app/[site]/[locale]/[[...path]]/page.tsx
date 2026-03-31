@@ -10,7 +10,7 @@ import Layout, { RouteFields } from "src/Layout";
 import components from ".sitecore/component-map";
 import Providers from "src/Providers";
 import { NextIntlClientProvider } from "next-intl";
-import { setRequestLocale } from "next-intl/server";
+import { setRequestLocale, getMessages } from "next-intl/server";
 import { ComponentPropsCollection } from "@sitecore-content-sdk/nextjs";
 import { Page as PageData } from "@sitecore-content-sdk/nextjs";
 
@@ -29,30 +29,32 @@ type PageWithComponentProps = PageData & {
 };
 
 export default async function Page({ params, searchParams }: PageProps) {
-  const { site, locale, path } = await params;
+  const { site, locale: pathLocale, path } = await params;
+  const editingParams = await searchParams;
   const draft = await draftMode();
+
+  // Resolve the actual locale: prioritize search params in draft mode (Editor), otherwise use path locale
+  const locale = (draft.isEnabled && (editingParams.sc_lang as string || editingParams.language as string)) || pathLocale;
 
   // Set site and locale to be available in src/i18n/request.ts for fetching the dictionary
   setRequestLocale(`${site}_${locale}`);
 
-  // Fetch the page data from Sitecore
-  let page;
-  if (draft.isEnabled) {
-    const editingParams = await searchParams;
-    if (isDesignLibraryPreviewData(editingParams)) {
-      page = await client.getDesignLibraryData(editingParams);
-    } else {
-      page = await client.getPreview(editingParams);
-    }
-  } else {
-    page = await client.getPage(path ?? [], { site, locale });
-  }
+  // Fetch the page data and messages in parallel
+  const [page, messages] = await Promise.all([
+    draft.isEnabled
+      ? isDesignLibraryPreviewData(editingParams)
+        ? client.getDesignLibraryData(editingParams)
+        : client.getPreview(editingParams)
+      : client.getPage(path ?? [], { site, locale }),
+    getMessages(),
+  ]);
 
   // If the page is not found, return a 404
   if (!page) {
     notFound();
   }
-  // Fetch the component data from Sitecore (Likely will be deprecated)
+
+  // Fetch the component data from Sitecore (Likely will be deprecated) 
   const componentProps = await client.getComponentData(
     page.layout,
     {},
@@ -65,7 +67,7 @@ export default async function Page({ params, searchParams }: PageProps) {
   };
 
   return (
-    <NextIntlClientProvider>
+    <NextIntlClientProvider locale={locale} messages={messages}>
       <Providers page={page} componentProps={enrichedPage}>
         <Layout page={page} />
       </Providers>

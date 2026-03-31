@@ -4,6 +4,7 @@ import {
     Image
 } from "@sitecore-content-sdk/nextjs";
 import React from 'react';
+import { Link } from 'src/i18n/navigation';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface Fields {
@@ -37,12 +38,12 @@ export const Default: React.FC<MenuHeaderBarProps> = ({ params, fields }) => {
         >
             {/* Logo Section */}
             <div className="header-logo-section" style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-                <a className="header-bar_logo" id="home-page-link-logo" href="/" style={{ display: 'flex', alignItems: 'center' }}>
+                <Link className="header-bar_logo" id="home-page-link-logo" href="/" style={{ display: 'flex', alignItems: 'center' }}>
                     <Image
                         field={fields.Image}
                         style={{ display: 'block', maxHeight: '50px', width: 'auto' }}
                     />
-                </a>
+                </Link>
             </div>
 
             {/* Utility Section (Language & Search) */}

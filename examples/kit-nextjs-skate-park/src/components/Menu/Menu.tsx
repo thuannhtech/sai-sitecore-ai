@@ -1,6 +1,7 @@
 "use client";
 import React from 'react';
 import { LinkField, Link } from '@sitecore-content-sdk/nextjs';
+import { useLocale } from 'next-intl';
 
 interface MenuFields {
   Link?: LinkField;
@@ -31,8 +32,28 @@ const getUrlStr = (urlField: any): string => {
   return str.replace(/\/$/, '');
 };
 
+// Helper: prepend locale to a Sitecore LinkField href
+const localizeField = (field: LinkField | undefined, locale: string): LinkField | undefined => {
+  if (!field?.value?.href) return field;
+  const href = field.value.href;
+  // Don't modify external links, anchors, or already-localized links
+  if (href.startsWith('http') || href.startsWith('//') || href.startsWith('#')) return field;
+  // Check if href already starts with /{locale}
+  if (href.startsWith(`/${locale}/`) || href === `/${locale}`) return field;
+  const normalizedHref = href.startsWith('/') ? href : `/${href}`;
+  return {
+    ...field,
+    value: {
+      ...field.value,
+      href: `/${locale}${normalizedHref}`
+    }
+  };
+};
+
 // Sub-component cho đệ quy
 const NavigationMenu = ({ allItems, currentNodes, level, isEditing, getChildren }: any) => {
+  const locale = useLocale();
+
   if (!currentNodes?.length && !(isEditing && level === 1)) {
     return null;
   }
@@ -57,21 +78,22 @@ const NavigationMenu = ({ allItems, currentNodes, level, isEditing, getChildren 
         }
         const displayText = linkText || fallbackText;
 
+        // Localize the link field so hrefs include the current locale
+        const localizedLink = isEditing ? menu?.Link : localizeField(menu?.Link, locale);
+
         return (
           <li key={item.id || index} className={classNames}>
             <div className="menu-item__title">
               <div className="menu-link-wrapper">
-                {menu?.Link && 'Link' in menu ? (
-                  // Dùng Link component của Sitecore — tự xử lý cả edit/view mode
+                {localizedLink && 'value' in localizedLink ? (
                   <Link
-                    field={menu.Link}
+                    field={localizedLink}
                     onClick={isEditing ? (e: React.MouseEvent) => e.preventDefault() : undefined}
                   >
                     {!linkText ? <span>{displayText}</span> : undefined}
                   </Link>
                 ) : (
-                  // Fallback khi không có Link field
-                  <a href={menu?.Link?.value?.href || '#'}>
+                  <a href={`/${locale}${menu?.Link?.value?.href || '/'}`}>
                     <span>{displayText}</span>
                   </a>
                 )}

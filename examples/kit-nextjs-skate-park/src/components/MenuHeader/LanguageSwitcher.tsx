@@ -11,15 +11,30 @@ export const LanguageSwitcher: React.FC = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  // In Editor mode, get locale from search params first
+  const currentLocale = searchParams.get('language') || searchParams.get('sc_lang') || locale;
+
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newLocale = e.target.value;
 
-    // Convert current searchParams to a string
+    // Check if we are in Sitecore Editing Mode (Experience Editor / Pages)
+    const isEditing = searchParams.get('sc_mode') === 'edit' || searchParams.get('mode') === 'edit';
+
+    if (isEditing) {
+      // In Editor mode, we want to stay on the same page but update the language parameter
+      // This is exactly how Sitecore Pages handles language switching internally
+      const newParams = new URLSearchParams(searchParams.toString());
+      newParams.set('language', newLocale);
+      newParams.set('sc_lang', newLocale);
+
+      // Perform a hard refresh with new query params to ensure Sitecore context is updated
+      window.location.search = newParams.toString();
+      return;
+    }
+
+    // Outside of Editor mode (Rendering), use standard path-based localization
     const searchString = searchParams.toString();
     const query = searchString ? `?${searchString}` : '';
-
-    // Change language and preserve the path and query string
-    // Note: pathname from src/i18n/navigation is already locale-less
     router.replace(`${pathname}${query}`, { locale: newLocale });
   };
 
@@ -27,7 +42,7 @@ export const LanguageSwitcher: React.FC = () => {
     <div className="language-switcher" style={{ display: 'flex', alignItems: 'center', marginLeft: '12px' }}>
       <div style={{ position: 'relative' }}>
         <select
-          value={locale}
+          value={currentLocale}
           onChange={handleLanguageChange}
           style={{
             appearance: 'none',

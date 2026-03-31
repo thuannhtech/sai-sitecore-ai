@@ -6,9 +6,21 @@ import {
   RedirectsMiddleware,
   LocaleMiddleware,
 } from '@sitecore-content-sdk/nextjs/middleware';
-import sites from '.sitecore/sites.json';
+import sitesData from '.sitecore/sites.json';
 import scConfig from 'sitecore.config';
 import { routing } from './i18n/routing';
+
+// Step 1: Deduplicate sites by name and ensure each site has entries for all supported locales
+const uniqueSiteNames = Array.from(new Set(sitesData.map(s => s.name)));
+const sites = uniqueSiteNames.flatMap(siteName => {
+  const baseSite = sitesData.find(s => s.name === siteName);
+  if (!baseSite) return [];
+  return routing.locales.map(lang => ({
+    name: baseSite.name,
+    hostName: baseSite.hostName,
+    language: lang
+  }));
+});
 
 const locale = new LocaleMiddleware({
   /**

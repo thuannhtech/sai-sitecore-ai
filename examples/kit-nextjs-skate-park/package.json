@@ -60,7 +60,7 @@
     "next:build": "next build",
     "next:dev": "cross-env NODE_OPTIONS='--inspect' next dev",
     "next:start": "next start",
-    "sitecore-tools:generate-map": "sitecore-tools project component add 8e8d9b5b-9ef8-4612-8f44-9de6e52c571d --token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjYTkxMTY1ZTEzYWU0ZmM2YjQ3ZGJmODg3YzIzYTM5YyIsImlhdCI6MTc3NDYwNjMyNiwic3ViIjoicXVhbmcubGVAY29uY2VudHJpeC5jb20iLCJzY19jb2RlX2lkIjoiOGU4ZDliNWItOWVmOC00NjEyLThmNDQtOWRlNmU1MmM1NzFkIiwic2NfY29tcG9uZW50X2lkIjoiMzM0MjI2MWQtYzg4ZS00ZTljLTkwMDYtNmJmZDA2NzYxN2ZmIiwic2NfdGVuYW50X2lkIjoiMzBkZmJhNDktOGNjZC00Njc5LTk4YjgtMDhkZTZiMDNjZTE3Iiwic2Nfb3JnYW5pemF0aW9uX2lkIjoib3JnX09DbU9lRkx2OTg2R3pZRWkiLCJzY19vcmdfcmVnaW9uIjoianBlIiwibmJmIjoxNzc0NjA2MzI2LCJleHAiOjE3NzQ2MDgxMjYsImlzcyI6Imh0dHBzOi8veG1hcHBzLWNvbXBvbmVudHNhcGkuc2l0ZWNvcmVjbG91ZC5pbyIsImF1ZCI6Imh0dHBzOi8veG1hcHBzLWNvbXBvbmVudHNhcGkuc2l0ZWNvcmVjbG91ZC5pby9pbnRlcm5hbCJ9.VIig3vvzrc0UBw5wY06hNNKRxQNynRr1IJQNshVH9to",
+    "sitecore-tools:generate-map": "sitecore-tools project component generate-map",
     "sitecore-tools:generate-map:watch": "sitecore-tools project component generate-map --watch",
     "sitecore-tools:build": "sitecore-tools project build",
     "dev": "cross-env NODE_ENV=development npm-run-all --serial sitecore-tools:generate-map sitecore-tools:build --parallel next:dev sitecore-tools:generate-map:watch",

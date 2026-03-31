@@ -32,7 +32,10 @@ type Props = {
     page?: any;
 };
 
+import { useLocale } from 'next-intl';
+
 export const Default = (props: Props) => {
+    const locale = useLocale();
     const { fields, params = {}, page } = props;
     const slides = fields?.items ?? [];
 
@@ -90,6 +93,7 @@ export const Default = (props: Props) => {
                 ) : (
                     // Normal (view) mode: Swiper carousel
                     <Swiper
+                        key={`banner-swiper-${locale}`}
                         onSwiper={(swiper) => {
                             swiperRef.current = swiper;
                         }}
