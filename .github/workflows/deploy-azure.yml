@@ -33,7 +33,7 @@ jobs:
 
       - name: 📦 Install dependencies
         working-directory: ${{ env.WORKING_DIRECTORY }}
-        run: npm ci
+        run: npm install
 
       - name: 🏗️ Build Next.js app (Standalone)
         working-directory: ${{ env.WORKING_DIRECTORY }}
