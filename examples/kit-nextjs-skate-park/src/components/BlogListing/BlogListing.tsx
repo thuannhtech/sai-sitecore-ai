@@ -3,7 +3,8 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import client from 'src/lib/sitecore-client';
 import { ImageField, RichText, Text } from '@sitecore-content-sdk/nextjs';
-import Link from 'next/link';
+import { Link } from 'src/i18n/navigation';
+import { useLocale } from 'next-intl';
 import { BlogListingProps, SitecoreField, BlogItem, RenderingParams } from './BlogListing.types';
 
 // --- GraphQL Query ---
@@ -99,13 +100,13 @@ const truncateText = (text: string, maxLength: number) => {
     return `${text.slice(0, maxLength).trim()}...`;
 };
 
-const formatDate = (dateValue: string) => {
+const formatDate = (dateValue: string, locale: string = 'en-US') => {
     if (!dateValue) return 'Just now';
 
     const date = new Date(dateValue);
     if (Number.isNaN(date.getTime())) return 'Just now';
 
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString(locale, {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
@@ -113,12 +114,12 @@ const formatDate = (dateValue: string) => {
 };
 
 
-const BlogCard = ({ item }: { item: BlogItem }) => {
+const BlogCard = ({ item, locale }: { item: BlogItem; locale: string }) => {
 
     const title = getFieldValue(item.fields, 'Title') || 'No title available for this post. Please read more to find out the details.';
     const rawContent = getFieldValue(item.fields, 'Content') || '';
     const summary = truncateText(stripHtml(rawContent), 140) || 'No description available for this post. Please read more to find out the details.';
-    const date = formatDate(getFieldValue(item.fields, 'PublishDate'));
+    const date = formatDate(getFieldValue(item.fields, 'PublishDate'), locale);
     const categories = getCategories(item.fields, 'Categories');
     const image = getImageUrl(item.fields, 'Image');
     const url = item?.url.path;
@@ -191,6 +192,8 @@ const BlogListing: React.FC<BlogListingProps> = (props) => {
     const rootFolder = renderingParams.BlogsFolder;
     const pageSize = parseInt(renderingParams.Limit || '6', 10); // Đổi default thành 6 cho đẹp Grid 3 cột
 
+    const locale = useLocale();
+
     const fetchData = useCallback(async () => {
         if (!rootFolder) {
             setLoading(false);
@@ -202,7 +205,7 @@ const BlogListing: React.FC<BlogListingProps> = (props) => {
             const excludedNames = ['Data'];
             const res: any = await client.getData(GET_BLOG_ITEMS_QUERY, {
                 path: rootFolder,
-                lang: 'en',
+                lang: locale,
             });
 
             console.log("res", res.item?.children?.results)
@@ -217,7 +220,7 @@ const BlogListing: React.FC<BlogListingProps> = (props) => {
         } finally {
             setLoading(false);
         }
-    }, [rootFolder]);
+    }, [rootFolder, locale]);
 
     useEffect(() => {
         fetchData();
@@ -278,7 +281,7 @@ const BlogListing: React.FC<BlogListingProps> = (props) => {
                         /* Skeleton Loading State */
                         Array.from({ length: pageSize }).map((_, idx) => <SkeletonCard key={idx} />)
                     ) : paginatedItems.length > 0 ? (
-                        paginatedItems.map((item) => <BlogCard key={item.id} item={item} />)
+                        paginatedItems.map((item) => <BlogCard key={item.id} item={item} locale={locale} />)
                     ) : (
                         /* Empty State */
                         <div className="col-span-full py-16 text-center bg-white rounded-xl border border-dashed border-gray-300">

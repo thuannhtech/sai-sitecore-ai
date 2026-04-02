@@ -21,6 +21,7 @@ import * as multipromoprops from 'src/components/multi-promo/multi-promo.props';
 import * as multipromoMultiPromo2Block from 'src/components/multi-promo/multi-promo.MultiPromo2Block';
 import * as MenuHeaderSitecoreAiGeneratedVariant from 'src/components/MenuHeader/MenuHeader.SitecoreAiGeneratedVariant';
 import * as MenuHeader from 'src/components/MenuHeader/MenuHeader';
+import * as LanguageSwitcher from 'src/components/MenuHeader/LanguageSwitcher';
 import * as Menu from 'src/components/Menu/Menu';
 import * as LinkList from 'src/components/link-list/LinkList';
 import * as Image from 'src/components/image/Image';
@@ -57,6 +58,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['MultiPromo', { ...MultiPromo, componentType: 'client' }],
   ['multi-promo', { ...multipromoprops, ...multipromoMultiPromo2Block }],
   ['MenuHeader', { ...MenuHeaderSitecoreAiGeneratedVariant, ...MenuHeader }],
+  ['LanguageSwitcher', { ...LanguageSwitcher, componentType: 'client' }],
   ['Menu', { ...Menu, componentType: 'client' }],
   ['LinkList', { ...LinkList }],
   ['Image', { ...Image }],
