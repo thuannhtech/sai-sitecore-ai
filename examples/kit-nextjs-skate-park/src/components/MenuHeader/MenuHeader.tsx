@@ -25,43 +25,24 @@ export const Default: React.FC<MenuHeaderBarProps> = ({ params, fields }) => {
         <div
             className={`component menu-header ${styles}`.trim()}
             id={id}
-            style={{
-                width: '100%',
-                height: '60px', // Fixed height for perfect centering
-                marginBottom: '40px',
-                backgroundColor: '#0022a1', // Brother Blue
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '0 40px'
-            }}
         >
             {/* Logo Section */}
-            <div className="header-logo-section" style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-                <Link className="header-bar_logo" id="home-page-link-logo" href="/" style={{ display: 'flex', alignItems: 'center' }}>
+            <div className="header-logo-section">
+                <Link className="header-bar_logo" id="home-page-link-logo" href="/">
                     <Image
                         field={fields.Image}
-                        style={{ display: 'block', maxHeight: '50px', width: 'auto' }}
+                        className="header-logo-img"
                     />
                 </Link>
             </div>
 
             {/* Utility Section (Language & Search) */}
-            <div
-                style={{
-                    color: '#ffffff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '24px',
-                    fontSize: '14px',
-                    fontFamily: 'sans-serif'
-                }}
-            >
+            <div className="utility-section">
                 {/* Language Switcher */}
                 <LanguageSwitcher />
 
                 {/* Search */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <div className="header-search-box">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>

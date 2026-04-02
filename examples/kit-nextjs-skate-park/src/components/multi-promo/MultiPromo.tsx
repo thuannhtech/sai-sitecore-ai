@@ -82,7 +82,11 @@ export const Default: React.FC<MultiPromoProps> = (props) => {
                   `Slide ${newIndex + 1} of ${rawChildren?.results?.length}`
                 );
               }}
-              modules={[A11y]}
+              modules={[A11y, Navigation]}
+              navigation={{
+                prevEl: '.swiper-button-prev',
+                nextEl: '.swiper-button-next',
+              }}
               spaceBetween={32}
               slidesPerView={1}
               breakpoints={{
@@ -97,6 +101,18 @@ export const Default: React.FC<MultiPromoProps> = (props) => {
                   <MultiPromoItem isPageEditing={isPageEditing} {...item} />
                 </SwiperSlide>
               ))}
+
+              {/* Navigation Buttons for Mobile */}
+              <button className="swiper-button-prev swiper-button-prev-promo" onClick={() => swiperRef.current?.slidePrev()}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
+              <button className="swiper-button-next swiper-button-next-promo" onClick={() => swiperRef.current?.slideNext()}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
             </Swiper>
           )}
 

@@ -150,33 +150,112 @@
     padding: 16px 0;
 }
 
+/* ── Mobile Hamburger & Bar ──────────────────────── */
+.menu-mobile-bar {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+}
+
+.menu-mobile-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0022a1;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.menu-hamburger {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 24px;
+    height: 18px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 1001;
+}
+
+.menu-hamburger span {
+    width: 100%;
+    height: 2px;
+    background-color: #222;
+    transition: all 0.3s ease;
+    border-radius: 2px;
+}
+
+.menu-hamburger.is-active span:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+}
+
+.menu-hamburger.is-active span:nth-child(2) {
+    opacity: 0;
+}
+
+.menu-hamburger.is-active span:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+}
+
 @media (max-width: 991px) {
+    .menu-mobile-bar {
+        display: flex;
+    }
+
+    .menu-nav {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #fff;
+        border-bottom: 1px solid #eee;
+    }
+
+    .menu-nav.is-open {
+        max-height: 1000px;
+        /* Adjust as needed for menu length */
+    }
+
     .menu-folder .menu-list.level-1 {
         flex-direction: column;
         align-items: stretch;
         gap: 0;
-        padding: 16px 20px;
+        padding: 0;
     }
 
-    .menu-folder .menu-list.level-1>.menu-item {
+    .menu-folder .menu-item {
         width: 100%;
         border-bottom: 1px solid #f2f2f2;
     }
 
-    .menu-folder .menu-list.level-1>.menu-item:last-child {
-        border-bottom: none;
-    }
-
-    .menu-folder .menu-list.level-1>.menu-item>.menu-item__title {
+    .menu-folder .menu-item__title {
         justify-content: space-between;
+        padding: 0 20px;
     }
 
-    .menu-folder .menu-list.level-1>.menu-item>.menu-item__title a {
-        padding: 16px 0;
+    .menu-folder .menu-item__title a {
+        padding: 14px 0 !important;
+        font-size: 15px;
+        font-weight: 500;
         width: 100%;
+        color: #333;
     }
 
-    /* Flatten all sub-menus logically in mobile view */
+    /* Sub-menu logic */
+    .menu-submenu-container {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+        background: #f9f9fc;
+    }
+
+    .menu-submenu-container.is-open {
+        max-height: 500px;
+    }
+
     .menu-folder .menu-item>.menu-list:not(.level-1) {
         position: relative;
         top: 0;
@@ -187,42 +266,42 @@
         opacity: 1;
         visibility: visible;
         transform: none !important;
-        border-radius: 0;
         display: block;
-        padding: 0 0 8px 16px;
+        padding: 0 0 0 20px;
         margin: 0;
         border: none;
     }
 
+    .menu-arrow-wrapper {
+        padding: 14px 0 14px 20px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .menu-folder .menu-arrow {
+        width: 14px;
+        height: 14px;
+        color: #666;
+        transition: transform 0.3s ease;
+    }
+
+    .menu-item.is-sub-open>.menu-item__title .menu-arrow {
+        transform: rotate(180deg);
+        color: #003087;
+    }
+
     .menu-folder .menu-list:not(.level-1)>.menu-item {
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .menu-folder .menu-list:not(.level-1)>.menu-item:last-child {
         border-bottom: none;
     }
 
     .menu-folder .menu-list:not(.level-1)>.menu-item>.menu-item__title a {
-        padding: 8px 0;
+        padding: 12px 0 !important;
         font-size: 14px;
-    }
-
-    .menu-folder .menu-list:not(.level-1)>.menu-item:hover>.menu-item__title {
-        background: transparent;
-    }
-
-    /* Reset the fly-outs into pure deep indentations */
-    .menu-folder .menu-item>.menu-list:not(.level-1)>.menu-item>.menu-list {
-        padding: 0 0 8px 16px;
-        top: 0;
-        left: 0;
-        transform: none !important;
-    }
-
-    /* Adjust arrows to point down normally in mobile */
-    .menu-folder .menu-list:not(.level-1)>.menu-item>.menu-item__title>.menu-arrow {
-        transform: rotate(0) !important;
-        margin-right: 0;
-    }
-
-    /* Stop the hover arrow spin to act like a static accordion lacking JS */
-    .menu-folder .menu-list.level-1>.menu-item:hover>.menu-item__title>.menu-arrow {
-        transform: rotate(0) !important;
+        color: #555;
     }
 }

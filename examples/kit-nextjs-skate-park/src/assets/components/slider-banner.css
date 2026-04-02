@@ -189,6 +189,33 @@
 }
 
 @media (max-width: 768px) {
+    .banner-slider-section {
+        padding: 7px 15px !important;
+        /* Giảm padding để ảnh to hết cỡ */
+    }
+
+    .banner-slide__image {
+        border-radius: 16px;
+        /* Khôi phục độ bo góc nguyên bản */
+    }
+
+    .banner-swiper__prev,
+    .banner-swiper__next {
+        width: 44px;
+        /* Nút to ra cho dễ bấm */
+        height: 44px;
+        background: rgba(255, 255, 255, 0.95);
+    }
+
+    .banner-swiper__prev svg,
+    .banner-swiper__next svg {
+        width: 22px;
+        /* Mũi tên rõ ràng hơn */
+        height: 22px;
+        stroke-width: 3;
+        /* Đậm nét hơn */
+    }
+
     .banner-slider__edit-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 12px;

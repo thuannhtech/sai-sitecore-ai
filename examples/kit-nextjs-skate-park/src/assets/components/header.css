@@ -1,19 +1,146 @@
-/* .prod-mode {
-  #header {
-    @apply flex max-mobile-large:pb-0 max-mobile-large:flex-col-reverse;
+/* ============================================
+   MenuHeader Component Styles
+   ============================================ */
+
+.menu-header {
+  width: 100%;
+  height: 60px;
+  background-color: #0022a1;
+  /* Brother Blue */
+  display: flex !important;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 40px;
+  box-sizing: border-box;
+  color: #ffffff;
+  margin-bottom: 40px;
+  transition: all 0.3s ease;
+}
+
+/* ── Logo Section ───────── */
+.header-logo-section {
+  display: flex !important;
+  align-items: center;
+  height: 100%;
+  flex-shrink: 0;
+  /* Đảm bảo logo không bị bóp nghẹt */
+}
+
+.header-bar_logo {
+  display: flex;
+  align-items: center;
+}
+
+.header-logo-img {
+  display: block !important;
+  height: 50px !important;
+  width: auto !important;
+  max-width: 180px;
+  object-fit: contain;
+}
+
+/* ── Utility Section (Language & Search) ─ */
+.utility-section {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  font-size: 14px;
+  font-family: sans-serif;
+}
+
+.header-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.header-search-box:hover {
+  opacity: 0.8;
+}
+
+/* ── Language Switcher ── */
+.language-switcher {
+  display: flex !important;
+  align-items: center;
+  margin-left: 12px;
+}
+
+.language-switcher select {
+  appearance: none;
+  padding: 6px 36px 6px 14px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  cursor: pointer;
+  background-color: transparent;
+  color: #ffffff;
+  outline: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 14px;
+  transition: all 0.2s ease-in-out;
+  min-width: 130px;
+}
+
+.language-switcher select:hover {
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+.language-switcher option {
+  background-color: #0022a1;
+  color: #fff;
+}
+
+/* ============================================
+   Responsive (Mobile & Tablet)
+   ============================================ */
+
+@media (max-width: 768px) {
+  .menu-header {
+    padding: 0 16px;
+    /* Giảm padding trên mobile */
+    height: 56px;
+  }
+
+  .header-bar_logo img {
+    max-height: 40px;
+    /* Thu nhỏ logo trên mobile */
+  }
+
+  .utility-section {
+    gap: 16px;
+    /* Thu hẹp khoảng cách các icon */
+  }
+
+  .header-search-box span {
+    display: none;
+    /* Ẩn chữ Search, chỉ hiện Icon trên màn hình nhỏ */
+  }
+
+  .language-switcher {
+    margin-left: 0;
+  }
+
+  .language-switcher select {
+    min-width: 100px;
+    padding: 4px 28px 4px 10px;
+    font-size: 11px;
+    background-position: right 6px center;
   }
 }
 
-header {
-  #header {
-    @apply max-mobile-large:py-0 max-mobile-large:flex-col-reverse;
-
-    .bs-title {
-      @apply pl-[50px] max-mobile-large:pl-0 max-mobile-large:text-center max-mobile-large:mt-[-5px];
-
-      h1 {
-        @apply text-[24px] font-semibold leading-[18px] pt-[40px] m-0 max-mobile-large:font-medium max-mobile-large:leading-[29px] max-mobile-large:pt-0 max-mobile-large:mb-[10px];
-      }
-    }
+@media (max-width: 480px) {
+  .utility-section {
+    gap: 12px;
   }
-} */
+
+  .menu-header {
+    margin-bottom: 24px;
+  }
+}

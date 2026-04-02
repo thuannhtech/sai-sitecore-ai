@@ -54,19 +54,12 @@
 
 .multi-promo__swiper .swiper-button-prev,
 .multi-promo__swiper .swiper-button-next {
-  color: #222;
-  background: #fff;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  top: 38%;
+  display: none !important;
 }
 
 .multi-promo__swiper .swiper-button-prev::after,
 .multi-promo__swiper .swiper-button-next::after {
-  font-size: 14px;
-  font-weight: 700;
+  display: none !important;
 }
 
 /* ── Card (Item) ──────────────────────────── */
@@ -179,12 +172,78 @@
   }
 
   .multi-promo__title {
-    font-size: 22px;
+    font-size: 20px;
+    /* Thu nhỏ tiêu đề chính cho cân đối */
+    font-weight: 700;
   }
 
   .multi-promo__edit-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 20px;
+  }
+
+  /* Font size cho Item */
+  .multi-promo__item-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .multi-promo__item-description {
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 10px;
+    color: #666;
+  }
+
+  /* Show and Style Navigation Buttons on Mobile Only */
+  .multi-promo__swiper .swiper-button-prev,
+  .multi-promo__swiper .swiper-button-next {
+    display: flex !important;
+    color: #003087;
+    background: rgba(255, 255, 255, 0.85) !important;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    top: 35% !important;
+    /* Center on image */
+    z-index: 20;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    transition: all 0.3s ease-in-out;
+    transform: translateY(-50%) !important;
+    position: absolute;
+    cursor: pointer;
+    outline: none;
+    padding: 0;
+  }
+
+  .multi-promo__swiper .swiper-button-prev {
+    left: 12px !important;
+  }
+
+  .swiper-button-prev-promo,
+  .swiper-button-next-promo {
+    svg {
+      stroke: #003087 !important;
+      width: 18px !important;
+      height: 18px !important;
+      object-fit: contain !important;
+      transform-origin: center;
+      pointer-events: none;
+    }
+  }
+
+  .multi-promo__swiper .swiper-button-next {
+    right: 12px !important;
+  }
+
+  .multi-promo__swiper .swiper-button-prev:active,
+  .multi-promo__swiper .swiper-button-next:active {
+    background: rgba(255, 255, 255, 1) !important;
+    transform: translateY(-50%) scale(0.95) !important;
   }
 }
 
