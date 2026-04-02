@@ -1,0 +1,73 @@
+name: Deploy Next.js to Azure Windows App Service
+
+on:
+  push:
+    branches:
+      - main
+    # Pipeline chỉ chạy khi có file trong thư mục này thay đổi
+    paths:
+      - 'examples/kit-nextjs-skate-park/**'
+      - '.github/workflows/deploy-azure.yml'
+  # Cho phép bạn bấm nút Run thủ công trên GitHub UI
+  workflow_dispatch: 
+
+env:
+  NODE_VERSION: '22.x'
+  WORKING_DIRECTORY: 'examples/kit-nextjs-skate-park'
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          # Dùng cache npm để cài đặt nhanh hơn ở các lần sau
+          cache: 'npm'
+          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/package-lock.json
+
+      - name: 📦 Install dependencies
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: npm install
+
+      - name: 🏗️ Build Next.js app (Standalone)
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        env:
+          # Inject GitHub Secrets để App có biến kết nối lúc pre-render build
+          SITECORE_EDGE_CONTEXT_ID: ${{ secrets.SITECORE_EDGE_CONTEXT_ID }}
+          NEXT_PUBLIC_SITECORE_EDGE_CONTEXT_ID: ${{ secrets.NEXT_PUBLIC_SITECORE_EDGE_CONTEXT_ID }}
+          NEXT_PUBLIC_DEFAULT_SITE_NAME: ${{ secrets.NEXT_PUBLIC_DEFAULT_SITE_NAME }}
+          SITECORE_EDITING_SECRET: ${{ secrets.SITECORE_EDITING_SECRET }}
+        run: npm run build
+
+      - name: 🗜️ Package standalone & static files
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          # Standalone output NextJS mặc định thiếu thư mục /public và /.next/static
+          # Ta cần copy thảy vào cho nó trọn vẹn
+          cp -r public .next/standalone/ 2>/dev/null || true
+          mkdir -p .next/standalone/.next
+          cp -r .next/static .next/standalone/.next/ 2>/dev/null || true
+          
+          # Ném file web.config (iisnode) vào chung với server.js
+          cp web.config .next/standalone/
+          
+          # Fix Next.js bị sập do hàm parseInt(PORT) vô tình làm hỏng Named Pipe của iisnode (gây ra lỗi 500)
+          sed -i 's/parseInt(process.env.PORT, 10)/process.env.PORT/g' .next/standalone/server.js
+          
+          # Chui vào thư mục và gom gọn lại thành file release.zip
+          cd .next/standalone
+          zip -r $GITHUB_WORKSPACE/release.zip .
+
+      - name: 🚀 Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'sai-rendering-host'
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+          package: release.zip
