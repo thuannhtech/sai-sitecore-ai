@@ -57,6 +57,9 @@ jobs:
           # Ném file web.config (iisnode) vào chung với server.js
           cp web.config .next/standalone/
           
+          # Fix Next.js bị sập do hàm parseInt(PORT) vô tình làm hỏng Named Pipe của iisnode (gây ra lỗi 500)
+          sed -i 's/parseInt(process.env.PORT, 10)/process.env.PORT/g' .next/standalone/server.js
+          
           # Chui vào thư mục và gom gọn lại thành file release.zip
           cd .next/standalone
           zip -r $GITHUB_WORKSPACE/release.zip .
