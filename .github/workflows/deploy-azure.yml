@@ -59,7 +59,7 @@ jobs:
           
           # Chui vào thư mục và gom gọn lại thành file release.zip
           cd .next/standalone
-          zip -r ../../../release.zip .
+          zip -r $GITHUB_WORKSPACE/release.zip .
 
       - name: 🚀 Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
