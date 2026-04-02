@@ -16,6 +16,8 @@ export const Default: React.FC<MultiPromoProps> = (props) => {
 
   const { title, description } = fields?.data?.datasource || {};
   const [announcement, setAnnouncement] = useState('');
+  const [isBeginning, setIsBeginning] = useState(true);
+  const [isEnd, setIsEnd] = useState(false);
   const swiperRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const isPageEditing = page?.mode?.isEditing;
 
@@ -75,12 +77,16 @@ export const Default: React.FC<MultiPromoProps> = (props) => {
             <Swiper
               onSwiper={(swiper) => {
                 swiperRef.current = swiper;
+                setIsBeginning(swiper.isBeginning);
+                setIsEnd(swiper.isEnd);
               }}
               onSlideChange={(swiper) => {
                 const newIndex = swiper.realIndex;
                 setAnnouncement(
                   `Slide ${newIndex + 1} of ${rawChildren?.results?.length}`
                 );
+                setIsBeginning(swiper.isBeginning);
+                setIsEnd(swiper.isEnd);
               }}
               modules={[A11y, Navigation]}
               navigation={{
@@ -93,7 +99,7 @@ export const Default: React.FC<MultiPromoProps> = (props) => {
                 640: { slidesPerView: 2, spaceBetween: 24 },
                 1024: { slidesPerView: getSlidesPerView(), spaceBetween: 32 },
               }}
-              loop={rawChildren?.results?.length > getSlidesPerView()}
+              loop={false}
               className="multi-promo__swiper"
             >
               {rawChildren?.results?.map((item: MultiPromoItemProps, index: number) => (
@@ -103,16 +109,20 @@ export const Default: React.FC<MultiPromoProps> = (props) => {
               ))}
 
               {/* Navigation Buttons for Mobile */}
-              <button className="swiper-button-prev swiper-button-prev-promo" onClick={() => swiperRef.current?.slidePrev()}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-              </button>
-              <button className="swiper-button-next swiper-button-next-promo" onClick={() => swiperRef.current?.slideNext()}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </button>
+              {!isBeginning && (
+                <button className="swiper-button-prev swiper-button-prev-promo" onClick={() => swiperRef.current?.slidePrev()}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                </button>
+              )}
+              {!isEnd && (
+                <button className="swiper-button-next swiper-button-next-promo" onClick={() => swiperRef.current?.slideNext()}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="18" height="18" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </button>
+              )}
             </Swiper>
           )}
 
