@@ -7,6 +7,7 @@ on:
     # Pipeline chỉ chạy khi có file trong thư mục này thay đổi
     paths:
       - 'examples/kit-nextjs-skate-park/**'
+      - '.github/workflows/deploy-azure.yml'
   # Cho phép bạn bấm nút Run thủ công trên GitHub UI
   workflow_dispatch: 
 
