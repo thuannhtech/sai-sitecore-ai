@@ -3,6 +3,7 @@
 import { BYOCClientWrapper, NextjsContentSdkComponent, FEaaSClientWrapper } from '@sitecore-content-sdk/nextjs';
 import { Form } from '@sitecore-content-sdk/nextjs';
 
+import * as ProductList from 'src/components/ProductList/ProductList';
 import * as NewBannerSlider from 'src/components/NewBannerSlider/NewBannerSlider';
 import * as Navigation from 'src/components/navigation/Navigation';
 import * as MultiPromoItemdev from 'src/components/multi-promo/MultiPromoItem.dev';
@@ -17,6 +18,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['BYOCWrapper', BYOCClientWrapper],
   ['FEaaSWrapper', FEaaSClientWrapper],
   ['Form', Form],
+  ['ProductList', { ...ProductList }],
   ['NewBannerSlider', { ...NewBannerSlider }],
   ['Navigation', { ...Navigation }],
   ['MultiPromoItem', { ...MultiPromoItemdev }],

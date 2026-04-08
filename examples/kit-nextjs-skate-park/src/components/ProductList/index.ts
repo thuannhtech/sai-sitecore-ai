@@ -1,0 +1,1 @@
+export { Default, default } from './ProductList'
