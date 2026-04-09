@@ -24,7 +24,6 @@
     height: auto;
     max-height: 500px;
     display: block;
-    object-fit: cover;
     object-position: center;
     border-radius: 16px;
     border: 1px solid #e2e8f0;
@@ -183,7 +182,6 @@
     width: 100%;
     height: auto;
     display: block;
-    object-fit: cover;
     aspect-ratio: 16 / 9;
     border-radius: 8px;
 }
