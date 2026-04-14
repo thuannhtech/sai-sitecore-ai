@@ -55,7 +55,7 @@ export const Default = ({ params, fields }: LinkListProps) => {
   const datasource = fields?.data?.datasource;
   const styles = `component link-list ${params.styles || ''}`.trim();
   const id = params.RenderingIdentifier;
-  console.log('fields', fields);
+  console.log('fields1', fields);
 
   const renderContent = () => {
     if (!datasource) {
