@@ -16,10 +16,22 @@ export default getRequestConfig(async ({ requestLocale }: GetRequestConfigParams
 
   const messages: Record<string, object> = {};
 
-  messages[parsedSite] = await client.getDictionary({
+  const rawMessages = await client.getDictionary({
     locale,
     site: parsedSite,
   });
+
+  // next-intl does not allow dots in keys (it uses them for nesting).
+  // Sitecore dictionary keys often contain dots or special paths like .well-known.
+  const sanitizedMessages: Record<string, string> = {};
+  for (const [key, value] of Object.entries(rawMessages)) {
+    // Replace dots with double underscores to avoid nesting issues in next-intl
+    const safeKey = key.replace(/\./g, '__');
+    sanitizedMessages[safeKey] = value;
+  }
+
+  messages[parsedSite] = sanitizedMessages;
+
   return {
     locale,
     messages,
