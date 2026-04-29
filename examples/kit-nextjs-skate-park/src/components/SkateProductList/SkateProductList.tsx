@@ -1,7 +1,9 @@
 'use client'
 
 import React, { JSX, useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { useLocale } from 'next-intl'
+import { SkateAddToCartButton } from '../SkateCart/SkateAddToCartButton'
 
 /* ── Types (Follow Title.tsx pattern) ───────── */
 interface SkateProductListProps {
@@ -192,31 +194,47 @@ export const Default = ({ params, fields, page }: SkateProductListProps): JSX.El
         ) : displayList.length > 0 ? (
           <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6' : 'flex flex-col gap-4'}>
             {displayList.map((product) => (
-              <a
+              <div
                 key={product.slug}
-                href={`/products/${product.slug.toLowerCase().replace(/\s+/g, '-')}`}
                 className={`group bg-white border border-gray-100 overflow-hidden transition-all hover:shadow-md ${viewMode === 'grid' ? 'flex flex-col rounded-2xl' : 'flex flex-row items-center rounded-xl p-3 gap-4'
                   }`}
               >
-                <div className={`${viewMode === 'grid' ? 'w-full aspect-square' : 'w-24 h-24 shrink-0'} bg-gray-50 relative rounded-xl overflow-hidden`}>
+                <Link
+                  href={`/products/${product.slug.toLowerCase().replace(/\s+/g, '-')}`}
+                  className={`${viewMode === 'grid' ? 'w-full aspect-square' : 'w-24 h-24 shrink-0'} bg-gray-50 relative rounded-xl overflow-hidden`}
+                >
                   {product.image ? (
-                    <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                    <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-300">No Image</div>
                   )}
-                </div>
-                <div className="p-4 flex-1">
-                  <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
-                    {product.name}
-                  </h3>
+                </Link>
+                <div className="p-4 flex-1 flex flex-col">
+                  <Link href={`/products/${product.slug.toLowerCase().replace(/\s+/g, '-')}`}>
+                    <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
+                      {product.name}
+                    </h3>
+                  </Link>
                   <p className="text-blue-600 font-bold mt-1 text-lg">
                     ${product.price?.toLocaleString()}
                   </p>
                   {viewMode === 'list' && product.description && (
                     <p className="text-gray-500 text-sm mt-1 line-clamp-1">{product.description}</p>
                   )}
+                  
+                  <div className="mt-4">
+                    <SkateAddToCartButton 
+                      product={{
+                        id: product.slug, // Dùng slug làm ID tạm thời cho mock
+                        name: product.name,
+                        price: product.price || 0,
+                        imageUrl: product.image
+                      }} 
+                      className="w-full py-2 text-sm"
+                    />
+                  </div>
                 </div>
-              </a>
+              </div>
             ))}
           </div>
         ) : (

@@ -6,6 +6,7 @@ import {
 import React from 'react';
 import { Link } from 'src/i18n/navigation';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { SkateCartToggle } from '../SkateCart/SkateCartToggle';
 
 interface Fields {
     Image: ImageField;
@@ -38,6 +39,10 @@ export const Default: React.FC<MenuHeaderBarProps> = ({ params, fields }) => {
 
             {/* Utility Section (Language & Search) */}
             <div className="utility-section">
+
+                {/* Cart Toggle */}
+                <SkateCartToggle />
+
                 {/* Language Switcher */}
                 <LanguageSwitcher />
 

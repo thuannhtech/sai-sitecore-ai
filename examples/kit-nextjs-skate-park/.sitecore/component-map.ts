@@ -4,8 +4,14 @@ import { BYOCServerWrapper, NextjsContentSdkComponent, FEaaSServerWrapper } from
 import { Form } from '@sitecore-content-sdk/nextjs';
 
 // end of built-in components
+import * as ProductCard from 'src/components/ProductCard';
 import * as TitleAndText from 'src/components/TitleAndText/TitleAndText';
 import * as Title from 'src/components/title/Title';
+import * as SkateProductList from 'src/components/SkateProductList/SkateProductList';
+import * as SkateProductDetail from 'src/components/SkateProductDetail/SkateProductDetail';
+import * as SkateMiniCart from 'src/components/SkateCart/SkateMiniCart';
+import * as SkateCartToggle from 'src/components/SkateCart/SkateCartToggle';
+import * as SkateAddToCartButton from 'src/components/SkateCart/SkateAddToCartButton';
 import * as RowSplitter from 'src/components/row-splitter/RowSplitter';
 import * as RichText from 'src/components/rich-text/RichText';
 import * as Promo from 'src/components/promo/Promo';
@@ -27,6 +33,7 @@ import * as LanguageSwitcher from 'src/components/MenuHeader/LanguageSwitcher';
 import * as Menu from 'src/components/Menu/Menu';
 import * as LinkList from 'src/components/link-list/LinkList';
 import * as Image from 'src/components/image/Image';
+import * as BasicForm from 'src/components/forms/BasicForm';
 import * as FooterNavigationColumn from 'src/components/Footer/FooterNavigationColumn';
 import * as Footer from 'src/components/Footer/Footer';
 import * as footerprops from 'src/components/Footer/footer.props';
@@ -45,8 +52,14 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['BYOCWrapper', BYOCServerWrapper],
   ['FEaaSWrapper', FEaaSServerWrapper],
   ['Form', { ...Form, componentType: 'client' }],
+  ['ProductCard', { ...ProductCard }],
   ['TitleAndText', { ...TitleAndText }],
   ['Title', { ...Title }],
+  ['SkateProductList', { ...SkateProductList, componentType: 'client' }],
+  ['SkateProductDetail', { ...SkateProductDetail }],
+  ['SkateMiniCart', { ...SkateMiniCart, componentType: 'client' }],
+  ['SkateCartToggle', { ...SkateCartToggle, componentType: 'client' }],
+  ['SkateAddToCartButton', { ...SkateAddToCartButton, componentType: 'client' }],
   ['RowSplitter', { ...RowSplitter }],
   ['RichText', { ...RichText }],
   ['Promo', { ...Promo }],
@@ -61,11 +74,12 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['MultiPromoItem', { ...MultiPromoItemdev }],
   ['MultiPromo', { ...MultiPromo, componentType: 'client' }],
   ['multi-promo', { ...multipromoprops, ...multipromoMultiPromo2Block }],
-  ['MenuHeader', { ...MenuHeaderSitecoreAiGeneratedVariant, ...MenuHeader }],
+  ['MenuHeader', { ...MenuHeaderSitecoreAiGeneratedVariant, ...MenuHeader, componentType: 'client' }],
   ['LanguageSwitcher', { ...LanguageSwitcher, componentType: 'client' }],
   ['Menu', { ...Menu, componentType: 'client' }],
   ['LinkList', { ...LinkList }],
   ['Image', { ...Image }],
+  ['BasicForm', { ...BasicForm, componentType: 'client' }],
   ['FooterNavigationColumn', { ...FooterNavigationColumn }],
   ['Footer', { ...Footer }],
   ['footer', { ...footerprops }],

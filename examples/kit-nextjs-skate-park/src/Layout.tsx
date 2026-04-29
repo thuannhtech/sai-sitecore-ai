@@ -1,6 +1,7 @@
 import React, { JSX } from "react";
 import { Field, Page } from "@sitecore-content-sdk/nextjs";
 import Scripts from "src/Scripts";
+import { SkateMiniCart } from "src/components/SkateCart/SkateMiniCart";
 import SitecoreStyles from "components/content-sdk/SitecoreStyles";
 import { DesignLibraryApp } from "@sitecore-content-sdk/nextjs";
 import { AppPlaceholder } from "@sitecore-content-sdk/nextjs";
@@ -75,6 +76,7 @@ const Layout = ({ page }: LayoutProps): JSX.Element => {
             </footer>
           </>
         )}
+        <SkateMiniCart />
       </div>
     </>
   );
