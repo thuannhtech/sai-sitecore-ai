@@ -2,46 +2,42 @@
   "meta": {
     "schema_version": "1.1.0",
     "awf_version": "3.3.0",
-    "last_updated": "2026-03-16"
+    "last_updated": "2026-04-29"
   },
   "project": {
     "name": "Tailstore Headless E-commerce",
     "type": "Sitecore XM Cloud + OrderCloud + Braintree",
-    "status": "Discovery Finalized"
+    "status": "Cart Implementation (Mock) Ready"
   },
   "tech_stack": {
     "frontend": "Next.js 15 (App Router)",
     "styling": "Tailwind CSS",
+    "state_management": "Zustand",
     "cms": "Sitecore XM Cloud (Headless JSS)",
-    "commerce": "OrderCloud SDK",
+    "commerce": "OrderCloud SDK (Mocked)",
     "search": "Sitecore Search (Headless)",
     "payment": "Braintree Payment Gateway",
     "forms": "Sitecore Forms"
   },
   "conventions": {
-    "naming_prefix": "Tailstore*",
-    "pattern”: "Atomic Design"
+    "naming_prefix": "Skate*",
+    "pattern": "Atomic Design",
+    "client_components": "Extract interactive parts to sub-components to keep headers/layouts as Server Components."
   },
-  "decisions": [
-    {
-      "topic": "Naming Convention",
-      "decision": "All components must use Tailstore* prefix",
-      "reason": "Brand identity and avoiding conflicts with JSS defaults."
-    },
-    {
-      "topic": "Blog Strategy",
-      "decision": "Integrate Sitecore Search for Listing with Facets",
-      "reason": "Powerful filtering and personalized search results."
-    },
-    {
-      "topic": "Payment Integration",
-      "decision": "Use Braintree Drop-in UI",
-      "reason": "Secure, PCI compliant, and supports multiple payment methods (PayPal/Credit Card)."
-    }
+  "features": [
+    { "name": "Product List (PLP)", "status": "Implemented" },
+    { "name": "Product Detail (PDP)", "status": "Implemented" },
+    { "name": "Mini Cart Sidebar", "status": "Implemented (Mock)" },
+    { "name": "Add to Cart Flow", "status": "Implemented (Mock)" }
   ],
-  "mappings": [
-    "docs/HOMEPAGE_MAPPING.md",
-    "docs/BLOG_MAPPING.md"
-  ],
-  "plans": "plans/260316-tailstore-headless/"
+  "knowledge_items": {
+    "patterns": [
+      "Zustand + LocalStorage for cart persistence in POC",
+      "Decoupled service layer for easy API switching"
+    ],
+    "gotchas": [
+      "MenuHeader must be a Server Component; use SkateCartToggle for interactive cart button.",
+      "Button loading state should be local to avoid flickering all buttons."
+    ]
+  }
 }
