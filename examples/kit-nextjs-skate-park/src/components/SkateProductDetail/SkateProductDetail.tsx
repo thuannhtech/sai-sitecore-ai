@@ -1,5 +1,6 @@
 import React, { JSX } from 'react'
 import { ProductDetail } from 'src/lib/products'
+import { SkateAddToCartButton } from '../SkateCart/SkateAddToCartButton'
 
 /* ── Types (Follow SkateProductList.tsx pattern) ───────── */
 interface SkateProductDetailProps {
@@ -101,15 +102,17 @@ export const Default = (props: SkateProductDetailProps): JSX.Element => {
               <div dangerouslySetInnerHTML={{ __html: product.descriptionHtml }} />
             </div>
 
-            {/* Actions */}
             <div className="space-y-6 mt-auto">
-              <button
-                disabled={product?.quantity === 0}
-                className="group relative w-full py-5 px-8 bg-gray-900 text-white rounded-[1.5rem] font-black text-xl shadow-2xl shadow-gray-200 hover:bg-blue-600 hover:-translate-y-1 transition-all active:translate-y-0 active:scale-[0.98] disabled:bg-gray-200 disabled:shadow-none disabled:cursor-not-allowed disabled:transform-none cursor-pointer"
-              >
-                <span className="relative z-10 uppercase">ADD TO CART</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-400 rounded-[1.5rem] opacity-0 group-hover:opacity-100 transition-opacity" />
-              </button>
+              <SkateAddToCartButton 
+                product={{
+                  id: product?.modelName || 'pdp-mock',
+                  name: product?.modelName || 'Product',
+                  price: product?.price || 0,
+                  imageUrl: product?.images?.[0]
+                }}
+                quantity={1}
+                className="w-full py-5 text-xl uppercase font-black rounded-[1.5rem]"
+              />
 
               <div className="grid grid-cols-2 gap-4">
                 <button className="py-4 px-4 border-2 border-gray-100 rounded-2xl text-sm font-bold text-gray-600 hover:bg-gray-50 hover:border-gray-200 hover:text-blue-600 transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer">
