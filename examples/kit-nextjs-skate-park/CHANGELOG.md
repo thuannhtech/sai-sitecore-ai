@@ -1,22 +1,19 @@
-# Changelog
+# Changelog - Skate Park Project
 
 ## [2026-04-29]
 ### Added
-- **Skate Cart System**: Toàn bộ hệ thống giỏ hàng giả lập (Mock).
-- **Zustand Store**: Quản lý trạng thái giỏ hàng (`src/lib/cart/store.ts`).
-- **SkateMiniCart**: Sidebar giỏ hàng trượt từ phải sang với hiệu ứng mượt mà.
-- **SkateAddToCartButton**: Nút bấm thêm vào giỏ hàng với trạng thái loading độc lập.
-- **SkateCartToggle**: Nút giỏ hàng trên Header tích hợp badge số lượng realtime.
-- **Skate Cart Page**: Trang giỏ hàng đầy đủ với layout 2 cột.
-- **Premium Empty State**: Giao diện giỏ hàng trống với nút "Continue Shopping" phong cách Gradient Blue Glow.
-- **Persistence**: Tự động lưu giỏ hàng vào `localStorage`.
-
-### Changed
-- **MenuHeader**: Chuyển về Server Component và tách logic giỏ hàng ra `SkateCartToggle`.
-- **Product Details & List**: Tích hợp nút Add to Cart thực tế.
-- **Layout**: Tích hợp Mini Cart toàn cục.
+- **SkateCheckout**: Server Component cho layout trang Checkout 2 cột.
+- **SkateCheckoutStep**: Client Component Accordion để quản lý các bước thanh toán.
+- **SkateShipmentMethod**: Component lựa chọn phương thức vận chuyển với mockup dữ liệu.
+- **SkatePaymentMethod**: Component lựa chọn thanh toán với Mockup Credit Card cao cấp.
+- **CSS Overrides**: Hệ thống style cho Sitecore BasicForm để đồng bộ thiết kế Skate.
+- **Visual Guides**: Thêm khung chỉ dẫn và min-height cho Placeholder trong chế độ Sitecore Editor.
 
 ### Fixed
-- Lỗi `useSyncExternalStore` trong Server Component.
-- Lỗi mất dữ liệu giỏ hàng khi chuyển trang/refresh.
-- Lỗi toàn bộ nút bấm hiện loading cùng lúc.
+- Lỗi Circular Dependency trong `component-map.ts` gây crash trang.
+- Lỗi `ReferenceError` khi khởi tạo các component có dùng `AppPlaceholder`.
+- Tối ưu hóa việc sử dụng `component-map.client` cho các Client Components.
+
+### Changed
+- Cập nhật `SkateCartSummary` hỗ trợ chế độ Checkout (nút Place Order).
+- Chuyển `SkateCheckout` sang Server Component để tương thích tốt hơn với Sitecore Pages.

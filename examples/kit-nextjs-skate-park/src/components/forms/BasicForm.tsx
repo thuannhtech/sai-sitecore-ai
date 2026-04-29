@@ -38,7 +38,6 @@ type FormDefinition = {
   secondaryButtonUrl?: string;
   successRedirect: string | null;
   fields: FormField[];
-  debug: any;
 };
 
 interface BasicFormProps {
@@ -57,63 +56,65 @@ interface BasicFormProps {
 }
 
 export default function BasicForm(props: BasicFormProps) {
-  const { dataSourceId: manualId, language, rendering, fields } = props;
+  const { dataSourceId: manualId, rendering, fields: initialFields } = props;
   const dataSourceId = rendering?.dataSource || manualId;
+
   const [formDef, setFormDef] = useState<FormDefinition | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formState, setFormState] = useState<Record<string, any>>({});
 
+  // --- Helper để lấy giá trị field linh hoạt ---
+  const getFieldValue = (item: any, fieldName: string): any => {
+    if (!item) return null;
 
-  console.log('props', props);
+    // Sitecore có thể trả về fields trực tiếp hoặc bọc trong .fields
+    const fields = item.fields || item;
 
-  // Helper to transform Sitecore data into FormDefinition
-  // Supports both Content Resolver (items array) and Integrated GraphQL (item tree)
+    // Các biến thể của tên field
+    const candidates = [
+      fieldName,                                    // VD: SubmitText
+      fieldName.toLowerCase(),                      // submittext
+      fieldName.replace(/([A-Z])/g, ' $1').trim(),  // Submit Text
+      fieldName.charAt(0).toLowerCase() + fieldName.slice(1) // submitText
+    ];
+
+    for (const name of candidates) {
+      const f = fields[name];
+      if (f !== undefined) {
+        // Trả về .value nếu có, nếu không trả về chính nó
+        return f?.value !== undefined ? f.value : f;
+      }
+    }
+    return null;
+  };
+
   const transformForm = (data: any): FormDefinition | null => {
-    let rootItem: any;
+    if (!data) return null;
+
+    let rootItem: any = null;
     let fieldItems: any[] = [];
-    const isResolver = !!data?.items;
+    const isResolver = !!data.items;
 
     if (isResolver) {
-      // Structure from Datasource Item And Children Resolver
-      rootItem = data?.items?.[0];
-      fieldItems = data?.items?.slice(1) || [];
+      rootItem = data.items?.[0];
+      fieldItems = data.items?.slice(1) || [];
     } else {
-      // Structure from Integrated GQL or API
-      rootItem = data?.data?.item || data?.item;
-      fieldItems = rootItem?.children?.results || [];
+      rootItem = data.data?.item || data.item;
+      fieldItems = rootItem?.children?.results || rootItem?.children || [];
     }
 
     if (!rootItem) return null;
 
-    const getVal = (item: any, fieldName: string) => {
-      // Try exact match then lowercase match to handle both Resolver and GQL aliases
-      const fields = isResolver ? item?.fields : item;
-      const lowerName = fieldName.toLowerCase();
-      const f = fields?.[fieldName] || fields?.[lowerName];
-      return f?.value ?? '';
-    };
-
-    const extractSuccessUrl = () => {
-      const field = isResolver ? rootItem?.fields?.SuccessRedirect : rootItem?.successRedirect;
-      const jv = field?.jsonValue;
-      if (jv?.value?.href) return jv.value.href;
-      const xml = field?.value as string | undefined;
-      if (!xml) return null;
-      const m = xml.match(/url="([^"]+)"/);
-      return m ? m[1] : null;
-    };
-
     const mappedFields: FormField[] = fieldItems.map((f: any) => {
-      const requiredVal = getVal(f, 'Required');
-      const required = requiredVal === '1' || requiredVal === true || /^true$/i.test(String(requiredVal));
-
-      const options = String(getVal(f, 'Options') || '')
+      // Parse Options cho Select
+      const optionsStr = String(getFieldValue(f, 'Options') || '');
+      const options = optionsStr
         .split('\n')
-        .map((l: string) => l.trim())
+        .map(l => l.trim())
         .filter(Boolean)
-        .map((l: string) => {
+        .map(l => {
           const idx = l.indexOf('|');
           return idx > -1
             ? { label: l.slice(0, idx).trim(), value: l.slice(idx + 1).trim() }
@@ -121,67 +122,54 @@ export default function BasicForm(props: BasicFormProps) {
         });
 
       return {
-        key: String(getVal(f, 'Key') || f.name || f.displayName || ''),
-        label: String(getVal(f, 'Label') || ''),
-        type: (String(getVal(f, 'Type')).toLowerCase() || 'text') as FieldType,
-        placeholder: String(getVal(f, 'Placeholder') || ''),
-        required,
-        minLength: getVal(f, 'MinLength') ? parseInt(String(getVal(f, 'MinLength')), 10) : undefined,
-        maxLength: getVal(f, 'MaxLength') ? parseInt(String(getVal(f, 'MaxLength')), 10) : undefined,
-        autoComplete: String(getVal(f, 'AutoComplete') || ''),
+        key: String(getFieldValue(f, 'Key') || f.name || f.displayName || ''),
+        label: String(getFieldValue(f, 'Label') || ''),
+        type: (String(getFieldValue(f, 'Type') || 'text').toLowerCase()) as FieldType,
+        placeholder: String(getFieldValue(f, 'Placeholder') || ''),
+        required: !!getFieldValue(f, 'Required'),
+        minLength: parseInt(getFieldValue(f, 'MinLength'), 10) || undefined,
+        maxLength: parseInt(getFieldValue(f, 'MaxLength'), 10) || undefined,
+        autoComplete: String(getFieldValue(f, 'AutoComplete') || ''),
         options,
-        helpText: String(getVal(f, 'HelpText') || ''),
-        validationMessage: String(getVal(f, 'ValidationMessage') || ''),
-        defaultValue: String(getVal(f, 'DefaultValue') || ''),
+        helpText: String(getFieldValue(f, 'HelpText') || ''),
+        validationMessage: String(getFieldValue(f, 'ValidationMessage') || ''),
+        defaultValue: String(getFieldValue(f, 'DefaultValue') || ''),
       };
     });
 
     return {
-      id: rootItem.id,
+      id: rootItem.id || '',
       name: rootItem.name || rootItem.displayName || '',
-      title: String(getVal(rootItem, 'Title') || rootItem.displayName || rootItem.name || ''),
-      endpoint: String(getVal(rootItem, 'Endpoint') || ''),
-      submitText: String(getVal(rootItem, 'SubmitText') || 'Submit'),
-      secondaryButtonText: String(getVal(rootItem, 'SecondaryButtonText') || ''),
-      secondaryButtonUrl: String(getVal(rootItem, 'SecondaryButtonUrl') || ''),
-      successRedirect: extractSuccessUrl(),
+      title: String(getFieldValue(rootItem, 'Title') || ''),
+      endpoint: String(getFieldValue(rootItem, 'Endpoint') || ''),
+      submitText: String(getFieldValue(rootItem, 'SubmitText') || 'Submit'),
+      secondaryButtonText: String(getFieldValue(rootItem, 'SecondaryButtonText') || ''),
+      secondaryButtonUrl: String(getFieldValue(rootItem, 'SecondaryButtonUrl') || ''),
+      successRedirect: getFieldValue(rootItem, 'SuccessRedirect')?.href || null,
       fields: mappedFields,
-      debug: rootItem?.fields?.Title?.value
     };
   };
 
   useEffect(() => {
-    if (fields) {
-      try {
-        const def = transformForm(fields);
-        if (def) {
-          setFormDef(def);
-          setError(null);
-          setLoading(false);
-          return;
-        }
-      } catch (e: any) {
-        console.error('Error parsing Sitecore form data:', e);
+    if (initialFields) {
+      const def = transformForm(initialFields);
+      if (def) {
+        setFormDef(def);
+        setError(null);
+      } else {
+        setError("Không thể đọc cấu trúc Form. Hãy kiểm tra lại Fields trong Sitecore.");
       }
-    }
-
-    if (!dataSourceId) {
       setLoading(false);
-      return;
+    } else if (!dataSourceId) {
+      setLoading(false);
+      setError("Thiếu DataSource cho BasicForm.");
     }
-
-  }, [dataSourceId, language]);
+  }, [initialFields, dataSourceId]);
 
   const initialValues = useMemo(() => {
     const iv: Record<string, any> = {};
-    formDef?.fields?.forEach((f) => {
-      if (f.type === 'checkbox') {
-        iv[f.key] = !!f.defaultValue;
-      } else if (f.type === 'password') {
-        iv[f.key] = '';
-      } else {
-        iv[f.key] = f.defaultValue || '';
-      }
+    formDef?.fields.forEach(f => {
+      iv[f.key] = f.type === 'checkbox' ? !!f.defaultValue : (f.defaultValue || '');
     });
     return iv;
   }, [formDef]);
@@ -190,56 +178,10 @@ export default function BasicForm(props: BasicFormProps) {
     setFormState(initialValues);
   }, [initialValues]);
 
-  function onChange(
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) {
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    setFormState((s) => ({
-      ...s,
-      [name]: type === 'checkbox' ? !!checked : value,
-    }));
-  }
-
-  function validate(): string | null {
-    if (!formDef) return 'Form not loaded';
-    for (const f of formDef.fields) {
-      const v = formState[f.key];
-      if (f.required && (v === undefined || v === '' || v === false)) {
-        return f.validationMessage || `${f.label} is required`;
-      }
-      if (typeof v === 'string') {
-        if (f.minLength && v.length < f.minLength) {
-          return f.validationMessage || `${f.label} is too short`;
-        }
-        if (f.maxLength && v.length > f.maxLength) {
-          return f.validationMessage || `${f.label} is too long`;
-        }
-        if (f.type === 'email' && v && !/^\S+@\S+\.\S+$/.test(v)) {
-          return f.validationMessage || `Invalid email`;
-        }
-      }
-    }
-
-    // Confirm password check if fields present
-    const pwd = formState['password'];
-    const cpw = formState['confirmPassword'];
-    if (pwd !== undefined && cpw !== undefined && pwd !== cpw) {
-      return 'Passwords do not match';
-    }
-
-    return null;
-  }
-
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formDef) return;
-
-    const err = validate();
-    if (err) {
-      setError(err);
+    if (!formDef || !formDef.endpoint) {
+      setError("Form chưa cấu hình Endpoint nhận dữ liệu.");
       return;
     }
 
@@ -253,281 +195,113 @@ export default function BasicForm(props: BasicFormProps) {
         body: JSON.stringify(formState),
       });
 
-      if (!res.ok) {
-        const msg = await res.json().catch(() => ({}));
-        throw new Error(msg.message || 'Submission failed');
-      }
+      if (!res.ok) throw new Error('Gửi form thất bại.');
 
       if (formDef.successRedirect) {
         window.location.href = formDef.successRedirect;
+      } else {
+        alert("Gửi thành công!");
       }
-    } catch (e: any) {
-      setError(e?.message || 'Submission failed');
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setSubmitting(false);
     }
-  }
+  };
 
-  if (loading) {
-    return (<div></div>);
-  }
-  if (!formDef && error)
+  if (loading) return <div className="p-8 text-center animate-pulse">Đang tải form...</div>;
+
+  if (error && !formDef) {
     return (
-      <div role="alert" className="error">
-        {error}
+      <div className="p-6 bg-red-50 border border-red-200 rounded-xl text-red-600">
+        <p className="font-bold mb-2">🛠 Form Debug Error:</p>
+        <p className="text-sm">{error}</p>
+        <p className="mt-4 text-[10px] uppercase font-bold opacity-50">Dành cho Developer: Kiểm tra console để xem chi tiết Props.</p>
       </div>
     );
-  if (!dataSourceId) return <div role="alert" className="error">Missing DataSource ID</div>;
+  }
+
   if (!formDef) return null;
 
   return (
-    <form
-      name={formDef.name}
-      method="post"
-      onSubmit={onSubmit}
-      noValidate
-      className="sc-BasicForm m-auto"
-    >
-      {formDef.title && <h2 className="sc-BasicForm-title">{formDef.title}</h2>}
-      {error && (
-        <div role="alert" className="error">
-          {error}
-        </div>
-      )}
+    <form onSubmit={onSubmit} className="sc-BasicForm space-y-6 max-w-lg mx-auto p-8 bg-white shadow-xl rounded-3xl border border-gray-100">
+      {formDef.title && <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tight">{formDef.title}</h2>}
 
-      {formDef.fields.map((f) => {
-        const value = formState[f.key];
-        const common = {
-          name: f.key,
-          id: f.key,
-          required: !!f.required,
-          'aria-required': f.required ? true : undefined,
-          placeholder: f.placeholder || undefined,
-          onChange,
-        };
+      {error && <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">{error}</div>}
 
-        return (
-          <div className="sc-FormGroup" key={f.key}>
-            {f.label && f.type !== 'link' && (
-              <label htmlFor={f.key}>
-                {f.label}
-                {f.required ? ' *' : ''}
+      <div className="space-y-4">
+        {formDef.fields.map((f) => (
+          <div key={f.key} className="flex flex-col gap-1.5">
+            {f.type !== 'link' && (
+              <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">
+                {f.label} {f.required && <span className="text-red-500">*</span>}
               </label>
             )}
+
             {f.type === 'textarea' ? (
-              <textarea {...common} value={value || ''} rows={4} />
+              <textarea
+                name={f.key}
+                value={formState[f.key] || ''}
+                onChange={(e) => setFormState({ ...formState, [f.key]: e.target.value })}
+                placeholder={f.placeholder}
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all min-h-[120px]"
+              />
             ) : f.type === 'select' ? (
-              <select {...common} value={value || ''}>
-                <option value="" disabled hidden>
-                  {f.placeholder || 'Select…'}
-                </option>
-                {(f.options || []).map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
+              <select
+                name={f.key}
+                value={formState[f.key] || ''}
+                onChange={(e) => setFormState({ ...formState, [f.key]: e.target.value })}
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
+              >
+                <option value="">{f.placeholder || 'Chọn...'}</option>
+                {f.options?.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
               </select>
             ) : f.type === 'checkbox' ? (
-              <div className="sc-Checkbox">
+              <label className="flex items-center gap-3 cursor-pointer group">
                 <input
                   type="checkbox"
-                  {...common}
-                  checked={!!value}
-                  onChange={onChange}
+                  checked={!!formState[f.key]}
+                  onChange={(e) => setFormState({ ...formState, [f.key]: e.target.checked })}
+                  className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
-                <span>{f.helpText}</span>
-              </div>
+                <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{f.helpText || f.label}</span>
+              </label>
             ) : f.type === 'link' ? (
-              <a href={f.defaultValue} className="sc-Link">
+              <a href={f.defaultValue} className="text-blue-600 hover:underline font-bold text-sm">
                 {f.label || f.key}
               </a>
             ) : (
               <input
                 type={f.type}
-                {...common}
-                value={value || ''}
-                minLength={f.minLength}
-                maxLength={f.maxLength}
-                autoComplete={f.autoComplete || undefined}
+                name={f.key}
+                value={formState[f.key] || ''}
+                onChange={(e) => setFormState({ ...formState, [f.key]: e.target.value })}
+                placeholder={f.placeholder}
+                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
               />
             )}
-            {f.helpText && f.type !== 'checkbox' && (
-              <small className="help">{f.helpText}</small>
-            )}
           </div>
-        );
-      })}
+        ))}
+      </div>
 
-      <button type="submit" disabled={submitting} className="btn-submit">
-        {submitting ? 'Please wait…' : formDef.submitText || 'Submit'}
-      </button>
+      <div className="pt-4 flex flex-col gap-3">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full py-4 bg-gray-900 text-white font-black uppercase tracking-widest rounded-2xl hover:bg-blue-600 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200"
+        >
+          {submitting ? 'Đang gửi...' : formDef.submitText}
+        </button>
 
-      {formDef.secondaryButtonText && (
-        <a href={formDef.secondaryButtonUrl || '#'} className="btn-secondary">
-          {formDef.secondaryButtonText}
-        </a>
-      )}
-
-      <style jsx>{`
-        .sc-BasicForm {
-          display: grid;
-          gap: 16px;
-          max-width: 560px;
-          background: #fff;
-          padding: 24px;
-          border-radius: 8px;
-          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-        }
-        .sc-BasicForm-title {
-          margin: 0 0 8px 0;
-          font-size: 1.5rem;
-          font-weight: 600;
-        }
-        .sc-FormGroup {
-          display: grid;
-          gap: 6px;
-        }
-        label {
-          font-weight: 500;
-          font-size: 0.9rem;
-        }
-        input,
-        select,
-        textarea {
-          padding: 10px;
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          font-size: 0.95rem;
-          width: 100%;
-        }
-        input:focus,
-        select:focus,
-        textarea:focus {
-          outline: 2px solid #0057b8;
-          outline-offset: -1px;
-        }
-        .sc-Checkbox {
-          display: inline-flex;
-          gap: 8px;
-          align-items: center;
-          font-size: 0.9rem;
-        }
-        .sc-Checkbox input {
-          width: auto;
-        }
-        .help {
-          color: #6b7280;
-          font-size: 0.8rem;
-        }
-        .btn-submit {
-          padding: 12px 16px;
-          background: #111827;
-          color: #fff;
-          border: 0;
-          border-radius: 6px;
-          cursor: pointer;
-          font-weight: 600;
-          transition: background 0.2s;
-        }
-        .btn-submit:hover {
-          background: #374151;
-        }
-        .btn-submit:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-        .btn-secondary {
-          padding: 12px 16px;
-          background: transparent;
-          color: #111827;
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          cursor: pointer;
-          font-weight: 600;
-          text-align: center;
-          text-decoration: none;
-          font-size: 0.95rem;
-          transition: all 0.2s;
-          display: block;
-          width: 100%;
-        }
-        .btn-secondary:hover {
-          background: #f9fafb;
-          border-color: #111827;
-        }
-        .error {
-          background: #fee2e2;
-          color: #991b1b;
-          padding: 10px 12px;
-          border-radius: 6px;
-          font-size: 0.9rem;
-          border: 1px solid #fecaca;
-        }
-        .loading {
-          color: #6b7280;
-          font-style: italic;
-        }
-        .sc-Link {
-          color: #0057b8;
-          text-decoration: none;
-          font-size: 0.9rem;
-          font-weight: 500;
-          transition: color 0.2s;
-          display: inline-block;
-          margin-top: 4px;
-        }
-        .sc-Link:hover {
-          color: #003a7a;
-          text-decoration: underline;
-        }
-
-        /* Skeleton Styles */
-        .skeleton-container {
-          pointer-events: none;
-          user-select: none;
-        }
-        .skeleton {
-          background: #f3f4f6;
-          background: linear-gradient(
-            90deg,
-            #f3f4f6 25%,
-            #e5e7eb 50%,
-            #f3f4f6 75%
-          );
-          background-size: 200% 100%;
-          animation: skeleton-loading 1.5s infinite linear;
-          border-radius: 6px;
-        }
-        .skeleton-title {
-          height: 32px;
-          width: 60%;
-          margin-bottom: 24px;
-        }
-        .skeleton-label {
-          height: 14px;
-          width: 30%;
-          margin-bottom: 8px;
-        }
-        .skeleton-input {
-          height: 42px;
-          width: 100%;
-          margin-bottom: 4px;
-        }
-        .skeleton-button {
-          height: 48px;
-          width: 100%;
-          margin-top: 8px;
-        }
-
-        @keyframes skeleton-loading {
-          0% {
-            background-position: 200% 0;
-          }
-          100% {
-            background-position: -200% 0;
-          }
-        }
-      `}</style>
+        {formDef.secondaryButtonText && (
+          <a
+            href={formDef.secondaryButtonUrl || '#'}
+            className="w-full py-4 bg-white text-gray-900 border border-gray-200 font-bold uppercase tracking-widest rounded-2xl hover:bg-gray-50 text-center transition-all"
+          >
+            {formDef.secondaryButtonText}
+          </a>
+        )}
+      </div>
     </form>
   );
 }

@@ -2,6 +2,7 @@
 
 @import './base/index.css';
 @import './components/index.css';
+@import './skate-checkout-overrides.css';
 
 /* bootstrap grid to tailwind plugin */
 @plugin 'tailwind-bootstrap-grid' {

@@ -1,0 +1,62 @@
+/* 
+  Skate Checkout Overrides 
+  Dùng để "mông má" lại component BasicForm của Sitecore sang phong cách Skate
+*/
+
+.sc-BasicForm {
+  max-width: 100% !important; /* Để form giãn hết chiều rộng của Step Wrapper */
+  padding: 0 !important; /* Bỏ padding vì Step Wrapper đã có padding */
+  box-shadow: none !important; /* Bỏ shadow vì Step Wrapper đã có shadow */
+  background: transparent !important;
+  border: none !important;
+  gap: 24px !important;
+}
+
+.sc-BasicForm-title {
+  display: none; /* Ẩn title của BasicForm vì mình dùng Title của SkateCheckoutStep */
+}
+
+.sc-FormGroup label {
+  font-family: inherit;
+  font-weight: 800 !important; /* Font đậm chất Skate */
+  text-transform: uppercase;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.05em;
+  color: #111827 !important;
+  margin-bottom: 8px !important;
+}
+
+.sc-FormGroup input, 
+.sc-FormGroup select, 
+.sc-FormGroup textarea {
+  border: 2px solid #f3f4f6 !important; /* Border dày hơn */
+  border-radius: 12px !important; /* Bo góc mượt mà */
+  padding: 14px 16px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.sc-FormGroup input:focus, 
+.sc-FormGroup select:focus, 
+.sc-FormGroup textarea:focus {
+  border-color: #2563eb !important;
+  background-color: #f8faff !important;
+  outline: none !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1) !important;
+}
+
+.btn-submit {
+  display: none !important; /* Ẩn nút submit lẻ vì mình dùng nút PLACE ORDER tổng */
+}
+
+.sc-Checkbox {
+  font-weight: 600 !important;
+  color: #4b5563 !important;
+}
+
+.sc-Checkbox input {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  border-radius: 6px !important;
+  cursor: pointer;
+}

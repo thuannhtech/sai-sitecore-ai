@@ -1,10 +1,14 @@
 'use client';
 
 import React from 'react';
-import { ShoppingBag, ShieldCheck, Truck, CreditCard } from 'lucide-react';
+import { ShoppingBag, ShieldCheck, Truck, CreditCard, CheckCircle2 } from 'lucide-react';
 import { useSkateCartStore } from 'src/lib/cart/store';
 
-export const SkateCartSummary: React.FC = () => {
+interface SkateCartSummaryProps {
+  isCheckout?: boolean;
+}
+
+export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout = false }) => {
   const { cart, isLoading } = useSkateCartStore();
 
   const subtotal = cart?.subtotal || 0;
@@ -47,10 +51,31 @@ export const SkateCartSummary: React.FC = () => {
       <div className="space-y-3">
         <button 
           disabled={isLoading || !hasItems}
-          className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-lg shadow-xl shadow-blue-100 hover:enabled:bg-blue-700 hover:enabled:-translate-y-1 active:enabled:translate-y-0 transition-all flex items-center justify-center gap-3 group disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
+          className={`w-full text-white py-5 rounded-2xl font-black text-lg shadow-xl transition-all flex items-center justify-center gap-3 group disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed ${
+            isCheckout 
+              ? 'bg-green-600 shadow-green-100 hover:enabled:bg-green-700' 
+              : 'bg-blue-600 shadow-blue-100 hover:enabled:bg-blue-700'
+          } hover:enabled:-translate-y-1 active:enabled:translate-y-0`}
+          onClick={() => {
+            if (isCheckout) {
+               // Xử lý Place Order
+               window.location.href = '/thank-you';
+            } else {
+               window.location.href = '/checkout';
+            }
+          }}
         >
-          <CreditCard className="group-hover:animate-pulse" />
-          PROCEED TO CHECKOUT
+          {isCheckout ? (
+            <>
+              <CheckCircle2 className="group-hover:animate-bounce" />
+              PLACE ORDER
+            </>
+          ) : (
+            <>
+              <CreditCard className="group-hover:animate-pulse" />
+              PROCEED TO CHECKOUT
+            </>
+          )}
         </button>
         
         <div className="p-4 bg-white/50 rounded-xl border border-dashed border-gray-200">

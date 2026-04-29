@@ -1,44 +1,33 @@
 {
-  "meta": {
-    "schema_version": "1.1.0",
-    "awf_version": "3.3.0",
-    "last_updated": "2026-04-29"
+  "meta": { "schema_version": "1.1.0", "awf_version": "4.0.2" },
+  "project": { 
+    "name": "Skate Park Sitecore AI", 
+    "type": "Sitecore XM Cloud + Next.js App Router", 
+    "status": "In Progress - Checkout Implementation" 
   },
-  "project": {
-    "name": "Tailstore Headless E-commerce",
-    "type": "Sitecore XM Cloud + OrderCloud + Braintree",
-    "status": "Cart Page Completed"
-  },
-  "tech_stack": {
-    "frontend": "Next.js 15 (App Router)",
-    "styling": "Tailwind CSS",
-    "state_management": "Zustand",
-    "cms": "Sitecore XM Cloud (Headless JSS)",
-    "commerce": "OrderCloud SDK (Mocked)",
-    "search": "Sitecore Search (Headless)",
-    "payment": "Braintree Payment Gateway",
-    "forms": "Sitecore Forms"
-  },
-  "conventions": {
-    "naming_prefix": "Skate*",
-    "pattern": "Atomic Design",
-    "client_components": "Extract interactive parts to sub-components to keep headers/layouts as Server Components.",
-    "border_radius": "rounded-2xl (consistent across main UI cards)"
+  "tech_stack": { 
+    "frontend": "Next.js 14 (App Router), Tailwind CSS", 
+    "state_management": "Zustand (SkateCartStore)",
+    "styling": "Vanilla CSS Overrides for Sitecore Forms",
+    "icons": "Lucide React"
   },
   "features": [
-    { "name": "Product List (PLP)", "status": "Implemented" },
-    { "name": "Product Detail (PDP)", "status": "Implemented" },
-    { "name": "Mini Cart Sidebar", "status": "Implemented (Mock)" },
-    { "name": "Full Cart Page", "status": "Implemented (Mock)" }
+    { "name": "Skate Shopping Cart", "status": "Implemented" },
+    { "name": "Skate Checkout Layout", "status": "Implemented - Testing Editor" },
+    { "name": "Skate Checkout Steps (Accordion)", "status": "Implemented" },
+    { "name": "Skate Shipment Method", "status": "Implemented" },
+    { "name": "Skate Payment Method", "status": "Implemented (with Premium UI)" }
   ],
   "knowledge_items": {
     "patterns": [
-      "Zustand + LocalStorage for cart persistence in POC",
-      "Decoupled service layer for easy API switching"
+      "Atomic Design for Sitecore components",
+      "Dynamic Placeholder naming conventions",
+      "Circular dependency resolution via late-binding/client-maps"
     ],
     "gotchas": [
-      "MenuHeader must be a Server Component; use SkateCartToggle for interactive cart button.",
-      "Ensure heights match in Cart Page grid for empty state symmetry."
+      "App Router components using AppPlaceholder must handle componentMap carefully to avoid circular loops.",
+      "Layout components should be Server Components for better Sitecore Editor chrome rendering.",
+      "BasicForm styling requires deep CSS overrides to match custom design systems."
     ]
   }
 }
