@@ -7,6 +7,8 @@
 - **SkateMiniCart**: Sidebar giỏ hàng trượt từ phải sang với hiệu ứng mượt mà.
 - **SkateAddToCartButton**: Nút bấm thêm vào giỏ hàng với trạng thái loading độc lập.
 - **SkateCartToggle**: Nút giỏ hàng trên Header tích hợp badge số lượng realtime.
+- **Skate Cart Page**: Trang giỏ hàng đầy đủ với layout 2 cột.
+- **Premium Empty State**: Giao diện giỏ hàng trống với nút "Continue Shopping" phong cách Gradient Blue Glow.
 - **Persistence**: Tự động lưu giỏ hàng vào `localStorage`.
 
 ### Changed

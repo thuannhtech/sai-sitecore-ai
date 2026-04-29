@@ -7,7 +7,7 @@
   "project": {
     "name": "Tailstore Headless E-commerce",
     "type": "Sitecore XM Cloud + OrderCloud + Braintree",
-    "status": "Cart Implementation (Mock) Ready"
+    "status": "Cart Page Completed"
   },
   "tech_stack": {
     "frontend": "Next.js 15 (App Router)",
@@ -22,13 +22,14 @@
   "conventions": {
     "naming_prefix": "Skate*",
     "pattern": "Atomic Design",
-    "client_components": "Extract interactive parts to sub-components to keep headers/layouts as Server Components."
+    "client_components": "Extract interactive parts to sub-components to keep headers/layouts as Server Components.",
+    "border_radius": "rounded-2xl (consistent across main UI cards)"
   },
   "features": [
     { "name": "Product List (PLP)", "status": "Implemented" },
     { "name": "Product Detail (PDP)", "status": "Implemented" },
     { "name": "Mini Cart Sidebar", "status": "Implemented (Mock)" },
-    { "name": "Add to Cart Flow", "status": "Implemented (Mock)" }
+    { "name": "Full Cart Page", "status": "Implemented (Mock)" }
   ],
   "knowledge_items": {
     "patterns": [
@@ -37,7 +38,7 @@
     ],
     "gotchas": [
       "MenuHeader must be a Server Component; use SkateCartToggle for interactive cart button.",
-      "Button loading state should be local to avoid flickering all buttons."
+      "Ensure heights match in Cart Page grid for empty state symmetry."
     ]
   }
 }
