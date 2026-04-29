@@ -11,6 +11,9 @@ import * as SkateProductList from 'src/components/SkateProductList/SkateProductL
 import * as SkateProductDetail from 'src/components/SkateProductDetail/SkateProductDetail';
 import * as SkateMiniCart from 'src/components/SkateCart/SkateMiniCart';
 import * as SkateCartToggle from 'src/components/SkateCart/SkateCartToggle';
+import * as SkateCartSummary from 'src/components/SkateCart/SkateCartSummary';
+import * as SkateCartItemList from 'src/components/SkateCart/SkateCartItemList';
+import * as SkateCart from 'src/components/SkateCart/SkateCart';
 import * as SkateAddToCartButton from 'src/components/SkateCart/SkateAddToCartButton';
 import * as RowSplitter from 'src/components/row-splitter/RowSplitter';
 import * as RichText from 'src/components/rich-text/RichText';
@@ -59,6 +62,9 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['SkateProductDetail', { ...SkateProductDetail }],
   ['SkateMiniCart', { ...SkateMiniCart, componentType: 'client' }],
   ['SkateCartToggle', { ...SkateCartToggle, componentType: 'client' }],
+  ['SkateCartSummary', { ...SkateCartSummary, componentType: 'client' }],
+  ['SkateCartItemList', { ...SkateCartItemList, componentType: 'client' }],
+  ['SkateCart', { ...SkateCart, componentType: 'client' }],
   ['SkateAddToCartButton', { ...SkateAddToCartButton, componentType: 'client' }],
   ['RowSplitter', { ...RowSplitter }],
   ['RichText', { ...RichText }],
@@ -74,7 +80,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['MultiPromoItem', { ...MultiPromoItemdev }],
   ['MultiPromo', { ...MultiPromo, componentType: 'client' }],
   ['multi-promo', { ...multipromoprops, ...multipromoMultiPromo2Block }],
-  ['MenuHeader', { ...MenuHeaderSitecoreAiGeneratedVariant, ...MenuHeader, componentType: 'client' }],
+  ['MenuHeader', { ...MenuHeaderSitecoreAiGeneratedVariant, ...MenuHeader }],
   ['LanguageSwitcher', { ...LanguageSwitcher, componentType: 'client' }],
   ['Menu', { ...Menu, componentType: 'client' }],
   ['LinkList', { ...LinkList }],
