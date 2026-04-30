@@ -59,7 +59,13 @@ export const Default = (props: SkateCheckoutProps): JSX.Element => {
 
           {/* Order Summary (1/3) */}
           <div className="lg:col-span-1">
-            <SkateCartSummary isCheckout={true} />
+            <SkateCartSummary
+              isCheckout={true}
+              onPlaceOrder={() => {
+                console.log('Place Order');
+                window.location.href = '/thank-you';
+              }}
+            />
           </div>
 
         </div>

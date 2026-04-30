@@ -6,9 +6,11 @@ import { useSkateCartStore } from 'src/lib/cart/store';
 
 interface SkateCartSummaryProps {
   isCheckout?: boolean;
+  onPlaceOrder?: () => void;
+  onProceedToCheckout?: () => void;
 }
 
-export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout = false }) => {
+export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout = false, onPlaceOrder, onProceedToCheckout }) => {
   const { cart, isLoading } = useSkateCartStore();
 
   const subtotal = cart?.subtotal || 0;
@@ -39,29 +41,27 @@ export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout =
         <div className="pt-4 border-t border-gray-200 flex justify-between items-end">
           <span className="text-lg font-bold text-gray-900">Total</span>
           <div className="text-right">
-             <span className="block text-3xl font-black text-blue-600 leading-none">
-               ${total.toLocaleString()}
-             </span>
-             <span className="text-xs text-gray-400 font-medium uppercase mt-1 block">incl. all taxes</span>
+            <span className="block text-3xl font-black text-blue-600 leading-none">
+              ${total.toLocaleString()}
+            </span>
+            <span className="text-xs text-gray-400 font-medium uppercase mt-1 block">incl. all taxes</span>
           </div>
         </div>
       </div>
 
       {/* Action Buttons */}
       <div className="space-y-3">
-        <button 
+        <button
           disabled={isLoading || !hasItems}
-          className={`w-full text-white py-5 rounded-2xl font-black text-lg shadow-xl transition-all flex items-center justify-center gap-3 group disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed ${
-            isCheckout 
-              ? 'bg-green-600 shadow-green-100 hover:enabled:bg-green-700' 
-              : 'bg-blue-600 shadow-blue-100 hover:enabled:bg-blue-700'
-          } hover:enabled:-translate-y-1 active:enabled:translate-y-0`}
+          className={`w-full text-white py-5 rounded-2xl font-black text-lg shadow-xl transition-all flex items-center justify-center gap-3 group disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed ${isCheckout
+            ? 'bg-green-600 shadow-green-100 hover:enabled:bg-green-700'
+            : 'bg-blue-600 shadow-blue-100 hover:enabled:bg-blue-700'
+            } hover:enabled:-translate-y-1 active:enabled:translate-y-0`}
           onClick={() => {
             if (isCheckout) {
-               // Xử lý Place Order
-               window.location.href = '/thank-you';
+              onPlaceOrder && onPlaceOrder();
             } else {
-               window.location.href = '/checkout';
+              onProceedToCheckout && onProceedToCheckout();
             }
           }}
         >
@@ -77,16 +77,16 @@ export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout =
             </>
           )}
         </button>
-        
+
         <div className="p-4 bg-white/50 rounded-xl border border-dashed border-gray-200">
-           <p className="text-xs text-gray-500 flex items-center gap-2 mb-2">
-             <Truck size={14} className="text-blue-600" />
-             Delivery in 3-5 business days
-           </p>
-           <p className="text-xs text-gray-500 flex items-center gap-2">
-             <ShieldCheck size={14} className="text-blue-600" />
-             Secure checkout guaranteed
-           </p>
+          <p className="text-xs text-gray-500 flex items-center gap-2 mb-2">
+            <Truck size={14} className="text-blue-600" />
+            Delivery in 3-5 business days
+          </p>
+          <p className="text-xs text-gray-500 flex items-center gap-2">
+            <ShieldCheck size={14} className="text-blue-600" />
+            Secure checkout guaranteed
+          </p>
         </div>
       </div>
 
