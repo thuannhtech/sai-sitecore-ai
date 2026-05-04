@@ -6,6 +6,7 @@ import { Form } from '@sitecore-content-sdk/nextjs';
 import * as SkateShipmentMethod from 'src/components/SkateShipmentMethod/SkateShipmentMethod';
 import * as SkateProductList from 'src/components/SkateProductList/SkateProductList';
 import * as SkatePaymentMethod from 'src/components/SkatePaymentMethod/SkatePaymentMethod';
+import * as SkateBraintreePayment from 'src/components/SkatePaymentMethod/SkateBraintreePayment';
 import * as SkateCheckoutSummaryAction from 'src/components/SkateCheckout/SkateCheckoutSummaryAction';
 import * as SkateMiniCart from 'src/components/SkateCart/SkateMiniCart';
 import * as SkateCartToggle from 'src/components/SkateCart/SkateCartToggle';
@@ -32,6 +33,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['SkateShipmentMethod', { ...SkateShipmentMethod }],
   ['SkateProductList', { ...SkateProductList }],
   ['SkatePaymentMethod', { ...SkatePaymentMethod }],
+  ['SkateBraintreePayment', { ...SkateBraintreePayment }],
   ['SkateCheckoutSummaryAction', { ...SkateCheckoutSummaryAction }],
   ['SkateMiniCart', { ...SkateMiniCart }],
   ['SkateCartToggle', { ...SkateCartToggle }],

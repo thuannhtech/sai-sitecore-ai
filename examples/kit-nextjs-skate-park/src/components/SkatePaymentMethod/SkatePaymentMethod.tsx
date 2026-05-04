@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import * as Icons from 'lucide-react';
+import React, { useMemo } from 'react';
+import * as Icons from 'lucide-react'; 
 import { Check } from 'lucide-react';
 import { ComponentProps } from 'lib/component-props';
+import { useSkatePaymentStore } from 'src/lib/payment/store';
+import { SkateBraintreePayment } from './SkateBraintreePayment';
 
 interface PaymentMethodFields {
   Enabled?: { value: boolean | string };
@@ -32,12 +34,13 @@ interface SkatePaymentMethodProps extends ComponentProps {
 export const SkatePaymentMethod: React.FC<SkatePaymentMethodProps> = (props) => {
   const { fields, params } = props;
   const styles = `${params?.GridParameters || ''} ${params?.styles || ''}`.trim();
+  const { selectedMethodId, setSelectedMethodId } = useSkatePaymentStore();
 
   // 1. Transform Sitecore Data to App Logic
   const paymentOptions = useMemo(() => {
     // Support both Content Resolver (items array) and Integrated GraphQL
     const rawItems = fields?.items || [];
-
+    
     return rawItems
       .filter(item => {
         const val = item.fields?.Enabled?.value;
@@ -47,7 +50,7 @@ export const SkatePaymentMethod: React.FC<SkatePaymentMethodProps> = (props) => 
         const f = item.fields;
         const useSandboxVal = f.UseSandbox?.value;
         const isSandbox = useSandboxVal === true || useSandboxVal === '1' || useSandboxVal === 'true';
-
+        
         // Helper to pick sandbox or prod value based on prefix requirement
         const getVal = (baseName: string) => {
           const sandboxKey = `Sandbox_${baseName}` as keyof PaymentMethodFields;
@@ -73,8 +76,6 @@ export const SkatePaymentMethod: React.FC<SkatePaymentMethodProps> = (props) => 
       });
   }, [fields]);
 
-  const [selectedId, setSelectedId] = useState(paymentOptions[0]?.id || '');
-
   if (paymentOptions.length === 0) {
     return (
       <div className="p-8 text-center border-2 border-dashed border-gray-200 rounded-2xl text-gray-400">
@@ -83,25 +84,29 @@ export const SkatePaymentMethod: React.FC<SkatePaymentMethodProps> = (props) => 
     );
   }
 
+  const activeOption = paymentOptions.find(o => o.id === selectedMethodId);
+
   return (
     <div className={`skate-payment-method py-4 ${styles}`}>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {paymentOptions.map((option) => {
-          const isSelected = selectedId === option.id;
+          const isSelected = selectedMethodId === option.id;
           return (
             <button
               key={option.id}
-              onClick={() => setSelectedId(option.id)}
-              className={`relative flex items-center gap-6 p-6 rounded-2xl border-2 transition-all text-left group ${isSelected
-                ? 'border-blue-600 bg-blue-50/30'
-                : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50/50'
-                }`}
+              onClick={() => setSelectedMethodId(option.id)}
+              className={`relative flex items-center gap-6 p-6 rounded-2xl border-2 transition-all text-left group ${
+                selectedMethodId === option.id 
+                  ? 'border-blue-600 bg-blue-50/30' 
+                  : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50/50'
+              }`}
             >
-              <div className={`shrink-0 w-14 h-14 rounded-xl flex items-center justify-center transition-colors ${isSelected ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400 group-hover:text-gray-600'
-                }`}>
+              <div className={`shrink-0 w-14 h-14 rounded-xl flex items-center justify-center transition-colors ${
+                selectedMethodId === option.id ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400 group-hover:text-gray-600'
+              }`}>
                 {option.icon}
               </div>
-
+              
               <div className="flex-1">
                 <h4 className="font-black text-gray-900 uppercase tracking-tight mb-1">
                   {option.name}
@@ -116,7 +121,7 @@ export const SkatePaymentMethod: React.FC<SkatePaymentMethodProps> = (props) => 
                 </div>
               </div>
 
-              {isSelected && (
+              {selectedMethodId === option.id && (
                 <div className="absolute top-1/2 -translate-y-1/2 right-6 text-blue-600">
                   <div className="bg-blue-600 rounded-full p-0.5 text-white shadow-lg shadow-blue-100">
                     <Check size={14} strokeWidth={4} />
@@ -129,7 +134,7 @@ export const SkatePaymentMethod: React.FC<SkatePaymentMethodProps> = (props) => 
       </div>
 
       {/* Credit Card Details Mockup (Show only if card selected) */}
-      {selectedId === 'card' && (
+      {selectedMethodId === 'card' && (
         <div className="mt-6 p-8 bg-gray-900 rounded-2xl shadow-2xl relative overflow-hidden group">
           {/* Decorative elements for the card */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-blue-600/30 transition-colors"></div>
@@ -167,20 +172,12 @@ export const SkatePaymentMethod: React.FC<SkatePaymentMethodProps> = (props) => 
         </div>
       )}
 
-      {/* Logic Note for Braintree/PayPal Integration */}
-      {selectedId === 'braintree' && (
-        <div className="mt-6 p-6 border-2 border-dashed border-gray-100 rounded-2xl text-center">
-          <p className="text-sm text-gray-500 font-medium">
-            Braintree Drop-in UI will initialize here using
-            <code className="mx-2 bg-gray-50 px-2 py-1 rounded text-blue-600 font-bold">
-              {paymentOptions.find(o => o.id === 'braintree')?.config.merchantId}
-            </code>
-          </p>
-        </div>
+      {/* Braintree Payment Module */}
+      {selectedMethodId === 'braintree' && activeOption && (
+         <SkateBraintreePayment config={activeOption.config} />
       )}
     </div>
   );
 };
 
 export default SkatePaymentMethod;
-
