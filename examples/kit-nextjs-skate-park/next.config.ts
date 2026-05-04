@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
   // Allow specifying a distinct distDir when concurrently running app in a container
   distDir: process.env.NEXTJS_DIST_DIR || '.next',
 
+  // Enable standalone output for Docker/VPS deployments via CI/CD.
+  // Set NEXT_STANDALONE=true in the GitHub Actions workflow environment.
+  // Do NOT set this for Vercel deployments (Vercel handles its own output).
+  ...(process.env.NEXT_STANDALONE === 'true' && { output: 'standalone' }),
+
   // Enable React Strict Mode
   reactStrictMode: true,
 
