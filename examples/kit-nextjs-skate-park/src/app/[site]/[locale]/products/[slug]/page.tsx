@@ -7,11 +7,14 @@ import SkateProductDetail from 'src/components/SkateProductDetail/SkateProductDe
 export const revalidate = 60;
 
 interface ProductPageProps {
-  params: {
+  params: Promise<{
     site: string;
     locale: string;
     slug: string;
-  };
+    path?: string[];
+    [key: string]: string | string[] | undefined;
+  }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 /**
@@ -35,8 +38,8 @@ export async function generateStaticParams() {
  * generateMetadata: Dynamic SEO based on product data.
  */
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
-  const { slug, locale } = params;
-  const product = await getProductBySlug(slug, locale);
+  const { slug, locale } = await params;
+  const product = await getProductBySlug(slug as string, locale);
 
   if (!product) {
     return {
@@ -59,16 +62,10 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
  * Page Component: Handles data fetching and separation of concerns.
  */
 export default async function ProductPage({ params }: ProductPageProps) {
-  const { slug, locale } = params;
-
-  // LOGS FOR VERIFICATION
-  console.log('--- PRODUCT PAGE REACHED ---');
-  console.log('Slug:', slug);
-  console.log('Locale:', locale);
-  console.log('Site:', params.site);
+  const { slug, locale } = await params;
 
   // 2. Data Fetching (Server-side)
-  const product = await getProductBySlug(slug, locale);
+  const product = await getProductBySlug(slug as string, locale);
 
   // 3. Error Handling: 404 if product doesn't exist
   if (!product) {
