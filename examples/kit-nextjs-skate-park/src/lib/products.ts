@@ -81,7 +81,10 @@ export async function getAllProducts(language = DEFAULT_LANGUAGE, path = PRODUCT
   }));
 }
 
-export async function getProductBySlug(slug: string, language = DEFAULT_LANGUAGE, rootPath = PRODUCTS_ROOT_PATH): Promise<ProductDetail | null> {
+export async function getProductBySlug(slug: string | undefined, language = DEFAULT_LANGUAGE, rootPath = PRODUCTS_ROOT_PATH): Promise<ProductDetail | null> {
+  
+  if (!slug) return null;
+  
   // Normalize slug: decode and handle hyphen-to-space conversion for Sitecore item names
   const decodedSlug = decodeURIComponent(slug);
   const spaceNormalizedSlug = decodedSlug.replace(/-/g, ' ');
