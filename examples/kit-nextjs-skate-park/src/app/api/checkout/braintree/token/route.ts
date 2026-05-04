@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import braintree from 'braintree';
 import client from 'src/lib/sitecore-client';
 
+/**
+ * GraphQL Query để lấy cấu hình Payment Method từ Sitecore Item ID
+ */
 const GET_PAYMENT_CONFIG = `
   query GetPaymentConfig($path: String!) {
     item(path: $path, language: "en") {
@@ -17,25 +20,26 @@ const GET_PAYMENT_CONFIG = `
 `;
 
 /**
- * Braintree Transaction API (Secure Version)
- * Tự động lấy cấu hình từ Sitecore để thực hiện thanh toán an toàn.
+ * API Generate Braintree Client Token (Secure Version)
+ * Tự động truy vấn Sitecore để lấy Key và sinh mã Authorization.
  */
 export async function POST(request: Request) {
   try {
-    const { nonce, amount, datasourceId } = await request.json();
+    const { datasourceId } = await request.json();
 
-    if (!nonce || !amount || !datasourceId) {
-      return NextResponse.json({ success: false, message: 'Missing required parameters (nonce, amount, datasourceId)' }, { status: 400 });
+    if (!datasourceId) {
+      return NextResponse.json({ success: false, message: 'Thiếu Datasource ID.' }, { status: 400 });
     }
 
-    // 1. Lấy cấu hình từ Sitecore (Server-to-Server)
+    // 1. Truy vấn cấu hình từ Sitecore Edge (Server-to-Server)
     const data = await client.getData<{ item: any }>(GET_PAYMENT_CONFIG, { path: datasourceId });
     const item = data?.item;
 
     if (!item) {
-      return NextResponse.json({ success: false, message: 'Payment config not found in Sitecore.' }, { status: 404 });
+      return NextResponse.json({ success: false, message: 'Không tìm thấy cấu hình thanh toán trên Sitecore.' }, { status: 404 });
     }
 
+    // 2. Xác định môi trường và bộ Key tương ứng
     const isSandbox = item.useSandbox?.value === '1' || item.useSandbox?.value === 'true';
     const config = {
       merchantId: isSandbox ? (item.sandbox_merchantId?.value || item.merchantId?.value) : item.merchantId?.value,
@@ -44,7 +48,11 @@ export async function POST(request: Request) {
       environment: isSandbox ? braintree.Environment.Sandbox : braintree.Environment.Production
     };
 
-    // 2. Khởi tạo Gateway
+    if (!config.merchantId || !config.publicKey || !config.privateKey) {
+      return NextResponse.json({ success: false, message: 'Cấu hình thanh toán trên Sitecore không đầy đủ.' }, { status: 400 });
+    }
+
+    // 3. Khởi tạo Gateway & Sinh Token
     const gateway = new braintree.BraintreeGateway({
       environment: config.environment,
       merchantId: config.merchantId,
@@ -52,26 +60,15 @@ export async function POST(request: Request) {
       privateKey: config.privateKey,
     });
 
-    // 3. Thực hiện giao dịch
-    const result = await gateway.transaction.sale({
-      amount: amount.toString(),
-      paymentMethodNonce: nonce,
-      options: {
-        submitForSettlement: true,
-      },
-    });
+    const response = await gateway.clientToken.generate({});
 
-    if (result.success) {
-      return NextResponse.json({ 
-        success: true, 
-        transactionId: result.transaction.id,
-        status: result.transaction.status 
-      });
+    if (response.success) {
+      return NextResponse.json({ success: true, clientToken: response.clientToken });
     } else {
-      return NextResponse.json({ success: false, message: result.message }, { status: 400 });
+      return NextResponse.json({ success: false, message: 'Braintree rejected token generation.' }, { status: 500 });
     }
   } catch (error: any) {
-    console.error('Braintree Checkout Secure API Error:', error);
-    return NextResponse.json({ success: false, message: 'Internal Server Error' }, { status: 500 });
+    console.error('Braintree Token Secure API Error:', error);
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }

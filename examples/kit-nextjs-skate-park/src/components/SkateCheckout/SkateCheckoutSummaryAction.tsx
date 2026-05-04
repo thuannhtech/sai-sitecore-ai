@@ -11,7 +11,7 @@ import { useSkateCartStore } from 'src/lib/cart/store';
  * with the selected Payment Method logic (e.g., Braintree).
  */
 export const SkateCheckoutSummaryAction = () => {
-  const { selectedMethodId, braintreeInstance, setIsProcessing, setError, isProcessing } = useSkatePaymentStore();
+  const { selectedMethodId, selectedMethodItemId, braintreeInstance, setIsProcessing, setError, isProcessing } = useSkatePaymentStore();
   const { cart } = useSkateCartStore();
 
   const handlePlaceOrder = async () => {
@@ -29,13 +29,14 @@ export const SkateCheckoutSummaryAction = () => {
         // A. Request Nonce from Drop-in UI
         const { nonce } = await braintreeInstance.requestPaymentMethod();
 
-        // B. Send Nonce to Server API
+        // B. Send Nonce + Datasource ID to Server API (Bảo mật tuyệt đối)
         const response = await fetch('/api/checkout/braintree', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             nonce,
             amount: cart?.subtotal || 0,
+            datasourceId: selectedMethodItemId, // Chỉ gửi ID
           }),
         });
 
@@ -58,12 +59,12 @@ export const SkateCheckoutSummaryAction = () => {
       } finally {
         setIsProcessing(false);
       }
-    } 
+    }
     // 2. Handle Other Methods (Card Mock, COD, MoMo Mock)
     else {
       setIsProcessing(true);
       console.log('Processing order for method:', selectedMethodId);
-      
+
       // Simulate API call
       setTimeout(() => {
         window.location.href = '/thank-you';
