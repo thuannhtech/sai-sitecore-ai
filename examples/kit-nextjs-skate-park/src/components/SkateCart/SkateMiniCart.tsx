@@ -121,9 +121,15 @@ export const SkateMiniCart: React.FC = () => {
             </div>
             <p className="text-xs text-gray-400 text-center">Shipping and taxes calculated at checkout.</p>
             <div className="grid gap-3">
-              <button className="w-full rounded-2xl bg-blue-600 py-4 font-black text-white shadow-lg shadow-blue-200 transition-all hover:bg-blue-700 hover:-translate-y-0.5 active:translate-y-0">
-                CHECKOUT NOW
-              </button>
+
+              <Link
+                style={{ color: '#fff' }}
+                href="/cart"
+                onClick={() => setIsOpen(false)}
+                className="w-full rounded-2xl bg-blue-600 py-4 font-black text-white shadow-lg shadow-blue-200 transition-all hover:bg-blue-700 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center"
+              >
+                VIEW CART
+              </Link>
               <button
                 onClick={() => setIsOpen(false)}
                 className="w-full rounded-2xl border-2 border-gray-200 py-4 font-bold text-gray-600 transition-colors hover:bg-white hover:border-gray-300"

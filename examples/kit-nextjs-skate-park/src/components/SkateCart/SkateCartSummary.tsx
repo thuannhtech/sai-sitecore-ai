@@ -53,7 +53,7 @@ export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout =
       <div className="space-y-3">
         <button
           disabled={isLoading || !hasItems}
-          className={`w-full text-white py-5 rounded-2xl font-black text-lg shadow-xl transition-all flex items-center justify-center gap-3 group disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed ${isCheckout
+          className={`cursor-pointer w-full text-white py-5 rounded-2xl font-black text-lg shadow-xl transition-all flex items-center justify-center gap-3 group disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed ${isCheckout
             ? 'bg-green-600 shadow-green-100 hover:enabled:bg-green-700'
             : 'bg-blue-600 shadow-blue-100 hover:enabled:bg-blue-700'
             } hover:enabled:-translate-y-1 active:enabled:translate-y-0`}
@@ -67,7 +67,7 @@ export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout =
         >
           {isCheckout ? (
             <>
-              <CheckCircle2 className="group-hover:animate-bounce" />
+              <CheckCircle2 className="" />
               PLACE ORDER
             </>
           ) : (

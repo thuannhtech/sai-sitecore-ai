@@ -1,6 +1,6 @@
 import React, { JSX } from 'react';
 import { Text, AppPlaceholder } from "@sitecore-content-sdk/nextjs";
-import { SkateCartSummary } from '../SkateCart/SkateCartSummary';
+import { SkateCheckoutSummaryAction } from './SkateCheckoutSummaryAction';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import componentMap from '.sitecore/component-map';
@@ -17,7 +17,6 @@ export const Default = (props: SkateCheckoutProps): JSX.Element => {
 
   // Debug log để kiểm tra trên Server/Client console
   console.log('Rendering UID:', rendering);
-  const availablePlaceholders = rendering?.placeholders ? Object.keys(rendering.placeholders) : [];
 
   return (
     <div className={`component skate-checkout pt-12 pb-24 ${styles}`}>
@@ -59,13 +58,7 @@ export const Default = (props: SkateCheckoutProps): JSX.Element => {
 
           {/* Order Summary (1/3) */}
           <div className="lg:col-span-1">
-            <SkateCartSummary
-              isCheckout={true}
-              onPlaceOrder={() => {
-                console.log('Place Order');
-                window.location.href = '/thank-you';
-              }}
-            />
+            <SkateCheckoutSummaryAction />
           </div>
 
         </div>
