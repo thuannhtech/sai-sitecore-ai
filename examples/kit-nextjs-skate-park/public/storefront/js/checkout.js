@@ -193,12 +193,18 @@ const SkateCheckoutBridge = {
 
             console.log("✅ [SUCCESS] Order saved to localStorage:", orderId);
             
-            // Reset stores
-            window.SkateCheckoutStore.getState().resetCheckout();
-            window.SkateCartStore.getState().clearCart();
+            // Reset stores & Clear Persistence
+            if (window.SkateCheckoutStore) window.SkateCheckoutStore.getState().resetCheckout();
+            if (window.SkateCartStore) {
+                window.SkateCartStore.getState().clearCart();
+                // Xóa chính xác key của Mock Service
+                localStorage.removeItem('skate_mock_cart');
+            }
             
-            // Chuyển hướng kèm token
-            window.location.href = `/thank-you?token=${orderId}`;
+            // Delay cực ngắn để đảm bảo Browser ghi nhận việc xóa Storage
+            setTimeout(() => {
+                window.location.href = `/thank-you?token=${orderId}`;
+            }, 100);
         }, 2000);
     },
 

@@ -65,7 +65,12 @@ export const useSkateCartStore = create<SkateCartState>((set, get) => ({
     }
   },
   
-  clearCart: () => set({ cart: { items: [], subtotal: 0, totalItems: 0 } }),
+  clearCart: () => {
+    set({ cart: { items: [], subtotal: 0, itemCount: 0 } });
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('skate_mock_cart');
+    }
+  },
 }));
 
 // Export store for external JS (Sitecore scripts)
