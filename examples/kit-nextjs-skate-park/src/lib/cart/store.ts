@@ -14,6 +14,7 @@ interface SkateCartState {
   addToCart: (product: SkateProduct, quantity: number) => Promise<void>;
   updateQuantity: (lineItemId: string, quantity: number) => Promise<void>;
   removeItem: (lineItemId: string) => Promise<void>;
+  clearCart: () => void;
 }
 
 export const useSkateCartStore = create<SkateCartState>((set, get) => ({
@@ -63,4 +64,11 @@ export const useSkateCartStore = create<SkateCartState>((set, get) => ({
       set({ error: 'Failed to remove item', isLoading: false });
     }
   },
+  
+  clearCart: () => set({ cart: { items: [], subtotal: 0, totalItems: 0 } }),
 }));
+
+// Export store for external JS (Sitecore scripts)
+if (typeof window !== 'undefined') {
+  (window as any).SkateCartStore = useSkateCartStore;
+}

@@ -10,9 +10,10 @@ const SkateCheckoutBridge = {
             BILLING: 'CheckoutBillingAddressFrom'
         },
         selectors: {
-            errorMsg: 'field-error-msg',
+            errorMsg: 'form-error-message',
             inputError: 'border-red-500',
-            submitBtn: 'button[type="submit"]'
+            submitBtn: 'button[type="submit"]',
+            placeOrderBtn: '.place-order-btn' // Nút Place Order trong Cart Summary
         }
     },
 
@@ -39,6 +40,22 @@ const SkateCheckoutBridge = {
         if (state.billingAddress) {
             this.rehydrateStep(".billing-address-step", this.config.forms.BILLING, state.billingAddress);
         }
+
+        // 3. Khởi tạo Shipping Method mặc định nếu chưa có
+        if (!state.shippingMethod) {
+            const standardBtn = document.querySelector('[data-method-id="standard"]');
+            if (standardBtn) {
+                this.handleShipmentSelection(standardBtn);
+            }
+        }
+
+        // 4. Khởi tạo Payment Method mặc định nếu chưa có
+        if (!state.selectedMethodId || (state.selectedMethodId === 'braintree' && !state.selectedMethodItemId)) {
+            const defaultPaymentBtn = document.querySelector('.payment-option-btn');
+            if (defaultPaymentBtn) {
+                this.handlePaymentSelection(defaultPaymentBtn);
+            }
+        }
     },
 
     rehydrateStep(wrapperSelector, formName, data) {
@@ -63,6 +80,112 @@ const SkateCheckoutBridge = {
                 this.clearFieldError(e.target);
             }
         }, true);
+
+        // Lắng nghe sự kiện click vào nút Place Order
+        document.addEventListener('click', (e) => {
+            if (e.target.closest(this.config.selectors.placeOrderBtn)) {
+                this.handlePlaceOrder(e);
+            }
+
+            // Lắng nghe chọn Shipping Method
+            const shipmentBtn = e.target.closest('.shipment-option-btn');
+            if (shipmentBtn) {
+                this.handleShipmentSelection(shipmentBtn);
+            }
+
+            // Lắng nghe chọn Payment Method
+            const paymentBtn = e.target.closest('.payment-option-btn');
+            if (paymentBtn) {
+                this.handlePaymentSelection(paymentBtn);
+            }
+        }, true);
+    },
+
+    // Logic xử lý khi chọn Shipping Method
+    handleShipmentSelection(btn) {
+        if (!window.SkateCheckoutStore) return;
+
+        const methodData = {
+            id: btn.getAttribute('data-method-id'),
+            name: btn.getAttribute('data-method-name'),
+            price: parseFloat(btn.getAttribute('data-method-price')),
+            time: btn.getAttribute('data-method-time')
+        };
+
+        console.log('Shipment Method Selected:', methodData);
+        window.SkateCheckoutStore.getState().setShippingMethod(methodData);
+    },
+
+    // Logic xử lý khi chọn Payment Method
+    handlePaymentSelection(btn) {
+        if (!window.SkateCheckoutStore) return;
+
+        const id = btn.getAttribute('data-method-id');
+        const itemId = btn.getAttribute('data-item-id');
+
+        console.log('Payment Method Selected:', id, itemId);
+        window.SkateCheckoutStore.getState().setSelectedMethodId(id, itemId);
+    },
+
+    // Logic xử lý khi click Place Order
+    handlePlaceOrder(e) {
+        if (!window.SkateCheckoutStore || !window.SkateCartStore) {
+            console.error('Stores not found!');
+            return;
+        }
+
+        const checkoutState = window.SkateCheckoutStore.getState();
+        const cartState = window.SkateCartStore.getState();
+
+        // 1. Kiểm tra tính hợp lệ của dữ liệu Checkout
+        const validation = {
+            shipping: !!checkoutState.shippingAddress,
+            billing: !!checkoutState.billingAddress,
+            method: !!checkoutState.shippingMethod,
+            payment: !!checkoutState.selectedMethodId && (checkoutState.selectedMethodId !== 'braintree' || !!checkoutState.braintreeInstance)
+        };
+
+        if (!validation.shipping || !validation.billing || !validation.method) {
+            alert("Vui lòng hoàn thành đầy đủ thông tin giao hàng, thanh toán và phương thức vận chuyển!");
+            console.warn("Place Order blocked - Incomplete data:", validation);
+            return;
+        }
+
+        // 2. Gom tất cả thông tin thành một Order Object
+        const orderObject = {
+            orderDate: new Date().toISOString(),
+            shippingAddress: checkoutState.shippingAddress,
+            billingAddress: checkoutState.billingAddress,
+            shippingMethod: checkoutState.shippingMethod,
+            paymentMethod: {
+                id: checkoutState.selectedMethodId,
+                itemId: checkoutState.selectedMethodItemId
+            },
+            cart: {
+                items: cartState.cart?.items || [],
+                subtotal: cartState.cart?.subtotal || 0,
+                itemCount: cartState.cart?.items?.length || 0
+            }
+        };
+
+        // 3. Log kết quả (Theo yêu cầu của anh)
+        console.log("🚀 [PLACE ORDER] Final Order Object ready for API:", orderObject);
+
+        // Hiệu ứng loading giả lập
+        const btn = e.target.closest(this.config.selectors.placeOrderBtn);
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="animate-pulse">PROCESSING...</span>';
+        btn.disabled = true;
+
+        debugger
+
+        // Giả lập gọi API thành công sau 2s
+        setTimeout(() => {
+            alert("Đặt hàng thành công! Cảm ơn anh.");
+            window.SkateCheckoutStore.getState().resetCheckout();
+            window.SkateCartStore.getState().clearCart();
+            window.location.href = "/thank-you";
+        }, 2000);
     },
 
     // 4. Handle Form Submission

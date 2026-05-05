@@ -1,6 +1,6 @@
 import React, { JSX } from 'react';
 import { Text, AppPlaceholder } from "@sitecore-content-sdk/nextjs";
-import { SkateCheckoutSummaryAction } from './SkateCheckoutSummaryAction';
+import { SkateCartSummary } from '../SkateCart/SkateCartSummary';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import Script from 'next/script';
@@ -51,7 +51,7 @@ export const Default = (props: SkateCheckoutProps): JSX.Element => {
 
           {/* Right Column: Order Summary */}
           <div className="lg:col-span-1">
-            <SkateCheckoutSummaryAction />
+            <SkateCartSummary isCheckout={true} />
           </div>
         </div>
       </div>

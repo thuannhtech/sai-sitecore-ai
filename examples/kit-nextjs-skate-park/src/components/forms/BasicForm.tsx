@@ -168,7 +168,7 @@ export default function BasicForm(props: BasicFormProps) {
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     // Check if external script (bridge) handled the submission
     if (e.defaultPrevented) return;
 
@@ -203,7 +203,7 @@ export default function BasicForm(props: BasicFormProps) {
     }
   };
 
-  if (loading) return <div className="p-8 text-center animate-pulse">Đang tải form...</div>;
+  if (loading) return <div className="p-8 text-center animate-pulse">Loading...</div>;
 
   if (error && !formDef) {
     return (
@@ -229,7 +229,7 @@ export default function BasicForm(props: BasicFormProps) {
       <div className="space-y-4">
         {formDef.fields.map((f) => {
           const val = savedData[f.key] || f.defaultValue;
-          
+
           return (
             <div key={f.key} className="flex flex-col gap-1.5">
               {f.type !== 'link' && (

@@ -85,28 +85,7 @@ export const SkatePaymentMethod: React.FC<SkatePaymentMethodProps> = (props) => 
     // No-op or sync other metadata if needed
   }, [activeOption]);
 
-  // [Auto-Sync ID] Nếu đã chọn method nhưng ID Item còn rỗng (lúc vừa load trang)
-  useEffect(() => {
-    if (paymentOptions.length > 0 && !selectedMethodItemId) {
-      const current = paymentOptions.find(o => o.id === selectedMethodId);
-      if (current) {
-        console.log(`PaymentMethod: Auto-syncing Item ID for ${selectedMethodId}`);
-        setSelectedMethodId(current.id, current.sitecoreItemId);
-      }
-    }
-  }, [paymentOptions, selectedMethodId, selectedMethodItemId, setSelectedMethodId]);
-
-  // 2. Self-healing logic: If selectedMethodId is not in options, select the first one.
-  useEffect(() => {
-    if (paymentOptions.length > 0) {
-      const exists = paymentOptions.some(o => o.id === selectedMethodId);
-      if (!exists) {
-        console.log(`PaymentMethod: Fallback from ${selectedMethodId} to ${paymentOptions[0].id}`);
-        setSelectedMethodId(paymentOptions[0].id, paymentOptions[0].sitecoreItemId);
-      }
-    }
-  }, [paymentOptions, selectedMethodId, setSelectedMethodId]);
-
+  // 2. Fallback logic removed from React, handled by checkout.js for "Dumb UI" pattern
   if (paymentOptions.length === 0) {
     return (
       <div className="p-8 text-center border-2 border-dashed border-gray-200 rounded-2xl text-gray-400">
@@ -115,17 +94,19 @@ export const SkatePaymentMethod: React.FC<SkatePaymentMethodProps> = (props) => 
     );
   }
 
-
   return (
-    <div className={`skate-payment-method py-4 ${styles}`}>
+    <div className={`skate-payment-method py-4 ${styles}`} id="SkatePaymentMethodContainer">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {paymentOptions.map((option) => {
           const isSelected = selectedMethodId === option.id;
           return (
             <button
               key={option.id}
+              type="button"
+              data-method-id={option.id}
+              data-item-id={option.sitecoreItemId}
               onClick={() => setSelectedMethodId(option.id, option.sitecoreItemId)}
-              className={`cursor-pointer relative flex items-center gap-6 p-6 rounded-2xl border-2 transition-all text-left group ${isSelected
+              className={`payment-option-btn cursor-pointer relative flex items-center gap-6 p-6 rounded-2xl border-2 transition-all text-left group ${isSelected
                 ? 'border-blue-600 bg-blue-50/30'
                 : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50/50'
                 }`}

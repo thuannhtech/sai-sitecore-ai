@@ -34,17 +34,25 @@ export const SkateShipmentMethod: React.FC = () => {
   const [selectedId, setSelectedId] = useState('standard');
 
   return (
-    <div className="skate-shipment-method py-4">
+    <div className="skate-shipment-method py-4" id="SkateShipmentMethodContainer">
+      {/* Hidden input để checkout.js có thể lấy giá trị dễ dàng */}
+      <input type="hidden" name="ShippingMethodId" value={selectedId} />
+      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {SHIPMENT_OPTIONS.map((option) => {
           const isSelected = selectedId === option.id;
           return (
             <button
               key={option.id}
+              type="button"
               onClick={() => setSelectedId(option.id)}
-              className={`relative flex flex-col p-6 rounded-2xl border-2 transition-all text-left group ${
+              data-method-id={option.id}
+              data-method-name={option.name}
+              data-method-price={option.price}
+              data-method-time={option.time}
+              className={`shipment-option-btn relative flex flex-col p-6 rounded-2xl border-2 transition-all text-left group ${
                 isSelected 
-                  ? 'border-blue-600 bg-blue-50/30' 
+                  ? 'border-blue-600 bg-blue-50/30 is-active' 
                   : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50/50'
               }`}
             >
