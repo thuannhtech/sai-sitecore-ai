@@ -181,10 +181,24 @@ const SkateCheckoutBridge = {
 
         // Giả lập gọi API thành công sau 2s
         setTimeout(() => {
-            alert("Đặt hàng thành công! Cảm ơn anh.");
+            const orderId = `SK-ORD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+            const orders = JSON.parse(localStorage.getItem('skate_orders') || '[]');
+            
+            // Thêm mã đơn hàng vào object
+            orderObject.orderId = orderId;
+            orders.push(orderObject);
+            
+            // Lưu vào localStorage
+            localStorage.setItem('skate_orders', JSON.stringify(orders));
+
+            console.log("✅ [SUCCESS] Order saved to localStorage:", orderId);
+            
+            // Reset stores
             window.SkateCheckoutStore.getState().resetCheckout();
             window.SkateCartStore.getState().clearCart();
-            window.location.href = "/thank-you";
+            
+            // Chuyển hướng kèm token
+            window.location.href = `/thank-you?token=${orderId}`;
         }, 2000);
     },
 
