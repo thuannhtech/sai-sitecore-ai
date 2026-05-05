@@ -24,12 +24,15 @@
       "Atomic Design for Sitecore components",
       "Dynamic Placeholder naming conventions",
       "Bridge Pattern: Using global window store to connect generic CMS forms with React app state",
-      "Capture-phase event interception for form submission hijacking"
+      "Capture-phase event interception for form submission hijacking",
+      "Uncontrolled Bridge: Using Uncontrolled React components for easier DOM manipulation by external scripts"
     ],
     "gotchas": [
       "BasicForm from Sitecore handles onSubmit internally, requiring Capture-phase listener or e.stopPropagation to override.",
       "Zustand stores used by external JS must be attached to the window object.",
-      "Naming conventions for Sitecore Forms are critical for JS-based logic routing (CheckoutShippingAddressForm vs CheckoutBillingAddressFrom)."
+      "Naming conventions for Sitecore Forms are critical for JS-based logic routing (CheckoutShippingAddressForm vs CheckoutBillingAddressFrom).",
+      "Stale Closures in Vanilla JS Bridge: Event handlers (like Cancel buttons) must be updated whenever their captured data changes.",
+      "Controlled Components vs external JS: Manually setting .value on React controlled components will cause data loss on re-render unless bubbling events are dispatched."
     ]
   }
 }

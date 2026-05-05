@@ -1,19 +1,23 @@
 # Changelog - Skate Park Project
 
+## [2026-05-05]
+### Added
+- **Uncontrolled Bridge Pattern**: Chuyển đổi Sitecore BasicForm sang kiến trúc Uncontrolled (FormData) để đồng bộ dữ liệu an toàn với script bên ngoài.
+- **Advanced Checkout Bridge**: Triển khai logic Edit/Cancel/Revert dữ liệu trong `checkout.js`.
+- **Interactive Validation**: Tự động xóa lỗi real-time khi người dùng chỉnh sửa input.
+- **Custom Event Handlers**: Re-binding logic cho nút Cancel để luôn sử dụng dữ liệu mới nhất (Fix stale closure bug).
+
+### Fixed
+- **State-Sync Bug**: Lỗi mất dữ liệu các field khác khi đang nhập liệu 1 field trong chế độ Bridge.
+- **Accordion Logic**: Sửa lỗi tự động đóng bước checkout khi hoàn thành (giữ nguyên trạng thái do user chọn).
+- **Edit/Cancel Flow**: Đảm bảo dữ liệu được khôi phục chính xác khi hủy chỉnh sửa.
+
+### Changed
+- **BasicForm Simplification**: Lược bỏ state nội bộ và `onChange` để tối ưu hiệu năng và khả năng bảo trì.
+- **Modular checkout.js**: Cấu trúc lại mã nguồn theo dạng module hướng đối tượng.
+
 ## [2026-04-29]
 ### Added
 - **SkateCheckout**: Server Component cho layout trang Checkout 2 cột.
 - **SkateCheckoutStep**: Client Component Accordion để quản lý các bước thanh toán.
-- **SkateShipmentMethod**: Component lựa chọn phương thức vận chuyển với mockup dữ liệu.
-- **SkatePaymentMethod**: Component lựa chọn thanh toán với Mockup Credit Card cao cấp.
-- **CSS Overrides**: Hệ thống style cho Sitecore BasicForm để đồng bộ thiết kế Skate.
-- **Visual Guides**: Thêm khung chỉ dẫn và min-height cho Placeholder trong chế độ Sitecore Editor.
-
-### Fixed
-- Lỗi Circular Dependency trong `component-map.ts` gây crash trang.
-- Lỗi `ReferenceError` khi khởi tạo các component có dùng `AppPlaceholder`.
-- Tối ưu hóa việc sử dụng `component-map.client` cho các Client Components.
-
-### Changed
-- Cập nhật `SkateCartSummary` hỗ trợ chế độ Checkout (nút Place Order).
-- Chuyển `SkateCheckout` sang Server Component để tương thích tốt hơn với Sitecore Pages.
+...

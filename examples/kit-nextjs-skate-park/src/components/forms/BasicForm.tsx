@@ -217,6 +217,9 @@ export default function BasicForm(props: BasicFormProps) {
 
   if (!formDef) return null;
 
+  // Lấy dữ liệu đã lưu trong session cho form này (nếu có)
+  const savedData = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem(`checkout_form_${formDef.name}`) || '{}') : {};
+
   return (
     <form ref={formRef} name={formDef.name} onSubmit={onSubmit} className="sc-BasicForm space-y-6 max-w-lg mx-auto p-8 bg-white shadow-xl rounded-3xl border border-gray-100">
       {formDef.title && <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tight">{formDef.title}</h2>}
@@ -224,55 +227,59 @@ export default function BasicForm(props: BasicFormProps) {
       {error && <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">{error}</div>}
 
       <div className="space-y-4">
-        {formDef.fields.map((f) => (
-          <div key={f.key} className="flex flex-col gap-1.5">
-            {f.type !== 'link' && (
-              <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">
-                {f.label} {f.required && <span className="text-red-500">*</span>}
-              </label>
-            )}
+        {formDef.fields.map((f) => {
+          const val = savedData[f.key] || f.defaultValue;
+          
+          return (
+            <div key={f.key} className="flex flex-col gap-1.5">
+              {f.type !== 'link' && (
+                <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">
+                  {f.label} {f.required && <span className="text-red-500">*</span>}
+                </label>
+              )}
 
-            {f.type === 'textarea' ? (
-              <textarea
-                name={f.key}
-                defaultValue={f.defaultValue}
-                placeholder={f.placeholder}
-                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all min-h-[120px]"
-              />
-            ) : f.type === 'select' ? (
-              <select
-                name={f.key}
-                defaultValue={f.defaultValue}
-                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
-              >
-                <option value="">{f.placeholder || 'Chọn...'}</option>
-                {f.options?.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-              </select>
-            ) : f.type === 'checkbox' ? (
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <input
-                  type="checkbox"
+              {f.type === 'textarea' ? (
+                <textarea
                   name={f.key}
-                  defaultChecked={f.defaultValue === 'true' || f.defaultValue === '1'}
-                  className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  defaultValue={val}
+                  placeholder={f.placeholder}
+                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all min-h-[120px]"
                 />
-                <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{f.helpText || f.label}</span>
-              </label>
-            ) : f.type === 'link' ? (
-              <a href={f.defaultValue} className="text-blue-600 hover:underline font-bold text-sm">
-                {f.label || f.key}
-              </a>
-            ) : (
-              <input
-                type={f.type}
-                name={f.key}
-                defaultValue={f.defaultValue}
-                placeholder={f.placeholder}
-                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-              />
-            )}
-          </div>
-        ))}
+              ) : f.type === 'select' ? (
+                <select
+                  name={f.key}
+                  defaultValue={val}
+                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
+                >
+                  <option value="">{f.placeholder || 'Chọn...'}</option>
+                  {f.options?.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                </select>
+              ) : f.type === 'checkbox' ? (
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    name={f.key}
+                    defaultChecked={val === 'true' || val === '1' || val === true}
+                    className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{f.helpText || f.label}</span>
+                </label>
+              ) : f.type === 'link' ? (
+                <a href={f.defaultValue} className="text-blue-600 hover:underline font-bold text-sm">
+                  {f.label || f.key}
+                </a>
+              ) : (
+                <input
+                  type={f.type}
+                  name={f.key}
+                  defaultValue={val}
+                  placeholder={f.placeholder}
+                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <div className="pt-4 flex flex-col gap-3">

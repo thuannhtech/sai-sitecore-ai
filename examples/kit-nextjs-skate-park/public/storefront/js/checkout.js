@@ -18,8 +18,38 @@ const SkateCheckoutBridge = {
 
     // 2. Initialization
     init() {
-        console.log('🚀 Skate Checkout Bridge Module Initialized.');
+        console.log('SkateCheckoutBridge initialized');
         this.bindEvents();
+
+        // Chờ một chút để Zustand Store kịp hydrate dữ liệu từ sessionStorage
+        setTimeout(() => this.rehydrateUI(), 100);
+    },
+
+    // Kiểm tra và khôi phục giao diện nếu đã có dữ liệu trong Store (từ session cũ)
+    rehydrateUI() {
+        if (!window.SkateCheckoutStore) return;
+        const state = window.SkateCheckoutStore.getState();
+
+        // 1. Khôi phục Shipping Summary
+        if (state.shippingAddress) {
+            this.rehydrateStep(".shipping-address-step", this.config.forms.SHIPPING, state.shippingAddress);
+        }
+
+        // 2. Khôi phục Billing Summary
+        if (state.billingAddress) {
+            this.rehydrateStep(".billing-address-step", this.config.forms.BILLING, state.billingAddress);
+        }
+    },
+
+    rehydrateStep(wrapperSelector, formName, data) {
+        const wrapper = document.querySelector(wrapperSelector);
+        if (wrapper) {
+            const form = wrapper.querySelector(`form[name='${formName}']`);
+            if (form) form.style.display = "none";
+
+            const content = wrapper.querySelector(".relative");
+            this.renderAddressSummary(content, data, wrapper, formName);
+        }
     },
 
     // 3. Event Binding
@@ -121,6 +151,63 @@ const SkateCheckoutBridge = {
         form.querySelectorAll('input, select, textarea').forEach(el => el.classList.remove(inputError));
     },
 
+    // Helper to render the Address Summary UI (Reusable for Shipping/Billing)
+    renderAddressSummary(container, data, wrapper, formName) {
+        const summaryId = `summary-${formName}`;
+        const oldSummary = container.querySelector(`#${summaryId}`);
+        if (oldSummary) oldSummary.remove();
+
+        const summaryDiv = document.createElement("div");
+        summaryDiv.id = summaryId;
+        summaryDiv.className = "address-summary-raw p-4 bg-gray-50 border border-gray-100 rounded-xl mt-2 animate-in fade-in duration-500";
+        summaryDiv.innerHTML = `
+            <div class="flex justify-between items-center">
+                <p class="text-gray-700 font-medium leading-relaxed">
+                    ${data.FullName || data.name || ''}, ${data.PhoneNumber || data.phone || ''}, ${data.Address || data.addressLine1 || ''}
+                </p>
+                <button type="button" class="edit-address-btn text-[10px] font-black uppercase text-blue-600 hover:underline ml-4">Edit</button>
+            </div>
+        `;
+
+        // Add Edit functionality
+        summaryDiv.querySelector(".edit-address-btn").onclick = () => {
+            const form = wrapper.querySelector(`form[name='${formName}']`);
+            this.clearAllErrors(form);
+
+            // Auto-fill (safe for uncontrolled)
+            Object.keys(data).forEach(key => {
+                const input = form.querySelector(`[name="${key}"]`);
+                if (input) {
+                    if (input.type === 'checkbox') input.checked = data[key];
+                    else input.value = data[key];
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            });
+
+            summaryDiv.style.display = "none";
+            form.style.display = "block";
+
+            // Add/Update Cancel button
+            let cancelBtn = form.querySelector(".cancel-edit-btn");
+            if (!cancelBtn) {
+                const submitBtn = form.querySelector(this.config.selectors.submitBtn);
+                cancelBtn = document.createElement("button");
+                cancelBtn.type = "button";
+                cancelBtn.className = "cancel-edit-btn w-full py-4 mt-2 bg-gray-100 text-gray-600 font-black uppercase tracking-widest rounded-2xl hover:bg-gray-200 transition-all";
+                cancelBtn.innerText = "Cancel";
+                submitBtn.parentNode.appendChild(cancelBtn);
+            }
+
+            cancelBtn.onclick = () => {
+                this.clearAllErrors(form);
+                summaryDiv.style.display = "block";
+                form.style.display = "none";
+            };
+        };
+
+        container.appendChild(summaryDiv);
+    },
+
     // 8. Interaction with Zustand Store
     updateStore(formName, data, form) {
         if (!window.SkateCheckoutStore) {
@@ -132,90 +219,25 @@ const SkateCheckoutBridge = {
 
         switch (formName) {
             case this.config.forms.SHIPPING:
-                const shippingAddressWarapper = document.querySelector(".shipping-address-step");
-                shippingAddressWarapper.querySelector("form[name='CheckoutShippingAddressForm']").style.display = "none";
+                const shippingWrapper = document.querySelector(".shipping-address-step");
+                if (shippingWrapper) {
+                    shippingWrapper.querySelector(`form[name='${formName}']`).style.display = "none";
+                    const content = shippingWrapper.querySelector(".relative");
+                    this.renderAddressSummary(content, data, shippingWrapper, formName);
+                }
 
-
-                const content = shippingAddressWarapper.querySelector(".relative");
-
-                // Check and remove old summary to avoid duplicates
-                const oldSummary = content.querySelector(".shipping-summary-raw");
-                if (oldSummary) oldSummary.remove();
-
-                // Create raw text summary element
-                const summaryDiv = document.createElement("div");
-                summaryDiv.className = "shipping-summary-raw p-4 bg-gray-50 border border-gray-100 rounded-xl mt-2 animate-in fade-in duration-500";
-                summaryDiv.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <p class="text-sm text-gray-700 font-medium leading-relaxed">
-                            ${data.FullName}, ${data.PhoneNumber}, ${data.Address}
-                        </p>
-                        <button type="button" class="edit-shipping-btn text-[10px] font-black uppercase text-blue-600 hover:underline ml-4">Edit</button>
-                    </div>
-                `;
-
-                // Add Edit functionality
-                summaryDiv.querySelector(".edit-shipping-btn").onclick = () => {
-                    const form = shippingAddressWarapper.querySelector("form[name='CheckoutShippingAddressForm']");
-                    
-                    // Reset errors when toggling form
-                    this.clearAllErrors(form);
-
-                    // 1. Auto-fill saved data back into form (Pure DOM - safe for Uncontrolled components)
-                    Object.keys(data).forEach(key => {
-                        const input = form.querySelector(`[name="${key}"]`);
-                        if (input) {
-                            if (input.type === 'checkbox') input.checked = data[key];
-                            else input.value = data[key];
-                            
-                            // Optional: notify any other listeners (like validation scripts)
-                            input.dispatchEvent(new Event('input', { bubbles: true }));
-                        }
-                    });
-
-                    // 2. Show form and hide summary
-                    summaryDiv.style.display = "none";
-                    form.style.display = "block";
-
-                    // 3. Add or Update Cancel button logic
-                    let cancelBtn = form.querySelector(".cancel-edit-btn");
-                    if (!cancelBtn) {
-                        const submitBtn = form.querySelector(this.config.selectors.submitBtn);
-                        cancelBtn = document.createElement("button");
-                        cancelBtn.type = "button";
-                        cancelBtn.className = "cancel-edit-btn w-full py-4 mt-2 bg-gray-100 text-gray-600 font-black uppercase tracking-widest rounded-2xl hover:bg-gray-200 transition-all";
-                        cancelBtn.innerText = "Cancel";
-                        submitBtn.parentNode.appendChild(cancelBtn);
-                    }
-
-                    // ALWAYS update the onclick handler to use the latest 'data'
-                    cancelBtn.onclick = () => {
-                        this.clearAllErrors(form);
-                        
-                        // Revert form values to the last saved data (discarding unsaved changes)
-                        Object.keys(data).forEach(key => {
-                            const input = form.querySelector(`[name="${key}"]`);
-                            if (input) {
-                                if (input.type === 'checkbox') input.checked = data[key];
-                                else input.value = data[key];
-                                // Sync visual state
-                                input.dispatchEvent(new Event('input', { bubbles: true }));
-                            }
-                        });
-
-                        form.style.display = "none";
-                        summaryDiv.style.display = "block";
-                    };
-                };
-
-                content.appendChild(summaryDiv);
-
-                // Update store and move to next step
                 store.setShippingAddress(data);
-
+                sessionStorage.setItem(`checkout_form_${formName}`, JSON.stringify(data));
                 break;
             case this.config.forms.BILLING:
+                const billingWrapper = document.querySelector(".billing-address-step");
+                if (billingWrapper) {
+                    billingWrapper.querySelector(`form[name='${formName}']`).style.display = "none";
+                    const content = billingWrapper.querySelector(".relative");
+                    this.renderAddressSummary(content, data, billingWrapper, formName);
+                }
                 store.setBillingAddress(data);
+                sessionStorage.setItem(`checkout_form_${formName}`, JSON.stringify(data));
                 break;
             default:
                 break;

@@ -37,37 +37,57 @@ interface SkateCheckoutState {
   resetCheckout: () => void;
 }
 
-export const useSkateCheckoutStore = create<SkateCheckoutState>((set) => ({
-  currentStep: 1, // 1: Shipping, 2: Method, 3: Payment
-  shippingAddress: null,
-  billingAddress: null,
-  billingSameAsShipping: true,
-  shippingMethod: null,
-  selectedMethodId: 'braintree',
-  selectedMethodItemId: '',
-  braintreeInstance: null,
-  isProcessing: false,
-  error: null,
+import { createJSONStorage, persist } from 'zustand/middleware';
 
-  setStep: (step) => set({ currentStep: step }),
-  setShippingAddress: (address) => set({ shippingAddress: address }),
-  setBillingAddress: (address) => set({ billingAddress: address }),
-  setBillingSameAsShipping: (same) => set({ billingSameAsShipping: same }),
-  setShippingMethod: (method) => set({ shippingMethod: method }),
-  setSelectedMethodId: (id, itemId) => set({ selectedMethodId: id, selectedMethodItemId: itemId || '' }),
-  setBraintreeInstance: (instance) => set({ braintreeInstance: instance }),
-  setIsProcessing: (processing) => set({ isProcessing: processing }),
-  setError: (error) => set({ error }),
-  resetCheckout: () => set({
-    currentStep: 1,
-    shippingAddress: null,
-    billingAddress: null,
-    billingSameAsShipping: true,
-    shippingMethod: null,
-    isProcessing: false,
-    error: null
-  })
-}));
+export const useSkateCheckoutStore = create<SkateCheckoutState>()(
+  persist(
+    (set) => ({
+      currentStep: 1, // 1: Shipping, 2: Method, 3: Payment
+      shippingAddress: null,
+      billingAddress: null,
+      billingSameAsShipping: true,
+      shippingMethod: null,
+      selectedMethodId: 'braintree',
+      selectedMethodItemId: '',
+      braintreeInstance: null,
+      isProcessing: false,
+      error: null,
+
+      setStep: (step) => set({ currentStep: step }),
+      setShippingAddress: (address) => set({ shippingAddress: address }),
+      setBillingAddress: (address) => set({ billingAddress: address }),
+      setBillingSameAsShipping: (same) => set({ billingSameAsShipping: same }),
+      setShippingMethod: (method) => set({ shippingMethod: method }),
+      setSelectedMethodId: (id, itemId) => set({ selectedMethodId: id, selectedMethodItemId: itemId || '' }),
+      setBraintreeInstance: (instance) => set({ braintreeInstance: instance }),
+      setIsProcessing: (processing) => set({ isProcessing: processing }),
+      setError: (error) => set({ error }),
+      resetCheckout: () => set({
+        currentStep: 1,
+        shippingAddress: null,
+        billingAddress: null,
+        billingSameAsShipping: true,
+        shippingMethod: null,
+        isProcessing: false,
+        error: null
+      })
+    }),
+    {
+      name: 'checkout_state',
+      storage: createJSONStorage(() => sessionStorage),
+      // Chỉ lưu những trường dữ liệu cần thiết, loại bỏ braintreeInstance vì nó gây lỗi Circular JSON
+      partialize: (state) => ({
+        currentStep: state.currentStep,
+        shippingAddress: state.shippingAddress,
+        billingAddress: state.billingAddress,
+        billingSameAsShipping: state.billingSameAsShipping,
+        shippingMethod: state.shippingMethod,
+        selectedMethodId: state.selectedMethodId,
+        selectedMethodItemId: state.selectedMethodItemId,
+      }),
+    }
+  )
+);
 
 // Export store for external JS (Sitecore scripts)
 if (typeof window !== 'undefined') {
