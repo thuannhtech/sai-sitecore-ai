@@ -1,4 +1,4 @@
-# Project Context
+# Project Context.
 
 ### Repository Overview
 
