@@ -3,7 +3,12 @@
 import { BYOCClientWrapper, NextjsContentSdkComponent, FEaaSClientWrapper } from '@sitecore-content-sdk/nextjs';
 import { Form } from '@sitecore-content-sdk/nextjs';
 
+import * as SkateShipmentMethod from 'src/components/SkateShipmentMethod/SkateShipmentMethod';
 import * as SkateProductList from 'src/components/SkateProductList/SkateProductList';
+import * as SkatePaymentMethod from 'src/components/SkatePaymentMethod/SkatePaymentMethod';
+import * as SkateBraintreePayment from 'src/components/SkatePaymentMethod/SkateBraintreePayment';
+import * as SkateCheckoutStep from 'src/components/SkateCheckoutStep/SkateCheckoutStep';
+import * as SkateOrderSuccess from 'src/components/SkateCheckout/SkateOrderSuccess';
 import * as SkateMiniCart from 'src/components/SkateCart/SkateMiniCart';
 import * as SkateCartToggle from 'src/components/SkateCart/SkateCartToggle';
 import * as SkateCartSummary from 'src/components/SkateCart/SkateCartSummary';
@@ -26,7 +31,12 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['BYOCWrapper', BYOCClientWrapper],
   ['FEaaSWrapper', FEaaSClientWrapper],
   ['Form', Form],
+  ['SkateShipmentMethod', { ...SkateShipmentMethod }],
   ['SkateProductList', { ...SkateProductList }],
+  ['SkatePaymentMethod', { ...SkatePaymentMethod }],
+  ['SkateBraintreePayment', { ...SkateBraintreePayment }],
+  ['SkateCheckoutStep', { ...SkateCheckoutStep }],
+  ['SkateOrderSuccess', { ...SkateOrderSuccess }],
   ['SkateMiniCart', { ...SkateMiniCart }],
   ['SkateCartToggle', { ...SkateCartToggle }],
   ['SkateCartSummary', { ...SkateCartSummary }],

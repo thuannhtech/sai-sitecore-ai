@@ -1,44 +1,38 @@
 {
-  "meta": {
-    "schema_version": "1.1.0",
-    "awf_version": "3.3.0",
-    "last_updated": "2026-04-29"
+  "meta": { "schema_version": "1.1.0", "awf_version": "4.0.2" },
+  "project": { 
+    "name": "Skate Park Sitecore AI", 
+    "type": "Sitecore XM Cloud + Next.js App Router", 
+    "status": "In Progress - Checkout Validation & Bridge" 
   },
-  "project": {
-    "name": "Tailstore Headless E-commerce",
-    "type": "Sitecore XM Cloud + OrderCloud + Braintree",
-    "status": "Cart Page Completed"
-  },
-  "tech_stack": {
-    "frontend": "Next.js 15 (App Router)",
-    "styling": "Tailwind CSS",
-    "state_management": "Zustand",
-    "cms": "Sitecore XM Cloud (Headless JSS)",
-    "commerce": "OrderCloud SDK (Mocked)",
-    "search": "Sitecore Search (Headless)",
-    "payment": "Braintree Payment Gateway",
-    "forms": "Sitecore Forms"
-  },
-  "conventions": {
-    "naming_prefix": "Skate*",
-    "pattern": "Atomic Design",
-    "client_components": "Extract interactive parts to sub-components to keep headers/layouts as Server Components.",
-    "border_radius": "rounded-2xl (consistent across main UI cards)"
+  "tech_stack": { 
+    "frontend": "Next.js 14 (App Router), Tailwind CSS", 
+    "state_management": "Zustand (SkateCartStore, SkateCheckoutStore)",
+    "styling": "Vanilla CSS Overrides for Sitecore Forms",
+    "icons": "Lucide React",
+    "validation": "React Hook Form + Zod (for React) | Vanilla JS (for Sitecore Forms)"
   },
   "features": [
-    { "name": "Product List (PLP)", "status": "Implemented" },
-    { "name": "Product Detail (PDP)", "status": "Implemented" },
-    { "name": "Mini Cart Sidebar", "status": "Implemented (Mock)" },
-    { "name": "Full Cart Page", "status": "Implemented (Mock)" }
+    { "name": "Skate Shopping Cart", "status": "Implemented" },
+    { "name": "Multi-Step Checkout Accordion", "status": "Implemented" },
+    { "name": "Sitecore BasicForm Bridge", "status": "Implemented (via checkout.js)" },
+    { "name": "Skate Checkout Store Global Exposure", "status": "Implemented" },
+    { "name": "Braintree Payment Integration", "status": "In Progress - Validation logic added" }
   ],
   "knowledge_items": {
     "patterns": [
-      "Zustand + LocalStorage for cart persistence in POC",
-      "Decoupled service layer for easy API switching"
+      "Atomic Design for Sitecore components",
+      "Dynamic Placeholder naming conventions",
+      "Bridge Pattern: Using global window store to connect generic CMS forms with React app state",
+      "Capture-phase event interception for form submission hijacking",
+      "Uncontrolled Bridge: Using Uncontrolled React components for easier DOM manipulation by external scripts"
     ],
     "gotchas": [
-      "MenuHeader must be a Server Component; use SkateCartToggle for interactive cart button.",
-      "Ensure heights match in Cart Page grid for empty state symmetry."
+      "BasicForm from Sitecore handles onSubmit internally, requiring Capture-phase listener or e.stopPropagation to override.",
+      "Zustand stores used by external JS must be attached to the window object.",
+      "Naming conventions for Sitecore Forms are critical for JS-based logic routing (CheckoutShippingAddressForm vs CheckoutBillingAddressFrom).",
+      "Stale Closures in Vanilla JS Bridge: Event handlers (like Cancel buttons) must be updated whenever their captured data changes.",
+      "Controlled Components vs external JS: Manually setting .value on React controlled components will cause data loss on re-render unless bubbling events are dispatched."
     ]
   }
 }

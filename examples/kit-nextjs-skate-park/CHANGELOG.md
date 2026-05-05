@@ -1,22 +1,23 @@
-# Changelog
+# Changelog - Skate Park Project
+
+## [2026-05-05]
+### Added
+- **Uncontrolled Bridge Pattern**: Chuyển đổi Sitecore BasicForm sang kiến trúc Uncontrolled (FormData) để đồng bộ dữ liệu an toàn với script bên ngoài.
+- **Advanced Checkout Bridge**: Triển khai logic Edit/Cancel/Revert dữ liệu trong `checkout.js`.
+- **Interactive Validation**: Tự động xóa lỗi real-time khi người dùng chỉnh sửa input.
+- **Custom Event Handlers**: Re-binding logic cho nút Cancel để luôn sử dụng dữ liệu mới nhất (Fix stale closure bug).
+
+### Fixed
+- **State-Sync Bug**: Lỗi mất dữ liệu các field khác khi đang nhập liệu 1 field trong chế độ Bridge.
+- **Accordion Logic**: Sửa lỗi tự động đóng bước checkout khi hoàn thành (giữ nguyên trạng thái do user chọn).
+- **Edit/Cancel Flow**: Đảm bảo dữ liệu được khôi phục chính xác khi hủy chỉnh sửa.
+
+### Changed
+- **BasicForm Simplification**: Lược bỏ state nội bộ và `onChange` để tối ưu hiệu năng và khả năng bảo trì.
+- **Modular checkout.js**: Cấu trúc lại mã nguồn theo dạng module hướng đối tượng.
 
 ## [2026-04-29]
 ### Added
-- **Skate Cart System**: Toàn bộ hệ thống giỏ hàng giả lập (Mock).
-- **Zustand Store**: Quản lý trạng thái giỏ hàng (`src/lib/cart/store.ts`).
-- **SkateMiniCart**: Sidebar giỏ hàng trượt từ phải sang với hiệu ứng mượt mà.
-- **SkateAddToCartButton**: Nút bấm thêm vào giỏ hàng với trạng thái loading độc lập.
-- **SkateCartToggle**: Nút giỏ hàng trên Header tích hợp badge số lượng realtime.
-- **Skate Cart Page**: Trang giỏ hàng đầy đủ với layout 2 cột.
-- **Premium Empty State**: Giao diện giỏ hàng trống với nút "Continue Shopping" phong cách Gradient Blue Glow.
-- **Persistence**: Tự động lưu giỏ hàng vào `localStorage`.
-
-### Changed
-- **MenuHeader**: Chuyển về Server Component và tách logic giỏ hàng ra `SkateCartToggle`.
-- **Product Details & List**: Tích hợp nút Add to Cart thực tế.
-- **Layout**: Tích hợp Mini Cart toàn cục.
-
-### Fixed
-- Lỗi `useSyncExternalStore` trong Server Component.
-- Lỗi mất dữ liệu giỏ hàng khi chuyển trang/refresh.
-- Lỗi toàn bộ nút bấm hiện loading cùng lúc.
+- **SkateCheckout**: Server Component cho layout trang Checkout 2 cột.
+- **SkateCheckoutStep**: Client Component Accordion để quản lý các bước thanh toán.
+...

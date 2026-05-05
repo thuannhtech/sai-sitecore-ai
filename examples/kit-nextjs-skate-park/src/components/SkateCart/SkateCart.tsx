@@ -39,7 +39,7 @@ export const Default = (props: SkateCartProps): JSX.Element => {
 
             {/* Sidebar: Summary (1/3 width on LG) */}
             <div className="lg:col-span-1">
-              <SkateCartSummary />
+              <SkateCartSummary onProceedToCheckout={() => window.location.href = '/checkout'} />
             </div>
           </div>
         </div>

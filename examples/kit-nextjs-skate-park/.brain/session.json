@@ -1,23 +1,37 @@
 {
-  "updated_at": "2026-04-29T16:56:00Z",
+  "updated_at": "2026-05-05T08:10:00Z",
   "working_on": {
-    "feature": "Skate Cart Page Implementation",
-    "task": "Full UI/UX Refinement & Logic Integration",
-    "status": "Completed",
-    "files": ["src/components/SkateCart/SkateCart.tsx", "src/components/SkateCart/SkateCartItemList.tsx", "src/components/SkateCart/SkateCartSummary.tsx"],
-    "notes": "Full Cart page is ready with premium empty state, synced heights, and consistent border radius."
+    "feature": "Checkout Flow Optimization",
+    "task": "Shipping Address Bridge & Summary",
+    "status": "completed",
+    "files": [
+      "src/components/forms/BasicForm.tsx",
+      "public/storefront/js/checkout.js",
+      "src/components/SkateCheckoutStep/SkateCheckoutStep.tsx"
+    ],
+    "notes": "System is stable. Refactored to Uncontrolled Components to fix all bridge-related bugs."
   },
   "pending_tasks": [
-    { "task": "OrderCloud API integration", "priority": "high" },
-    { "task": "Checkout flow & Payment integration", "priority": "high" }
+    { "task": "Implement Billing Address bridge logic", "priority": "medium" },
+    { "task": "Implement Shipping Method bridge logic", "priority": "medium" },
+    { "task": "Payment Method integration", "priority": "high" }
   ],
   "recent_changes": [
-    { "type": "feature", "description": "Implemented Full Cart Page Rendering for Sitecore", "files": ["src/components/SkateCart/SkateCart.tsx"] },
-    { "type": "ui-refinement", "description": "Upgraded Empty State UI & Continue Shopping button with gradient/glow", "files": ["src/components/SkateCart/SkateCartItemList.tsx"] },
-    { "type": "ui-refinement", "description": "Synced component heights and reduced border radius to 2xl", "files": ["src/components/SkateCart/*.tsx"] }
+    {
+      "type": "architecture",
+      "description": "Switched BasicForm to Uncontrolled architecture (FormData + defaultValue).",
+      "impact": "Eliminated state-sync bugs and stale closures when bridging with Vanilla JS."
+    },
+    {
+      "type": "feature",
+      "description": "Implemented Edit/Cancel/Revert logic in checkout.js",
+      "impact": "Professional UX with data protection on cancel."
+    }
   ],
   "decisions_made": [
-    { "decision": "Show Cart Summary even when empty", "reason": "Maintain UI structure and provide a consistent experience." },
-    { "decision": "Use rounded-2xl for a more industrial skate look", "reason": "User feedback for less rounded corners." }
+    {
+      "decision": "Use Uncontrolled Components for Sitecore BasicForms",
+      "reason": "React's controlled state is too difficult to sync reliably with external scripts that manipulate the DOM directly."
+    }
   ]
 }

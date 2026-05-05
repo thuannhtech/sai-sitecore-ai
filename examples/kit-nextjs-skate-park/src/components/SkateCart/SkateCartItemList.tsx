@@ -132,7 +132,7 @@ export const SkateCartItemList: React.FC = () => {
       {/* Footer / Continue Shopping */}
       <div className="px-8 py-6 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
         <Link
-          href="/"
+          href="/products"
           className="text-sm font-bold text-gray-500 hover:text-blue-600 flex items-center gap-2 transition-colors"
         >
           <ArrowLeft size={16} />
