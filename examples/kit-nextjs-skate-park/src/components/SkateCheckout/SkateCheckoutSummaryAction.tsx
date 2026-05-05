@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { SkateCartSummary } from '../SkateCart/SkateCartSummary';
-import { useSkatePaymentStore } from 'src/lib/payment/store';
+import { useSkateCheckoutStore } from 'src/lib/payment/store';
 import { useSkateCartStore } from 'src/lib/cart/store';
 
 /**
@@ -11,14 +11,40 @@ import { useSkateCartStore } from 'src/lib/cart/store';
  * with the selected Payment Method logic (e.g., Braintree).
  */
 export const SkateCheckoutSummaryAction = () => {
-  const { selectedMethodId, selectedMethodItemId, braintreeInstance, setIsProcessing, setError, isProcessing } = useSkatePaymentStore();
+  const {
+    selectedMethodId,
+    selectedMethodItemId,
+    braintreeInstance,
+    setIsProcessing,
+    setError,
+    isProcessing,
+    shippingAddress,
+    billingAddress,
+    shippingMethod
+  } = useSkateCheckoutStore();
   const { cart } = useSkateCartStore();
 
   const handlePlaceOrder = async () => {
+    // 0. Validation Orchestrator
+    if (!shippingAddress) {
+      setError('Missing Shipping Address. Please fill and save it.');
+      return;
+    }
+
+    if (!billingAddress) {
+      setError('Missing Billing Address. Please confirm your billing info.');
+      return;
+    }
+
+    if (!shippingMethod) {
+      setError('Please select a Shipping Method.');
+      return;
+    }
+
     // 1. Handle Braintree Payment
     if (selectedMethodId === 'braintree') {
       if (!braintreeInstance) {
-        alert('Giao diện thanh toán Braintree chưa sẵn sàng.');
+        setError('Payment interface (Braintree) is not ready. Please refresh.');
         return;
       }
 
@@ -29,36 +55,40 @@ export const SkateCheckoutSummaryAction = () => {
         // A. Request Nonce from Drop-in UI
         const { nonce } = await braintreeInstance.requestPaymentMethod();
 
-        // B. Send Nonce + Datasource ID to Server API (Bảo mật tuyệt đối)
-        const response = await fetch('/api/checkout/braintree', {
+        // B. Submit Full Order to Server
+        const response = await fetch('/api/checkout/submit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             nonce,
-            amount: cart?.subtotal || 0,
-            datasourceId: selectedMethodItemId, // Chỉ gửi ID
+            amount: (cart?.subtotal || 0) + (shippingMethod?.price || 0),
+            datasourceId: selectedMethodItemId,
+            shippingAddress,
+            shippingMethod,
+            billingAddress,
+            items: cart?.items || []
           }),
         });
 
         const result = await response.json();
 
         if (result.success) {
-          // Success navigation
-          window.location.href = `/thank-you?tid=${result.transactionId}`;
+          window.location.href = `/thank-you?oid=${result.orderId}&tid=${result.transactionId}`;
         } else {
-          setError(result.message);
-          alert(`Thanh toán thất bại: ${result.message}`);
+          setError(`Order Failed: ${result.message}`);
         }
       } catch (err: any) {
-        // Handle user cancellation or Braintree errors
-        if (err.code !== 'DROPIN_NO_PAYMENT_METHOD_SELECTED') {
-          console.error('Braintree Payment Error:', err);
-          setError(err.message);
-          alert(`Lỗi: ${err.message}`);
+        if (err.code === 'DROPIN_NO_PAYMENT_METHOD_SELECTED') {
+          setError('Please select a payment method in the Braintree form.');
+        } else {
+          console.error('Checkout Error:', err);
+          setError(err.message || 'An unexpected error occurred during payment.');
         }
       } finally {
         setIsProcessing(false);
       }
+    } else if (!selectedMethodId) {
+      setError('Please select a Payment Method.');
     }
     // 2. Handle Other Methods (Card Mock, COD, MoMo Mock)
     else {
@@ -76,7 +106,6 @@ export const SkateCheckoutSummaryAction = () => {
     <SkateCartSummary
       isCheckout={true}
       onPlaceOrder={handlePlaceOrder}
-      isLoading={isProcessing}
     />
   );
 };

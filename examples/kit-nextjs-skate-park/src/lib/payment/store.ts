@@ -1,33 +1,75 @@
 import { create } from 'zustand';
+import { AddressInfo, ShippingMethodInfo } from './schema';
 
-interface SkatePaymentState {
+/**
+ * useSkateCheckoutStore
+ * Centralized store for managing the entire checkout lifecycle.
+ */
+interface SkateCheckoutState {
+  // Step Management
+  currentStep: number;
+  
+  // Data
+  shippingAddress: AddressInfo | null;
+  billingAddress: AddressInfo | null;
+  billingSameAsShipping: boolean;
+  shippingMethod: ShippingMethodInfo | null;
+  
+  // Payment
   selectedMethodId: string;
-  selectedMethodItemId: string; // ID của Item trong Sitecore
-  activeConfig: any | null;
+  selectedMethodItemId: string; 
   braintreeInstance: any | null;
+  
+  // Global Status
   isProcessing: boolean;
   error: string | null;
 
   // Actions
+  setStep: (step: number) => void;
+  setShippingAddress: (address: AddressInfo) => void;
+  setBillingAddress: (address: AddressInfo) => void;
+  setBillingSameAsShipping: (same: boolean) => void;
+  setShippingMethod: (method: ShippingMethodInfo) => void;
   setSelectedMethodId: (id: string, itemId?: string) => void;
-  setActiveConfig: (config: any | null) => void;
   setBraintreeInstance: (instance: any | null) => void;
   setIsProcessing: (processing: boolean) => void;
   setError: (error: string | null) => void;
+  resetCheckout: () => void;
 }
 
-export const useSkatePaymentStore = create<SkatePaymentState>((set) => ({
+export const useSkateCheckoutStore = create<SkateCheckoutState>((set) => ({
+  currentStep: 1, // 1: Shipping, 2: Method, 3: Payment
+  shippingAddress: null,
+  billingAddress: null,
+  billingSameAsShipping: true,
+  shippingMethod: null,
   selectedMethodId: 'braintree',
   selectedMethodItemId: '',
-  activeConfig: null,
   braintreeInstance: null,
   isProcessing: false,
   error: null,
 
-  setSelectedMethodId: (id: string, itemId?: string) =>
-    set({ selectedMethodId: id, selectedMethodItemId: itemId || '' }),
-  setActiveConfig: (config: any | null) => set({ activeConfig: config }),
-  setBraintreeInstance: (instance: any | null) => set({ braintreeInstance: instance }),
-  setIsProcessing: (processing: boolean) => set({ isProcessing: processing }),
-  setError: (error: string | null) => set({ error }),
+  setStep: (step) => set({ currentStep: step }),
+  setShippingAddress: (address) => set({ shippingAddress: address }),
+  setBillingAddress: (address) => set({ billingAddress: address }),
+  setBillingSameAsShipping: (same) => set({ billingSameAsShipping: same }),
+  setShippingMethod: (method) => set({ shippingMethod: method }),
+  setSelectedMethodId: (id, itemId) => set({ selectedMethodId: id, selectedMethodItemId: itemId || '' }),
+  setBraintreeInstance: (instance) => set({ braintreeInstance: instance }),
+  setIsProcessing: (processing) => set({ isProcessing: processing }),
+  setError: (error) => set({ error }),
+  resetCheckout: () => set({
+    currentStep: 1,
+    shippingAddress: null,
+    billingAddress: null,
+    billingSameAsShipping: true,
+    shippingMethod: null,
+    isProcessing: false,
+    error: null
+  })
 }));
+
+// Export store for external JS (Sitecore scripts)
+if (typeof window !== 'undefined') {
+  (window as any).SkateCheckoutStore = useSkateCheckoutStore;
+}

@@ -3,31 +3,33 @@
   "project": { 
     "name": "Skate Park Sitecore AI", 
     "type": "Sitecore XM Cloud + Next.js App Router", 
-    "status": "In Progress - Checkout Implementation" 
+    "status": "In Progress - Checkout Validation & Bridge" 
   },
   "tech_stack": { 
     "frontend": "Next.js 14 (App Router), Tailwind CSS", 
-    "state_management": "Zustand (SkateCartStore)",
+    "state_management": "Zustand (SkateCartStore, SkateCheckoutStore)",
     "styling": "Vanilla CSS Overrides for Sitecore Forms",
-    "icons": "Lucide React"
+    "icons": "Lucide React",
+    "validation": "React Hook Form + Zod (for React) | Vanilla JS (for Sitecore Forms)"
   },
   "features": [
     { "name": "Skate Shopping Cart", "status": "Implemented" },
-    { "name": "Skate Checkout Layout", "status": "Implemented - Testing Editor" },
-    { "name": "Skate Checkout Steps (Accordion)", "status": "Implemented" },
-    { "name": "Skate Shipment Method", "status": "Implemented" },
-    { "name": "Skate Payment Method", "status": "Implemented (with Premium UI)" }
+    { "name": "Multi-Step Checkout Accordion", "status": "Implemented" },
+    { "name": "Sitecore BasicForm Bridge", "status": "Implemented (via checkout.js)" },
+    { "name": "Skate Checkout Store Global Exposure", "status": "Implemented" },
+    { "name": "Braintree Payment Integration", "status": "In Progress - Validation logic added" }
   ],
   "knowledge_items": {
     "patterns": [
       "Atomic Design for Sitecore components",
       "Dynamic Placeholder naming conventions",
-      "Circular dependency resolution via late-binding/client-maps"
+      "Bridge Pattern: Using global window store to connect generic CMS forms with React app state",
+      "Capture-phase event interception for form submission hijacking"
     ],
     "gotchas": [
-      "App Router components using AppPlaceholder must handle componentMap carefully to avoid circular loops.",
-      "Layout components should be Server Components for better Sitecore Editor chrome rendering.",
-      "BasicForm styling requires deep CSS overrides to match custom design systems."
+      "BasicForm from Sitecore handles onSubmit internally, requiring Capture-phase listener or e.stopPropagation to override.",
+      "Zustand stores used by external JS must be attached to the window object.",
+      "Naming conventions for Sitecore Forms are critical for JS-based logic routing (CheckoutShippingAddressForm vs CheckoutBillingAddressFrom)."
     ]
   }
 }

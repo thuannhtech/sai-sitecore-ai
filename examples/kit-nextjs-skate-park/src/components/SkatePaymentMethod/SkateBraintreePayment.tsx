@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import dropin from 'braintree-web-drop-in';
-import { useSkatePaymentStore } from 'src/lib/payment/store';
+import { useSkateCheckoutStore } from 'src/lib/payment/store';
 
 export type PaymentMethodConfig = {
   isSandbox: boolean;
@@ -20,7 +20,7 @@ interface SkateBraintreePaymentProps {
  */
 export const SkateBraintreePayment: React.FC<SkateBraintreePaymentProps> = ({ config }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { braintreeInstance, error, setError, setBraintreeInstance, selectedMethodItemId } = useSkatePaymentStore();
+  const { braintreeInstance, error, setError, setBraintreeInstance, selectedMethodItemId } = useSkateCheckoutStore();
 
   useEffect(() => {
     // [Race Condition Fix] Đợi cho đến khi có ID từ Sitecore mới gọi API lấy Token

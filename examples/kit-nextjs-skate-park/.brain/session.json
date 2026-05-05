@@ -1,26 +1,28 @@
 {
-  "updated_at": "2026-04-29T19:40:00Z",
+  "updated_at": "2026-05-04T15:40:00Z",
   "working_on": {
-    "feature": "Skate Checkout Implementation",
-    "task": "Fixing Sitecore Editor Drag & Drop for Checkout Placeholders",
-    "status": "In Debugging",
+    "feature": "Checkout Validation & Integration",
+    "task": "Sitecore BasicForm Bridge Implementation",
+    "status": "ready_for_testing",
     "files": [
-      "src/components/SkateCheckout/SkateCheckout.tsx",
-      "src/components/SkateCheckoutStep/SkateCheckoutStep.tsx",
-      ".sitecore/component-map.ts"
+      "src/lib/payment/store.ts",
+      "public/storefront/js/checkout.js",
+      "src/components/SkateCheckout/ShippingAddressForm.tsx",
+      "src/components/SkateCheckout/BillingAddressForm.tsx"
     ],
-    "notes": "Checkout layout converted to Server Component. Placeholder visual guides added."
+    "notes": "Đã triển khai logic đánh chặn form submit cho Shipping và Billing. Cần user nhúng script vào Sitecore theme."
   },
   "pending_tasks": [
-    { "task": "Verify placeholder name 'checkout-content' in Sitecore Rendering definition", "priority": "high" },
-    { "task": "Test BasicForm styling inside SkateCheckoutStep", "priority": "medium" },
-    { "task": "Implement Thank You page", "priority": "low" }
+    { "task": "Verify checkout.js with real Sitecore BasicForm rendering", "priority": "high" },
+    { "task": "Complete Order Submission API connection in SkateCheckoutSummaryAction", "priority": "medium" },
+    { "task": "Test Braintree nonce generation with new address validation flow", "priority": "medium" }
+  ],
+  "recent_changes": [
+    { "type": "architecture", "description": "Exposed Zustand store to window.SkateCheckoutStore" },
+    { "type": "script", "description": "Created checkout.js bridge for Sitecore generic forms" },
+    { "type": "fix", "description": "Reinforced validation for address and shipping method forms" }
   ],
   "decisions_made": [
-    { "decision": "Use component-map.client in Client Components", "reason": "Avoid circular dependency and server-only modules in browser" },
-    { "decision": "Make SkateCheckout a Server Component", "reason": "Better integration with Sitecore Layout Service and Editor markers" }
-  ],
-  "errors_encountered": [
-    { "error": "ReferenceError: Cannot access 'Default' before initialization", "solution": "Move imports to bottom of component-map.ts and use client map for client components.", "resolved": true }
+    { "decision": "Use Vanilla JS bridge for Sitecore Forms", "reason": "BasicForm is generic and cannot be easily modified with custom Zod logic without rebuilding the whole component." }
   ]
 }

@@ -7,7 +7,9 @@ import * as SkateShipmentMethod from 'src/components/SkateShipmentMethod/SkateSh
 import * as SkateProductList from 'src/components/SkateProductList/SkateProductList';
 import * as SkatePaymentMethod from 'src/components/SkatePaymentMethod/SkatePaymentMethod';
 import * as SkateBraintreePayment from 'src/components/SkatePaymentMethod/SkateBraintreePayment';
+import * as SkateCheckoutStep from 'src/components/SkateCheckoutStep/SkateCheckoutStep';
 import * as SkateCheckoutSummaryAction from 'src/components/SkateCheckout/SkateCheckoutSummaryAction';
+import * as ShippingMethodForm from 'src/components/SkateCheckout/ShippingMethodForm';
 import * as SkateMiniCart from 'src/components/SkateCart/SkateMiniCart';
 import * as SkateCartToggle from 'src/components/SkateCart/SkateCartToggle';
 import * as SkateCartSummary from 'src/components/SkateCart/SkateCartSummary';
@@ -34,7 +36,9 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['SkateProductList', { ...SkateProductList }],
   ['SkatePaymentMethod', { ...SkatePaymentMethod }],
   ['SkateBraintreePayment', { ...SkateBraintreePayment }],
+  ['SkateCheckoutStep', { ...SkateCheckoutStep }],
   ['SkateCheckoutSummaryAction', { ...SkateCheckoutSummaryAction }],
+  ['ShippingMethodForm', { ...ShippingMethodForm }],
   ['SkateMiniCart', { ...SkateMiniCart }],
   ['SkateCartToggle', { ...SkateCartToggle }],
   ['SkateCartSummary', { ...SkateCartSummary }],

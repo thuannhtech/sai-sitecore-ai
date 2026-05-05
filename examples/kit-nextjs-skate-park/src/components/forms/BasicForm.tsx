@@ -63,7 +63,7 @@ export default function BasicForm(props: BasicFormProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [formState, setFormState] = useState<Record<string, any>>({});
+  const formRef = React.useRef<HTMLFormElement>(null);
 
   // --- Helper để lấy giá trị field linh hoạt ---
   const getFieldValue = (item: any, fieldName: string): any => {
@@ -139,7 +139,7 @@ export default function BasicForm(props: BasicFormProps) {
 
     return {
       id: rootItem.id || '',
-      name: rootItem.name || rootItem.displayName || '',
+      name: rootItem?.fields?.Name?.value || rootItem.name || '',
       title: String(getFieldValue(rootItem, 'Title') || ''),
       endpoint: String(getFieldValue(rootItem, 'Endpoint') || ''),
       submitText: String(getFieldValue(rootItem, 'SubmitText') || 'Submit'),
@@ -166,24 +166,18 @@ export default function BasicForm(props: BasicFormProps) {
     }
   }, [initialFields, dataSourceId]);
 
-  const initialValues = useMemo(() => {
-    const iv: Record<string, any> = {};
-    formDef?.fields.forEach(f => {
-      iv[f.key] = f.type === 'checkbox' ? !!f.defaultValue : (f.defaultValue || '');
-    });
-    return iv;
-  }, [formDef]);
-
-  useEffect(() => {
-    setFormState(initialValues);
-  }, [initialValues]);
-
-  const onSubmit = async (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!formDef || !formDef.endpoint) {
-      setError("Form chưa cấu hình Endpoint nhận dữ liệu.");
-      return;
-    }
+    
+    // Check if external script (bridge) handled the submission
+    if (e.defaultPrevented) return;
+
+    // Extract data from the form using native FormData API
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+
+    // If no endpoint, do nothing (dumb form mode)
+    if (!formDef?.endpoint) return;
 
     setSubmitting(true);
     setError(null);
@@ -192,15 +186,15 @@ export default function BasicForm(props: BasicFormProps) {
       const res = await fetch(formDef.endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formState),
+        body: JSON.stringify(data),
       });
 
-      if (!res.ok) throw new Error('Gửi form thất bại.');
+      if (!res.ok) throw new Error('Submission failed.');
 
       if (formDef.successRedirect) {
         window.location.href = formDef.successRedirect;
       } else {
-        alert("Gửi thành công!");
+        alert("Success!");
       }
     } catch (err: any) {
       setError(err.message);
@@ -224,7 +218,7 @@ export default function BasicForm(props: BasicFormProps) {
   if (!formDef) return null;
 
   return (
-    <form onSubmit={onSubmit} className="sc-BasicForm space-y-6 max-w-lg mx-auto p-8 bg-white shadow-xl rounded-3xl border border-gray-100">
+    <form ref={formRef} name={formDef.name} onSubmit={onSubmit} className="sc-BasicForm space-y-6 max-w-lg mx-auto p-8 bg-white shadow-xl rounded-3xl border border-gray-100">
       {formDef.title && <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tight">{formDef.title}</h2>}
 
       {error && <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">{error}</div>}
@@ -241,16 +235,14 @@ export default function BasicForm(props: BasicFormProps) {
             {f.type === 'textarea' ? (
               <textarea
                 name={f.key}
-                value={formState[f.key] || ''}
-                onChange={(e) => setFormState({ ...formState, [f.key]: e.target.value })}
+                defaultValue={f.defaultValue}
                 placeholder={f.placeholder}
                 className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all min-h-[120px]"
               />
             ) : f.type === 'select' ? (
               <select
                 name={f.key}
-                value={formState[f.key] || ''}
-                onChange={(e) => setFormState({ ...formState, [f.key]: e.target.value })}
+                defaultValue={f.defaultValue}
                 className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
               >
                 <option value="">{f.placeholder || 'Chọn...'}</option>
@@ -260,8 +252,8 @@ export default function BasicForm(props: BasicFormProps) {
               <label className="flex items-center gap-3 cursor-pointer group">
                 <input
                   type="checkbox"
-                  checked={!!formState[f.key]}
-                  onChange={(e) => setFormState({ ...formState, [f.key]: e.target.checked })}
+                  name={f.key}
+                  defaultChecked={f.defaultValue === 'true' || f.defaultValue === '1'}
                   className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{f.helpText || f.label}</span>
@@ -274,8 +266,7 @@ export default function BasicForm(props: BasicFormProps) {
               <input
                 type={f.type}
                 name={f.key}
-                value={formState[f.key] || ''}
-                onChange={(e) => setFormState({ ...formState, [f.key]: e.target.value })}
+                defaultValue={f.defaultValue}
                 placeholder={f.placeholder}
                 className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
               />

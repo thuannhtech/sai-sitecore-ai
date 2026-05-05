@@ -4,7 +4,7 @@ import React, { useMemo, useEffect } from 'react';
 import * as Icons from 'lucide-react';
 import { Check } from 'lucide-react';
 import { ComponentProps } from 'lib/component-props';
-import { useSkatePaymentStore } from 'src/lib/payment/store';
+import { useSkateCheckoutStore } from 'src/lib/payment/store';
 import { PaymentMethodConfig, SkateBraintreePayment } from './SkateBraintreePayment';
 
 interface PaymentMethodFields {
@@ -35,7 +35,7 @@ interface SkatePaymentMethodProps extends ComponentProps {
 export const SkatePaymentMethod: React.FC<SkatePaymentMethodProps> = (props) => {
   const { fields, params } = props;
   const styles = `${params?.GridParameters || ''} ${params?.styles || ''}`.trim();
-  const { selectedMethodId, selectedMethodItemId, setSelectedMethodId, setActiveConfig } = useSkatePaymentStore();
+  const { selectedMethodId, selectedMethodItemId, setSelectedMethodId } = useSkateCheckoutStore();
 
   // 1. Transform Sitecore Data to App Logic
   const paymentOptions = useMemo(() => {
@@ -80,10 +80,10 @@ export const SkatePaymentMethod: React.FC<SkatePaymentMethodProps> = (props) => 
     paymentOptions.find(o => o.id === selectedMethodId),
     [paymentOptions, selectedMethodId]);
 
-  // Sync active config to store
+  // Sync active config to store - Removed setActiveConfig because we use selectedMethodItemId for backend config fetch
   useEffect(() => {
-    setActiveConfig(activeOption?.config || null);
-  }, [activeOption, setActiveConfig]);
+    // No-op or sync other metadata if needed
+  }, [activeOption]);
 
   // [Auto-Sync ID] Nếu đã chọn method nhưng ID Item còn rỗng (lúc vừa load trang)
   useEffect(() => {

@@ -20,7 +20,7 @@ export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout =
   const hasItems = cart && cart.items.length > 0;
 
   return (
-    <div className="bg-gray-50 rounded-2xl p-8 lg:sticky lg:top-8 border border-gray-100 shadow-sm h-full flex flex-col">
+    <div className="bg-gray-50 rounded-2xl p-8 lg:sticky lg:top-8 border border-gray-100 shadow-sm">
       <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2 uppercase tracking-tight">
         Order Summary
       </h2>
