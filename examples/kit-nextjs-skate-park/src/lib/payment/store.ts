@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { AddressInfo, ShippingMethodInfo } from './schema';
+import { AddressInfo, ShippingMethodInfo } from '../checkout/schema';
 
 /**
  * useSkateCheckoutStore
