@@ -129,83 +129,95 @@ const SkateCheckoutBridge = {
 
     // Logic xử lý khi click Place Order
     handlePlaceOrder(e) {
-        if (!window.SkateCheckoutStore || !window.SkateCartStore) {
-            console.error('Stores not found!');
-            return;
-        }
+        if (e) e.preventDefault();
+        if (!window.SkateCheckoutStore || !window.SkateCartStore) return;
 
         const checkoutState = window.SkateCheckoutStore.getState();
         const cartState = window.SkateCartStore.getState();
+        const selectedPaymentId = checkoutState.selectedMethodId;
 
-        // 1. Kiểm tra tính hợp lệ của dữ liệu Checkout
-        const validation = {
-            shipping: !!checkoutState.shippingAddress,
-            billing: !!checkoutState.billingAddress,
-            method: !!checkoutState.shippingMethod,
-            payment: !!checkoutState.selectedMethodId && (checkoutState.selectedMethodId !== 'braintree' || !!checkoutState.braintreeInstance)
+        // Hiệu ứng loading trên nút
+        const btn = e.target.closest(this.config.selectors.placeOrderBtn);
+        const originalText = btn.innerHTML;
+
+        const setBtnLoading = (isLoading, text = "PROCESSING...") => {
+            btn.disabled = isLoading;
+            btn.innerHTML = isLoading ? `<span class="animate-pulse">${text}</span>` : originalText;
         };
 
-        if (!validation.shipping || !validation.billing || !validation.method) {
-            alert("Vui lòng hoàn thành đầy đủ thông tin giao hàng, thanh toán và phương thức vận chuyển!");
-            console.warn("Place Order blocked - Incomplete data:", validation);
+        const proceedWithOrder = (transactionData = null) => {
+            const orderObject = {
+                orderDate: new Date().toISOString(),
+                shippingAddress: checkoutState.shippingAddress,
+                billingAddress: checkoutState.billingAddress,
+                shippingMethod: checkoutState.shippingMethod,
+                paymentMethod: {
+                    id: checkoutState.selectedMethodId,
+                    itemId: checkoutState.selectedMethodItemId
+                },
+                transaction: transactionData, // Lưu toàn bộ payload (nonce, details, deviceData...)
+                cart: {
+                    items: cartState.cart?.items || [],
+                    subtotal: cartState.cart?.subtotal || 0,
+                    itemCount: cartState.cart?.items?.length || 0
+                }
+            };
+
+            console.log("🚀 [BRIDGE] Submitting Order with Transaction:", orderObject);
+
+            setTimeout(() => {
+                const orderId = `SK-ORD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+                const orders = JSON.parse(localStorage.getItem('skate_orders') || '[]');
+
+                orderObject.orderId = orderId;
+                orders.push(orderObject);
+                localStorage.setItem('skate_orders', JSON.stringify(orders));
+
+                console.log("✅ [SUCCESS] Order saved:", orderId);
+
+                if (window.SkateCheckoutStore) window.SkateCheckoutStore.getState().resetCheckout();
+                if (window.SkateCartStore) {
+                    window.SkateCartStore.getState().clearCart();
+                    localStorage.removeItem('skate_mock_cart');
+                }
+
+                setTimeout(() => {
+                    window.location.href = `/thank-you?token=${orderId}`;
+                }, 100);
+            }, 2000);
+        };
+
+        // 1. Kiểm tra validation cơ bản
+        if (!checkoutState.shippingAddress || !checkoutState.billingAddress || !checkoutState.shippingMethod) {
+            alert("Vui lòng hoàn thành đầy đủ thông tin giao hàng và phương thức vận chuyển!");
             return;
         }
 
-        // 2. Gom tất cả thông tin thành một Order Object
-        const orderObject = {
-            orderDate: new Date().toISOString(),
-            shippingAddress: checkoutState.shippingAddress,
-            billingAddress: checkoutState.billingAddress,
-            shippingMethod: checkoutState.shippingMethod,
-            paymentMethod: {
-                id: checkoutState.selectedMethodId,
-                itemId: checkoutState.selectedMethodItemId
-            },
-            cart: {
-                items: cartState.cart?.items || [],
-                subtotal: cartState.cart?.subtotal || 0,
-                itemCount: cartState.cart?.items?.length || 0
+        // 2. Xử lý thanh toán
+        if (selectedPaymentId === 'braintree') {
+            if (!window.SkateBraintreeInstance) {
+                alert("Vui lòng nhập thông tin thẻ trước khi đặt hàng.");
+                return;
             }
-        };
 
-        // 3. Log kết quả (Theo yêu cầu của anh)
-        console.log("🚀 [PLACE ORDER] Final Order Object ready for API:", orderObject);
+            setBtnLoading(true, "AUTHORIZING...");
 
-        // Hiệu ứng loading giả lập
-        const btn = e.target.closest(this.config.selectors.placeOrderBtn);
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="animate-pulse">PROCESSING...</span>';
-        btn.disabled = true;
+            window.SkateBraintreeInstance.requestPaymentMethod((err, payload) => {
+                if (err) {
+                    console.error('Braintree Error:', err);
+                    setBtnLoading(false);
+                    alert("Lỗi xác thực thẻ: " + err.message);
+                    return;
+                }
 
-        debugger
-
-        // Giả lập gọi API thành công sau 2s
-        setTimeout(() => {
-            const orderId = `SK-ORD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-            const orders = JSON.parse(localStorage.getItem('skate_orders') || '[]');
-            
-            // Thêm mã đơn hàng vào object
-            orderObject.orderId = orderId;
-            orders.push(orderObject);
-            
-            // Lưu vào localStorage
-            localStorage.setItem('skate_orders', JSON.stringify(orders));
-
-            console.log("✅ [SUCCESS] Order saved to localStorage:", orderId);
-            
-            // Reset stores & Clear Persistence
-            if (window.SkateCheckoutStore) window.SkateCheckoutStore.getState().resetCheckout();
-            if (window.SkateCartStore) {
-                window.SkateCartStore.getState().clearCart();
-                // Xóa chính xác key của Mock Service
-                localStorage.removeItem('skate_mock_cart');
-            }
-            
-            // Delay cực ngắn để đảm bảo Browser ghi nhận việc xóa Storage
-            setTimeout(() => {
-                window.location.href = `/thank-you?token=${orderId}`;
-            }, 100);
-        }, 2000);
+                console.log('✅ [BRIDGE] Braintree Payload Received:', payload);
+                setBtnLoading(true, "FINALIZING...");
+                proceedWithOrder(payload); // Truyền toàn bộ payload
+            });
+        } else {
+            setBtnLoading(true);
+            proceedWithOrder();
+        }
     },
 
     // 4. Handle Form Submission

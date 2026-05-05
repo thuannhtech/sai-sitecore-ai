@@ -70,8 +70,12 @@ export const SkateBraintreePayment: React.FC<SkateBraintreePaymentProps> = ({ co
           paypal: { flow: 'vault' }
         });
 
+        // C. Chia sẻ instance ra window để checkout.js có thể gọi
+        (window as any).SkateBraintreeInstance = instance;
+
         if (isDestroyed) {
           instance.teardown();
+          (window as any).SkateBraintreeInstance = null;
           return;
         }
 
