@@ -10,9 +10,15 @@ import { NextIntlClientProvider } from "next-intl";
 import { setRequestLocale, getMessages } from "next-intl/server";
 import components from ".sitecore/component-map";
 import { isDesignLibraryPreviewData } from "@sitecore-content-sdk/nextjs/editing";
+import { routing } from "src/i18n/routing";
+import scConfig from "sitecore.config";
+import sites from ".sitecore/sites.json";
 
 // 1. ISR: Revalidate every 60 seconds
 export const revalidate = 60;
+
+// Allow dynamic rendering for paths not pre-generated (e.g. new products added after build)
+export const dynamicParams = true;
 
 interface ProductPageProps {
   params: Promise<{
@@ -26,27 +32,37 @@ interface ProductPageProps {
 }
 
 /**
- * generateStaticParams: Fetch all product names from Sitecore to pre-render static pages.
- * Note: In multi-site/multi-locale, you'd iterate over all sites/locales.
+ * generateStaticParams: Cần trả về ĐẦY ĐỦ { site, locale, slug } cho route [site]/[locale]/products/[slug].
+ * Vì [site]/layout.tsx không có generateStaticParams, Next.js không tự propagate site/locale
+ * xuống cho trang con. Ta phải tự resolve tất cả các tham số dynamic.
  */
-export async function generateStaticParams({
-  params
-}: {
-  params: Promise<{ site: string; locale: string }> | { site: string; locale: string }
-}) {
+export async function generateStaticParams(): Promise<{ site: string; locale: string; slug: string }[]> {
   try {
-    // Next.js 15: params có thể là Promise, ta await để đảm bảo an toàn
-    const resolvedParams = await params;
-    const locale = resolvedParams?.locale || 'en';
+    // Lấy tên site mặc định từ config hoặc sites.json
+    const defaultSiteName = scConfig.defaultSite || (sites as any[])[0]?.name;
+    if (!defaultSiteName) {
+      console.warn('[generateStaticParams/products] No site name found, skipping static generation.');
+      return [];
+    }
 
-    // Truyền locale từ URL vào, giữ nguyên rootPath (undefined) và truyền tham số first = 200
-    const slugs = await getAllProductSlugs(locale, undefined, 200);
+    const locales = routing.locales.slice();
+    const allParams: { site: string; locale: string; slug: string }[] = [];
 
-    return slugs.map((slug: any) => ({
-      slug,
-    }));
+    for (const locale of locales) {
+      try {
+        const slugs = await getAllProductSlugs(locale, undefined, 200);
+        for (const slug of slugs) {
+          allParams.push({ site: defaultSiteName, locale, slug });
+        }
+      } catch (localeError) {
+        console.error(`[generateStaticParams/products] Error fetching slugs for locale ${locale}:`, localeError);
+      }
+    }
+
+    console.log(`[generateStaticParams/products] Generated ${allParams.length} static product paths.`);
+    return allParams;
   } catch (error) {
-    console.error('Error generating static params:', error);
+    console.error('[generateStaticParams/products] Fatal error, returning empty:', error);
     return [];
   }
 }
@@ -113,17 +129,40 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   }
 
   // 4. Fetch Layout Data từ Sitecore JSS (Hỗ trợ Preview Mode trong Sitecore Pages)
-  const [page, messages] = await Promise.all([
-    draft.isEnabled
-      ? isDesignLibraryPreviewData(editingParams)
-        ? client.getDesignLibraryData(editingParams)
-        : client.getPreview(editingParams)
-      : client.getPage(['products', '-'], { site, locale }), // Ở môi trường Live, gọi layout wildcard
-    getMessages(),
-  ]);
+  // Dùng try-catch vì client.getPage() có thể THROW (không chỉ return null)
+  // khi Sitecore API không khả dụng → gây ra 500 nếu không bắt.
+  let page: Awaited<ReturnType<typeof client.getPage>> | null = null;
+  let messages: Awaited<ReturnType<typeof getMessages>>;
+
+  try {
+    const results = await Promise.all([
+      draft.isEnabled
+        ? isDesignLibraryPreviewData(editingParams)
+          ? client.getDesignLibraryData(editingParams)
+          : client.getPreview(editingParams)
+        : client.getPage(['products', '-'], { site, locale }),
+      getMessages(),
+    ]);
+    page = results[0];
+    messages = results[1];
+  } catch (layoutError) {
+    console.error('[ProductPage] Failed to fetch Sitecore layout, falling back to pure render:', layoutError);
+    // Lấy messages riêng nếu layout fetch thất bại
+    try {
+      messages = await getMessages();
+    } catch {
+      messages = {} as any;
+    }
+    // Fallback: render pure component khi layout không available
+    return (
+      <main className="min-h-screen bg-white">
+        <SkateProductDetail product={product} />
+      </main>
+    );
+  }
 
   if (!page) {
-    // Fallback: render pure component nếu mất kết nối layout
+    // Fallback: render pure component nếu layout trả về null
     return (
       <main className="min-h-screen bg-white">
         <SkateProductDetail product={product} />
