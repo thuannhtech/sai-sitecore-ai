@@ -7,7 +7,7 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
     const page = Number(searchParams.get('page') ?? '1')
-    const pageSize = Number(searchParams.get('pageSize') ?? '6')
+    const pageSize = Number(searchParams.get('pageSize') ?? '8')
     const q = (searchParams.get('q') ?? '').toLowerCase()
     const sort = searchParams.get('sort') ?? 'name-asc'
     const locale = searchParams.get('locale') ?? 'en'

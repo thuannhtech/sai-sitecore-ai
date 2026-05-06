@@ -99,11 +99,11 @@ export const Default = (props: SkateProductDetailProps): JSX.Element => {
 
             {/* Description */}
             <div className="prose prose-blue prose-lg max-w-none mb-12 text-gray-600 leading-relaxed">
-              <div dangerouslySetInnerHTML={{ __html: product.descriptionHtml }} />
+              <div dangerouslySetInnerHTML={{ __html: product?.descriptionHtml || 'No description available' }} />
             </div>
 
             <div className="space-y-6 mt-auto">
-              <SkateAddToCartButton 
+              <SkateAddToCartButton
                 product={{
                   id: product?.modelName || 'pdp-mock',
                   name: product?.modelName || 'Product',
