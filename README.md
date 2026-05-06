@@ -1,10 +1,10 @@
 # XM Cloud Front End Application Starter Kits  
 
-This repository contains multiple Next.js Starter Kits, and the SPA Starters monorepo (which includes a Node Proxy Application and and SPA starter apps) for Sitecore XM Cloud Development. It is intended to get developers up and running quickly with a new front end project that is integrated with Sitecore XM Cloud. 
+This repository contains multiple Next.js Starter Kits, and the SPA Starters monorepo (which includes a Node Proxy Application and and SPA starter apps) for Sitecore XM Cloud Development. It is intended to get developers up and running quickly with a new front end project that is integrated with Sitecore XM Cloud.  
 
 [Deploying XM Cloud](https://doc.sitecore.com/xmc/en/developers/xm-cloud/deploying-xm-cloud.html)
 
-Here's a quick overview of the major folders and their purpose:
+Here's a quick overview of the major folders and their purpose: 
 
   - `/examples`:
   Contains starter front-end applications. Each subfolder is a working app

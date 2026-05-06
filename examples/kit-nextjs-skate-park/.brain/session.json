@@ -1,23 +1,37 @@
 {
-  "updated_at": "2026-03-16T20:25:00Z",
+  "updated_at": "2026-05-05T08:10:00Z",
   "working_on": {
-    "feature": "Discovery & Strategy",
-    "task": "Finalizing Implementation Plan (v2.0)",
-    "status": "Completed",
-    "notes": "Project brief, master plan, and component mappings for Home/Blog are ready."
+    "feature": "Checkout Flow Optimization",
+    "task": "Shipping Address Bridge & Summary",
+    "status": "completed",
+    "files": [
+      "src/components/forms/BasicForm.tsx",
+      "public/storefront/js/checkout.js",
+      "src/components/SkateCheckoutStep/SkateCheckoutStep.tsx"
+    ],
+    "notes": "System is stable. Refactored to Uncontrolled Components to fix all bridge-related bugs."
   },
   "pending_tasks": [
-    { "task": "Phase 01: Setup OrderCloud SDK & Environment", "priority": "high" },
-    { "task": "Phase 02: Build TailstoreHeader & TailstoreFooter", "priority": "high" },
-    { "task": "Phase 03: Build TailstoreBlogSearchResults using Search mock", "priority": "medium" }
+    { "task": "Implement Billing Address bridge logic", "priority": "medium" },
+    { "task": "Implement Shipping Method bridge logic", "priority": "medium" },
+    { "task": "Payment Method integration", "priority": "high" }
   ],
   "recent_changes": [
-    { "type": "plan", "description": "Restructured project into 6 phases including Braintree and Search", "files": ["plans/260316-tailstore-headless/plan.md"] },
-    { "type": "mapping", "description": "Applied Tailstore* naming prefix to all mappings and plans", "files": ["docs/HOMEPAGE_MAPPING.md", "docs/BLOG_MAPPING.md"] },
-    { "type": "docs", "description": "Updated Project Brief with Payment and Search focus", "files": ["docs/BRIEF.md"] }
+    {
+      "type": "architecture",
+      "description": "Switched BasicForm to Uncontrolled architecture (FormData + defaultValue).",
+      "impact": "Eliminated state-sync bugs and stale closures when bridging with Vanilla JS."
+    },
+    {
+      "type": "feature",
+      "description": "Implemented Edit/Cancel/Revert logic in checkout.js",
+      "impact": "Professional UX with data protection on cancel."
+    }
   ],
   "decisions_made": [
-    { "decision": "Separate Blog into Phase 03 with Search focus", "reason": "Better scalability" },
-    { "decision": "Add Braintree Payment in Phase 05", "reason": "Revenue critical" }
+    {
+      "decision": "Use Uncontrolled Components for Sitecore BasicForms",
+      "reason": "React's controlled state is too difficult to sync reliably with external scripts that manipulate the DOM directly."
+    }
   ]
 }
