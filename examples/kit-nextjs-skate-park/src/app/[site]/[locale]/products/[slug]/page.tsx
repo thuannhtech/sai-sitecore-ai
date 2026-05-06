@@ -129,40 +129,57 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   }
 
   // 4. Fetch Layout Data từ Sitecore JSS (Hỗ trợ Preview Mode trong Sitecore Pages)
-  // Dùng try-catch vì client.getPage() có thể THROW (không chỉ return null)
-  // khi Sitecore API không khả dụng → gây ra 500 nếu không bắt.
+  // Sitecore Content SDK v1.x (Edge API) có thể resolve wildcard '*' khác với
+  // JSS convention cũ dùng '-'. Thử cả hai để tương thích.
   let page: Awaited<ReturnType<typeof client.getPage>> | null = null;
   let messages: Awaited<ReturnType<typeof getMessages>>;
 
   try {
-    const results = await Promise.all([
-      draft.isEnabled
-        ? isDesignLibraryPreviewData(editingParams)
-          ? client.getDesignLibraryData(editingParams)
-          : client.getPreview(editingParams)
-        : client.getPage(['products', '-'], { site, locale }),
-      getMessages(),
-    ]);
-    page = results[0];
-    messages = results[1];
-  } catch (layoutError) {
-    console.error('[ProductPage] Failed to fetch Sitecore layout, falling back to pure render:', layoutError);
-    // Lấy messages riêng nếu layout fetch thất bại
+    messages = await getMessages();
+  } catch {
+    messages = {} as any;
+  }
+
+  if (draft.isEnabled) {
+    // Preview mode: lấy layout từ Sitecore Pages Editor
     try {
-      messages = await getMessages();
-    } catch {
-      messages = {} as any;
+      page = isDesignLibraryPreviewData(editingParams)
+        ? await client.getDesignLibraryData(editingParams)
+        : await client.getPreview(editingParams);
+    } catch (previewError) {
+      console.error('[ProductPage] Preview layout fetch failed:', previewError);
     }
-    // Fallback: render pure component khi layout không available
-    return (
-      <main className="min-h-screen bg-white">
-        <SkateProductDetail product={product} />
-      </main>
-    );
+  } else {
+    // Live mode: thử lần lượt các đường dẫn wildcard
+    // Sitecore item '*' có thể được truy cập qua '*' (Content SDK v1.x Edge) hoặc '-' (JSS classic)
+    const wildcardPaths: string[][] = [
+      ['products', '*'],  // Tên item thực trong Sitecore (wildcard)
+      ['products', '-'],  // Quy ước JSS cũ (dash thay cho wildcard)
+    ];
+
+    for (const wildcardPath of wildcardPaths) {
+      try {
+        const candidate = await client.getPage(wildcardPath, { site, locale });
+        if (candidate) {
+          console.log(`[ProductPage] ✓ Layout found at /${wildcardPath.join('/')} (site=${site}, locale=${locale})`);
+          page = candidate;
+          break;
+        }
+        console.warn(`[ProductPage] ✗ No layout at /${wildcardPath.join('/')} (site=${site}, locale=${locale}) - returned null`);
+      } catch (pathError) {
+        console.error(`[ProductPage] ✗ Error fetching layout at /${wildcardPath.join('/')}:`, pathError);
+      }
+    }
+
+    if (!page) {
+      console.error(`[ProductPage] All wildcard paths failed for slug="${slug}", site="${site}", locale="${locale}". Rendering without Sitecore layout.`);
+    }
   }
 
   if (!page) {
-    // Fallback: render pure component nếu layout trả về null
+    // Fallback: render pure component nếu tất cả layout paths đều thất bại.
+    // Header/footer sẽ không hiện vì chúng được render từ Sitecore placeholders.
+    // Kiểm tra Vercel logs để xem wildcard path nào bị lỗi.
     return (
       <main className="min-h-screen bg-white">
         <SkateProductDetail product={product} />
