@@ -48,6 +48,9 @@ export const LanguageSwitcher: React.FC = () => {
           <option value="en">English</option>
           <option value="ja-JP">Japanese</option>
           <option value="vi-VN">Vietnamese</option>
+          <option value="es-MX">Spanish (Mexico)</option>
+          <option value="fr-FR">French</option>
+          <option value="ko-KR">Korean</option>
         </select>
       </div>
     </div>

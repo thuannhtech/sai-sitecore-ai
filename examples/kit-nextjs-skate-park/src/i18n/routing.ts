@@ -3,7 +3,7 @@ import sitecoreConfig from 'sitecore.config';
 
 export const routing = defineRouting({
   // A list of all locales that are supported
-  locales: [sitecoreConfig.defaultLanguage, 'ja-JP', 'vi-VN'],
+  locales: [sitecoreConfig.defaultLanguage, 'ja-JP', 'vi-VN', 'es-MX', 'fr-FR', 'ko-KR'],
 
   // Used when no locale matches
   defaultLocale: sitecoreConfig.defaultLanguage,
