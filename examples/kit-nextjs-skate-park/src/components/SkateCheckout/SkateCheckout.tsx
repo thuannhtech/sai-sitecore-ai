@@ -22,12 +22,12 @@ export const Default = (props: SkateCheckoutProps): JSX.Element => {
       <div className="container mx-auto px-4">
 
         {/* Header */}
-        <div className="mb-12">
+        <div className="mb-12 mt-5">
           <Link
             href="/cart"
-            className="inline-flex items-center gap-2 text-xs font-black text-gray-400 hover:text-blue-600 transition-colors group uppercase tracking-widest mb-4"
+            className="inline-flex items-center gap-2 text-md font-black text-gray-400 hover:text-blue-600 transition-colors group tracking-widest mb-4"
           >
-            <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+            <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" />
             Back to cart
           </Link>
           <h1 className="text-4xl font-black text-gray-900 tracking-tight uppercase">

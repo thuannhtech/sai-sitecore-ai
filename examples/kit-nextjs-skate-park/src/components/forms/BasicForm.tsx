@@ -38,6 +38,7 @@ type FormDefinition = {
   secondaryButtonUrl?: string;
   successRedirect: string | null;
   fields: FormField[];
+  script?: string;
 };
 
 interface BasicFormProps {
@@ -137,6 +138,9 @@ export default function BasicForm(props: BasicFormProps) {
       };
     });
 
+    const script = rootItem?.fields?.Script?.value || '';
+    console.log("script", script);
+
     return {
       id: rootItem.id || '',
       name: rootItem?.fields?.Name?.value || rootItem.name || '',
@@ -147,6 +151,7 @@ export default function BasicForm(props: BasicFormProps) {
       secondaryButtonUrl: String(getFieldValue(rootItem, 'SecondaryButtonUrl') || ''),
       successRedirect: getFieldValue(rootItem, 'SuccessRedirect')?.href || null,
       fields: mappedFields,
+      script: script,
     };
   };
 
@@ -154,6 +159,7 @@ export default function BasicForm(props: BasicFormProps) {
     if (initialFields) {
       const def = transformForm(initialFields);
       if (def) {
+        console.log("def", def);
         setFormDef(def);
         setError(null);
       } else {
@@ -220,86 +226,136 @@ export default function BasicForm(props: BasicFormProps) {
   // Lấy dữ liệu đã lưu trong session cho form này (nếu có)
   const savedData = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem(`checkout_form_${formDef.name}`) || '{}') : {};
 
+  console.log("formDef", formDef);
+
   return (
-    <form ref={formRef} name={formDef.name} onSubmit={onSubmit} className="sc-BasicForm space-y-6 max-w-lg mx-auto p-8 bg-white shadow-xl rounded-3xl border border-gray-100">
-      {formDef.title && <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tight">{formDef.title}</h2>}
+    <>
+      <form ref={formRef} name={formDef.name} onSubmit={onSubmit} className="sc-BasicForm space-y-6 max-w-lg mx-auto p-8 bg-white shadow-xl rounded-3xl border border-gray-100">
+        {formDef.title && <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tight">{formDef.title}</h2>}
 
-      {error && <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">{error}</div>}
+        {error && <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">{error}</div>}
 
-      <div className="space-y-4">
-        {formDef.fields.map((f) => {
-          const val = savedData[f.key] || f.defaultValue;
+        <div className="space-y-4">
+          {formDef.fields.map((f) => {
+            const val = savedData[f.key] || f.defaultValue;
 
-          return (
-            <div key={f.key} className="flex flex-col gap-1.5">
-              {f.type !== 'link' && (
-                <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">
-                  {f.label} {f.required && <span className="text-red-500">*</span>}
-                </label>
-              )}
+            return (
+              <div key={f.key} className="flex flex-col gap-1.5">
+                {f.type !== 'link' && (
+                  <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">
+                    {f.label} {f.required && <span className="text-red-500">*</span>}
+                  </label>
+                )}
 
-              {f.type === 'textarea' ? (
-                <textarea
-                  name={f.key}
-                  defaultValue={val}
-                  placeholder={f.placeholder}
-                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all min-h-[120px]"
-                />
-              ) : f.type === 'select' ? (
-                <select
-                  name={f.key}
-                  defaultValue={val}
-                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
-                >
-                  <option value="">{f.placeholder || 'Chọn...'}</option>
-                  {f.options?.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                </select>
-              ) : f.type === 'checkbox' ? (
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <input
-                    type="checkbox"
+                {f.type === 'textarea' ? (
+                  <textarea
                     name={f.key}
-                    defaultChecked={val === 'true' || val === '1' || val === true}
-                    className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    defaultValue={val}
+                    placeholder={f.placeholder}
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all min-h-[120px]"
                   />
-                  <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{f.helpText || f.label}</span>
-                </label>
-              ) : f.type === 'link' ? (
-                <a href={f.defaultValue} className="text-blue-600 hover:underline font-bold text-sm">
-                  {f.label || f.key}
-                </a>
-              ) : (
-                <input
-                  type={f.type}
-                  name={f.key}
-                  defaultValue={val}
-                  placeholder={f.placeholder}
-                  className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                />
-              )}
-            </div>
-          );
-        })}
-      </div>
+                ) : f.type === 'select' ? (
+                  <select
+                    name={f.key}
+                    defaultValue={val}
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
+                  >
+                    <option value="">{f.placeholder || 'Chọn...'}</option>
+                    {f.options?.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                  </select>
+                ) : f.type === 'checkbox' ? (
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      name={f.key}
+                      defaultChecked={val === 'true' || val === '1' || val === true}
+                      className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{f.helpText || f.label}</span>
+                  </label>
+                ) : f.type === 'link' ? (
+                  <a href={f.defaultValue} className="text-blue-600 hover:underline font-bold text-sm">
+                    {f.label || f.key}
+                  </a>
+                ) : (
+                  <input
+                    type={f.type}
+                    name={f.key}
+                    defaultValue={val}
+                    placeholder={f.placeholder}
+                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
 
-      <div className="pt-4 flex flex-col gap-3">
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full py-4 bg-gray-900 text-white font-black uppercase tracking-widest rounded-2xl hover:bg-blue-600 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200"
-        >
-          {submitting ? 'Đang gửi...' : formDef.submitText}
-        </button>
-
-        {formDef.secondaryButtonText && (
-          <a
-            href={formDef.secondaryButtonUrl || '#'}
-            className="w-full py-4 bg-white text-gray-900 border border-gray-200 font-bold uppercase tracking-widest rounded-2xl hover:bg-gray-50 text-center transition-all"
+        <div className="pt-4 flex flex-col gap-3">
+          <button
+            type="submit"
+            disabled={submitting}
+            className="cursor-pointer w-full py-4 bg-gray-900 text-white font-black uppercase tracking-widest rounded-2xl hover:bg-blue-600 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200"
           >
-            {formDef.secondaryButtonText}
-          </a>
-        )}
+            {submitting ? 'Sending...' : formDef.submitText}
+          </button>
+
+          {formDef.secondaryButtonText && (
+            <a
+              href={formDef.secondaryButtonUrl || '#'}
+              className="w-full py-4 bg-white text-gray-900 border border-gray-200 font-bold uppercase tracking-widest rounded-2xl hover:bg-gray-50 text-center transition-all"
+            >
+              {formDef.secondaryButtonText}
+            </a>
+          )}
+        </div>
+      </form>
+      <div className='hidden-debug'>
+        {formDef.script && <RawHtmlInjector htmlString={formDef.script} />}
       </div>
-    </form>
+
+    </>
   );
+}
+
+// Component helper để nhúng an toàn HTML chứa cả <style> và <script>
+function RawHtmlInjector({ htmlString }: { htmlString: string }) {
+  console.log("RawHtmlInjector", htmlString);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  // Xử lý unescape nếu chuỗi bị bọc trong dấu ngoặc kép (do JSON serialize)
+  let cleanHtml = htmlString;
+  if (typeof cleanHtml === 'string') {
+    if (cleanHtml.startsWith('"') && cleanHtml.endsWith('"')) {
+      try { cleanHtml = JSON.parse(cleanHtml); } catch (e) { }
+    }
+
+    // Giải mã (Unescape) HTML Entities do Sitecore có thể encode chuỗi nhập vào
+    cleanHtml = cleanHtml
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&amp;/g, '&');
+
+    // Chuyển \n \t thành ký tự thực (nếu đang là chuỗi literal)
+    cleanHtml = cleanHtml.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+  }
+
+  React.useEffect(() => {
+    console.log("RawHtmlInjector received cleanHtml:", cleanHtml);
+    if (!containerRef.current || !cleanHtml) return;
+
+    // Tìm tất cả các thẻ <script> bên trong chuỗi HTML vừa nhúng
+    const scripts = containerRef.current.querySelectorAll('script');
+    scripts.forEach((oldScript) => {
+      // Trình duyệt không chạy script nhúng qua innerHTML, ta phải clone nó ra thẻ mới
+      const newScript = document.createElement('script');
+      Array.from(oldScript.attributes).forEach((attr) => newScript.setAttribute(attr.name, attr.value));
+      newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+      oldScript.parentNode?.replaceChild(newScript, oldScript);
+    });
+  }, [cleanHtml]);
+
+  return <div ref={containerRef} dangerouslySetInnerHTML={{ __html: cleanHtml }} />;
 }

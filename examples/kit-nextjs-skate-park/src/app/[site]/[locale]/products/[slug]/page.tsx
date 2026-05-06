@@ -29,10 +29,19 @@ interface ProductPageProps {
  * generateStaticParams: Fetch all product names from Sitecore to pre-render static pages.
  * Note: In multi-site/multi-locale, you'd iterate over all sites/locales.
  */
-export async function generateStaticParams() {
+export async function generateStaticParams({
+  params
+}: {
+  params: Promise<{ site: string; locale: string }> | { site: string; locale: string }
+}) {
   try {
-    const slugs = await getAllProductSlugs();
-    // Return slugs. Site and locale can be dynamic at runtime or pre-defined here.
+    // Next.js 15: params có thể là Promise, ta await để đảm bảo an toàn
+    const resolvedParams = await params;
+    const locale = resolvedParams?.locale || 'en';
+
+    // Truyền locale từ URL vào, giữ nguyên rootPath (undefined) và truyền tham số first = 200
+    const slugs = await getAllProductSlugs(locale, undefined, 200);
+
     return slugs.map((slug: any) => ({
       slug,
     }));

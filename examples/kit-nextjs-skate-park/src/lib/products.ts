@@ -54,11 +54,11 @@ export async function getDynamicProductsRoot(language = DEFAULT_LANGUAGE): Promi
   }
 }
 
-export async function getAllProducts(language = DEFAULT_LANGUAGE, path = PRODUCTS_ROOT_PATH): Promise<ProductCard[]> {
+export async function getAllProducts(language = DEFAULT_LANGUAGE, path = PRODUCTS_ROOT_PATH, first = 100): Promise<ProductCard[]> {
   const query = `
-    query Products($path: String!, $language: String!) {
+    query Products($path: String!, $language: String!, $first: Int) {
       item(path: $path, language: $language) {
-        children {
+        children(first: $first) {
           results {
             id
             name
@@ -71,8 +71,11 @@ export async function getAllProducts(language = DEFAULT_LANGUAGE, path = PRODUCT
       }
     }
   `;
-  const data = await client.getData<{ item: any }>(query, { path, language });
+  const data = await client.getData<{ item: any }>(query, { path, language, first });
   const results = data?.item?.children?.results || [];
+
+  console.log("response DATA results", results);
+
   return results.map((r: any) => {
     let imageUrl = '';
     if (Array.isArray(r?.images?.jsonValue)) {
@@ -155,15 +158,15 @@ export async function getProductBySlug(slug: string | undefined, language = DEFA
   console.log("response DATA", i);
 
   let images: string[] = [];
-  
+
   // 1. Nếu jsonValue là một mảng trực tiếp (trường hợp TreeList/Multilist trỏ tới Media Items)
   if (Array.isArray(i?.images?.jsonValue)) {
     images = i.images.jsonValue.map((img: any) => img.url).filter(Boolean);
-  } 
+  }
   // 2. Nếu trả về targetItems
   else if (Array.isArray(i?.images?.targetItems) && i.images.targetItems.length > 0) {
     images = i.images.targetItems.map((target: any) => target.url?.path).filter(Boolean);
-  } 
+  }
   // 3. Fallback trường hợp cấu trúc cũ (jsonValue.value)
   else if (Array.isArray(i?.images?.jsonValue?.value)) {
     images = i.images.jsonValue.value.map((img: any) => img.src).filter(Boolean);
@@ -185,11 +188,11 @@ export async function getProductBySlug(slug: string | undefined, language = DEFA
 }
 
 
-export async function getAllProductSlugs(language = DEFAULT_LANGUAGE, rootPath = PRODUCTS_ROOT_PATH) {
+export async function getAllProductSlugs(language = DEFAULT_LANGUAGE, rootPath = PRODUCTS_ROOT_PATH, first = 100) {
   const query = `
-    query Products($path: String!, $language: String!) {
+    query Products($path: String!, $language: String!, $first: Int) {
       item(path: $path, language: $language) {
-        children {
+        children(first: $first) {
           results {
             name
           }
@@ -197,7 +200,7 @@ export async function getAllProductSlugs(language = DEFAULT_LANGUAGE, rootPath =
       }
     }
   `;
-  const data = await client.getData<{ item: any }>(query, { path: rootPath, language });
+  const data = await client.getData<{ item: any }>(query, { path: rootPath, language, first });
   const results = data?.item?.children?.results || [];
   return results.map((r: any) => r.name);
 }

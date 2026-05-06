@@ -63,11 +63,15 @@ export const SkateMiniCart: React.FC = () => {
               {cart.items.map((item) => (
                 <div key={item.id} className="flex gap-4">
                   <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-gray-50 border border-gray-100">
-                    <img
-                      src={item.imageUrl || '/placeholder.png'}
-                      alt={item.name}
-                      className="h-full w-full object-cover"
-                    />
+                    {item.imageUrl ? (
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-300 text-[15px] font-medium text-center leading-tight">No Image</div>
+                    )}
                   </div>
                   <div className="flex flex-1 flex-col justify-between py-1">
                     <div>

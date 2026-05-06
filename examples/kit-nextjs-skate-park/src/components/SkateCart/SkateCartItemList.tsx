@@ -65,11 +65,15 @@ export const SkateCartItemList: React.FC = () => {
             {/* Product Info */}
             <div className="col-span-1 md:col-span-6 flex items-center gap-6">
               <div className="relative w-24 h-24 shrink-0 overflow-hidden rounded-2xl bg-gray-50 border border-gray-100 group-hover:scale-105 transition-transform">
-                <img
-                  src={item.imageUrl || '/placeholder.png'}
-                  alt={item.name}
-                  className="w-full h-full object-cover"
-                />
+                {item.imageUrl ? (
+                  <img
+                    src={item.imageUrl}
+                    alt={item.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-300 text-[15px] font-medium text-center leading-tight">No Image</div>
+                )}
               </div>
               <div>
                 <h3 className="text-lg font-bold text-gray-900 leading-tight mb-1">{item.name}</h3>
