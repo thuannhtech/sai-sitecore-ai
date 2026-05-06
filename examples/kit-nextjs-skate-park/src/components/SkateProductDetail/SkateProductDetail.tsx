@@ -22,7 +22,8 @@ interface SkateProductDetailProps {
  */
 export const Default = (props: SkateProductDetailProps): JSX.Element => {
 
-  const { params, product } = props;
+  const product = props.product || props.fields?.product;
+  const { params } = props;
 
   console.log("props rendering", props);
 
@@ -45,7 +46,7 @@ export const Default = (props: SkateProductDetailProps): JSX.Element => {
             <div className="aspect-[4/5] sm:aspect-square bg-gray-50 rounded-[2.5rem] overflow-hidden border border-gray-100 shadow-inner group">
               {product?.images?.length > 0 ? (
                 <img
-                  src={product?.images[0]}
+                  src={product?.images[0] as string}
                   alt={product?.modelName}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                 />
@@ -60,7 +61,7 @@ export const Default = (props: SkateProductDetailProps): JSX.Element => {
             {/* Thumbnails */}
             {product?.images?.length > 1 && (
               <div className="grid grid-cols-4 gap-4 px-2">
-                {product?.images?.slice(0, 4).map((img, i) => (
+                {product?.images?.slice(0, 4).map((img: any, i: number) => (
                   <div key={i} className={`aspect-square rounded-2xl overflow-hidden border-2 transition-all cursor-pointer ${i === 0 ? 'border-blue-500 ring-2 ring-blue-50' : 'border-gray-50 hover:border-gray-200'}`}>
                     <img src={img} className="w-full h-full object-cover" alt={`${product?.modelName} thumbnail ${i + 1}`} />
                   </div>

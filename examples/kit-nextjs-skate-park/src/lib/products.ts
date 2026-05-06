@@ -21,8 +21,10 @@ export type ProductDetail = {
   descriptionPlain: string;
   price: number;
   quantity: number;
-  images: string[];
+  images: any;
   orderCloudId?: string;
+  status?: string;
+  createdDate?: string;
 };
 
 export async function getDynamicProductsRoot(language = DEFAULT_LANGUAGE): Promise<string> {
@@ -71,20 +73,31 @@ export async function getAllProducts(language = DEFAULT_LANGUAGE, path = PRODUCT
   `;
   const data = await client.getData<{ item: any }>(query, { path, language });
   const results = data?.item?.children?.results || [];
-  return results.map((r: any) => ({
-    id: r.id,
-    slug: r.name,
-    modelName: r?.modelName?.value || r.name,
-    price: r?.price?.value ? parseFloat(r.price.value) : 0,
-    description: r?.description?.value ? r.description.value.replace(/<[^>]*>/g, ' ').slice(0, 150) : '',
-    imageUrl: r?.images?.jsonValue?.value?.[0]?.src || '',
-  }));
+  return results.map((r: any) => {
+    let imageUrl = '';
+    if (Array.isArray(r?.images?.jsonValue)) {
+      imageUrl = r.images.jsonValue[0]?.url || '';
+    } else if (Array.isArray(r?.images?.targetItems) && r.images.targetItems.length > 0) {
+      imageUrl = r.images.targetItems[0]?.url?.path || '';
+    } else if (Array.isArray(r?.images?.jsonValue?.value)) {
+      imageUrl = r.images.jsonValue.value[0]?.src || '';
+    }
+
+    return {
+      id: r.id,
+      slug: r.name,
+      modelName: r?.modelName?.value || r.name,
+      price: r?.price?.value ? parseFloat(r.price.value) : 0,
+      description: r?.description?.value ? r.description.value.replace(/<[^>]*>/g, ' ').slice(0, 150) : '',
+      imageUrl,
+    };
+  });
 }
 
 export async function getProductBySlug(slug: string | undefined, language = DEFAULT_LANGUAGE, rootPath = PRODUCTS_ROOT_PATH): Promise<ProductDetail | null> {
-  
+
   if (!slug) return null;
-  
+
   // Normalize slug: decode and handle hyphen-to-space conversion for Sitecore item names
   const decodedSlug = decodeURIComponent(slug);
   const spaceNormalizedSlug = decodedSlug.replace(/-/g, ' ');
@@ -110,8 +123,16 @@ export async function getProductBySlug(slug: string | undefined, language = DEFA
           description: field(name: "Description") { value }
           price: field(name: "Price") { value }
           quantity: field(name: "Quantity") { value }
-          images: field(name: "Images") { jsonValue }
-          oc: field(name: "OrderCloudProductId") { value }
+          images: field(name: "Images") { 
+            jsonValue 
+            ... on MultilistField {
+              targetItems {
+                url { path }
+              }
+            }
+          }
+          createdDate: field(name: "CreatedDate") { value }
+          status: field(name: "Status") { value }
         }
       }
     }
@@ -130,7 +151,23 @@ export async function getProductBySlug(slug: string | undefined, language = DEFA
   const plain = descHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
   // Map images from jsonValue
-  const images = i?.images?.jsonValue?.value?.map((img: any) => img.src) || [];
+
+  console.log("response DATA", i);
+
+  let images: string[] = [];
+  
+  // 1. Nếu jsonValue là một mảng trực tiếp (trường hợp TreeList/Multilist trỏ tới Media Items)
+  if (Array.isArray(i?.images?.jsonValue)) {
+    images = i.images.jsonValue.map((img: any) => img.url).filter(Boolean);
+  } 
+  // 2. Nếu trả về targetItems
+  else if (Array.isArray(i?.images?.targetItems) && i.images.targetItems.length > 0) {
+    images = i.images.targetItems.map((target: any) => target.url?.path).filter(Boolean);
+  } 
+  // 3. Fallback trường hợp cấu trúc cũ (jsonValue.value)
+  else if (Array.isArray(i?.images?.jsonValue?.value)) {
+    images = i.images.jsonValue.value.map((img: any) => img.src).filter(Boolean);
+  }
 
   return {
     id: i.id,
@@ -142,6 +179,8 @@ export async function getProductBySlug(slug: string | undefined, language = DEFA
     quantity: i?.quantity?.value ? parseInt(i.quantity.value, 10) : 0,
     images: images,
     orderCloudId: i?.oc?.value || undefined,
+    status: i?.status?.value || '',
+    createdDate: i?.createdDate?.value || '',
   };
 }
 

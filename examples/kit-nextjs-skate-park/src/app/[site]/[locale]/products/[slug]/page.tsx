@@ -49,6 +49,8 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   const { slug, locale } = await params;
   const product = await getProductBySlug(slug as string, locale);
 
+  console.log("product metadata", product);
+
   if (!product) {
     return {
       title: 'Product Not Found',
@@ -61,7 +63,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     openGraph: {
       title: product.modelName,
       description: product.descriptionPlain,
-      images: product.images.map((img) => ({ url: img })),
+      images: product.images.map((img: any) => ({ url: img })),
     },
   };
 }
@@ -78,6 +80,8 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
   // 1. Data Fetching (Server-side)
   let product = await getProductBySlug(slug as string, locale);
+
+  console.log("product detail", product);
 
   // 2. MOCK PRODUCT cho Sitecore Pages Editor
   // Nếu url slug là wildcard item ('-' hoặc '*') HOẶC đang trong chế độ edit mà không tìm thấy product
@@ -124,13 +128,19 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const injectProductIntoComponentProps = (placeholders: any) => {
     for (const ph in placeholders) {
       placeholders[ph].forEach((rendering: any) => {
-        if (rendering.componentName === 'SkateProductDetail' && rendering.uid) {
-          rendering.product = product;
-
-          componentProps[rendering.uid] = {
-            ...componentProps[rendering.uid] as any,
+        if (rendering.componentName === 'SkateProductDetail') {
+          // Inject into fields since AppPlaceholder guarantees fields are passed to Server Components
+          rendering.fields = {
+            ...rendering.fields,
             product: product
           };
+
+          if (rendering.uid) {
+            componentProps[rendering.uid] = {
+              ...componentProps[rendering.uid] as any,
+              product: product
+            };
+          }
         }
         if (rendering.placeholders) {
           injectProductIntoComponentProps(rendering.placeholders);
