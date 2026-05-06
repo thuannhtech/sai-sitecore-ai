@@ -291,7 +291,7 @@ export default function BasicForm(props: BasicFormProps) {
           })}
         </div>
 
-        <div className="pt-4 flex flex-col gap-3">
+        <div className="pt-4 flex gap-3">
           <button
             type="submit"
             disabled={submitting}

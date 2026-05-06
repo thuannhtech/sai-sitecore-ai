@@ -79,6 +79,10 @@ const SkateCheckoutBridge = {
             if (e.target.name) {
                 this.clearFieldError(e.target);
             }
+            // Chỉ cho phép nhập số vào trường PhoneNumber
+            if (e.target.name === 'PhoneNumber') {
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            }
         }, true);
 
         // Lắng nghe sự kiện click vào nút Place Order
