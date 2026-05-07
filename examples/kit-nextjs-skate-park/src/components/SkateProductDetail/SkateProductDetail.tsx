@@ -1,6 +1,4 @@
-'use client';
-
-import React, { JSX, useEffect, useState } from 'react';
+import React, { JSX } from 'react';
 import { ProductDetail } from 'src/lib/products';
 import { SkateAddToCartButton } from '../SkateCart/SkateAddToCartButton';
 
@@ -16,116 +14,43 @@ interface SkateProductDetailProps {
   product?: ProductDetail;
 }
 
-type ProductApiState = {
-  loading: boolean;
-  error: string | null;
-  product: ProductDetail | null;
-};
-
 export const Default = (props: SkateProductDetailProps): JSX.Element => {
-  const initialProduct = props.product || props.fields?.product || null;
-  const productSlug = props.fields?.productSlug;
-  const productLocale = props.fields?.productLocale || 'en';
+  const product = props.product || props.fields?.product;
   const { params } = props;
 
-  const [state, setState] = useState<ProductApiState>({
-    loading: initialProduct?.id === 'debug-static-product',
-    error: null,
-    product: initialProduct,
-  });
-
-  useEffect(() => {
-    if (!productSlug) {
-      return;
-    }
-
-    let cancelled = false;
-
-    const loadProduct = async () => {
-      try {
-        const response = await fetch(
-          `/api/products/${encodeURIComponent(productSlug)}?locale=${encodeURIComponent(productLocale)}`,
-          { cache: 'no-store' }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to load product details.');
-        }
-
-        const payload = (await response.json()) as ProductDetail;
-
-        if (!cancelled) {
-          setState({
-            loading: false,
-            error: null,
-            product: payload,
-          });
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setState((current) => ({
-            loading: false,
-            error: error instanceof Error ? error.message : 'Failed to load product details.',
-            product: current.product,
-          }));
-        }
-      }
-    };
-
-    loadProduct();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [productLocale, productSlug]);
-
-  const product = state.product;
-  const productImages = product?.images ?? [];
-
   return (
-    <section
-      className={`bg-white overflow-hidden ${params?.styles || ''}`}
-      id={params?.RenderingIdentifier}
-    >
+    <section className={`bg-white overflow-hidden ${params?.styles || ''}`} id={params?.RenderingIdentifier}>
       <div className="max-w-7xl mx-auto px-6 py-12 md:py-20">
         <nav className="flex items-center gap-2 text-sm text-gray-400 mb-8 font-medium">
           <a href="/" className="hover:text-blue-600 transition-colors">Home</a>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6" /></svg>
           <a href="/products" className="hover:text-blue-600 transition-colors">Products</a>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6" /></svg>
-          <span className="text-gray-900 font-bold truncate">{product?.modelName || 'Product'}</span>
+          <span className="text-gray-900 font-bold truncate">{product?.modelName}</span>
         </nav>
-
-        {state.error && (
-          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {state.error}
-          </div>
-        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24">
           <div className="space-y-6">
             <div className="aspect-[4/5] sm:aspect-square bg-gray-50 rounded-[2.5rem] overflow-hidden border border-gray-100 shadow-inner group">
-              {productImages.length > 0 ? (
+              {product?.images?.length > 0 ? (
                 <img
-                  src={productImages[0] as string}
-                  alt={product?.modelName || 'Product'}
+                  src={product.images[0] as string}
+                  alt={product.modelName}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                 />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 gap-4">
                   <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
-                  <span className="text-sm font-medium">
-                    {state.loading ? 'Loading image...' : 'No Image Available'}
-                  </span>
+                  <span className="text-sm font-medium">No Image Available</span>
                 </div>
               )}
             </div>
 
-            {productImages.length > 1 && (
+            {product?.images?.length > 1 && (
               <div className="grid grid-cols-4 gap-4 px-2">
-                {productImages.slice(0, 4).map((img: string, i: number) => (
+                {product.images.slice(0, 4).map((img: string, i: number) => (
                   <div key={i} className={`aspect-square rounded-2xl overflow-hidden border-2 transition-all cursor-pointer ${i === 0 ? 'border-blue-500 ring-2 ring-blue-50' : 'border-gray-50 hover:border-gray-200'}`}>
-                    <img src={img} className="w-full h-full object-cover" alt={`${product?.modelName || 'Product'} thumbnail ${i + 1}`} />
+                    <img src={img} className="w-full h-full object-cover" alt={`${product.modelName} thumbnail ${i + 1}`} />
                   </div>
                 ))}
               </div>
@@ -135,15 +60,15 @@ export const Default = (props: SkateProductDetailProps): JSX.Element => {
           <div className="flex flex-col">
             <div className="mb-8">
               <h1 className="text-4xl md:text-6xl font-black text-gray-900 leading-[1.1] mb-6 tracking-tight">
-                {product?.modelName || 'Loading product...'}
+                {product?.modelName}
               </h1>
 
               <div className="flex items-center gap-6">
                 <div className="text-4xl font-bold text-blue-600">
-                  ${product?.price?.toLocaleString() ?? '0'}
+                  ${product?.price?.toLocaleString()}
                 </div>
                 <div className="h-8 w-px bg-gray-200" />
-                {product?.quantity && product.quantity > 0 ? (
+                {product?.quantity > 0 ? (
                   <div className="flex items-center gap-2 text-emerald-600">
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -153,24 +78,20 @@ export const Default = (props: SkateProductDetailProps): JSX.Element => {
                   </div>
                 ) : (
                   <span className="px-3 py-1 bg-red-50 text-red-600 text-xs font-bold rounded-full uppercase tracking-wider">
-                    {state.loading ? 'Loading stock' : 'Out of Stock'}
+                    Out of Stock
                   </span>
                 )}
               </div>
             </div>
 
             <div className="prose prose-blue prose-lg max-w-none mb-12 text-gray-600 leading-relaxed">
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: product?.descriptionHtml || '<p>Loading product details...</p>',
-                }}
-              />
+              <div dangerouslySetInnerHTML={{ __html: product?.descriptionHtml || 'No description available' }} />
             </div>
 
             <div className="space-y-6 mt-auto">
               <SkateAddToCartButton
                 product={{
-                  id: product?.id || 'pdp-debug',
+                  id: product?.id || 'pdp-mock',
                   name: product?.modelName || 'Product',
                   price: product?.price || 0,
                   imageUrl: product?.images?.[0],
