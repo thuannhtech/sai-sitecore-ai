@@ -26,7 +26,7 @@ export const Default = (props: SkateProductDetailProps): JSX.Element => {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6" /></svg>
           <a href="/products" className="hover:text-blue-600 transition-colors">Products</a>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6" /></svg>
-          <span className="text-gray-900 font-bold truncate">{product?.modelName}</span>
+          <span className="text-gray-900 font-bold truncate">{product?.modelName ?? "Sample product"}</span>
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24">
@@ -50,7 +50,7 @@ export const Default = (props: SkateProductDetailProps): JSX.Element => {
               <div className="grid grid-cols-4 gap-4 px-2">
                 {product.images.slice(0, 4).map((img: string, i: number) => (
                   <div key={i} className={`aspect-square rounded-2xl overflow-hidden border-2 transition-all cursor-pointer ${i === 0 ? 'border-blue-500 ring-2 ring-blue-50' : 'border-gray-50 hover:border-gray-200'}`}>
-                    <img src={img} className="w-full h-full object-cover" alt={`${product.modelName} thumbnail ${i + 1}`} />
+                    <img src={img} className="w-full h-full object-cover" alt={`${product.modelName ?? "Sample product"} thumbnail ${i + 1}`} />
                   </div>
                 ))}
               </div>
@@ -60,12 +60,12 @@ export const Default = (props: SkateProductDetailProps): JSX.Element => {
           <div className="flex flex-col">
             <div className="mb-8">
               <h1 className="text-4xl md:text-6xl font-black text-gray-900 leading-[1.1] mb-6 tracking-tight">
-                {product?.modelName}
+                {product?.modelName ?? "Sample product"}
               </h1>
 
               <div className="flex items-center gap-6">
                 <div className="text-4xl font-bold text-blue-600">
-                  ${product?.price?.toLocaleString()}
+                  ${product?.price?.toLocaleString() ?? "999.999".toLocaleString()}
                 </div>
                 <div className="h-8 w-px bg-gray-200" />
                 {product?.quantity > 0 ? (
