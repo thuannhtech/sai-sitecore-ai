@@ -22,6 +22,8 @@ interface SkateProductDetailProps {
  */
 export const Default = (props: SkateProductDetailProps): JSX.Element => {
 
+  console.log("debug props 1", props);
+
   const product = props.product || props.fields?.product;
   const { params } = props;
 
