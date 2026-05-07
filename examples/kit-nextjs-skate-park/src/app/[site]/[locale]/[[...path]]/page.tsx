@@ -23,7 +23,6 @@ type PageProps = {
   }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
-
 type PageWithComponentProps = PageData & {
   componentProps: ComponentPropsCollection;
 };
@@ -36,17 +35,21 @@ export default async function Page({ params, searchParams }: PageProps) {
   // Resolve the actual locale: prioritize search params in draft mode (Editor), otherwise use path locale
   const locale = (draft.isEnabled && (editingParams.sc_lang as string || editingParams.language as string)) || pathLocale;
 
+
   // Set site and locale to be available in src/i18n/request.ts for fetching the dictionary
   setRequestLocale(`${site}_${locale}`);
 
   // Fetch the page data and messages in parallel
   const [page, messages] = await Promise.all([
+
+
     draft.isEnabled
       ? isDesignLibraryPreviewData(editingParams)
         ? client.getDesignLibraryData(editingParams)
         : client.getPreview(editingParams)
       : client.getPage(path ?? [], { site, locale }),
     getMessages(),
+
   ]);
 
   // If the page is not found, return a 404
@@ -65,6 +68,7 @@ export default async function Page({ params, searchParams }: PageProps) {
     ...page,
     componentProps,
   };
+
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
@@ -93,6 +97,7 @@ export const generateStaticParams = async () => {
       routing.locales.slice()
     );
   }
+
   return [];
 };
 
