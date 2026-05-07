@@ -1,11 +1,11 @@
 'use client'
 
-import React, { JSX, useState, useEffect, useCallback } from 'react'
+import React, { JSX, useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { useLocale } from 'next-intl'
 import { SkateAddToCartButton } from '../SkateCart/SkateAddToCartButton'
 
-/* ── Types (Follow Title.tsx pattern) ───────── */
+/* ── Types ──────────────────────────────────── */
 interface SkateProductListProps {
   params: {
     styles?: string
@@ -17,7 +17,7 @@ interface SkateProductListProps {
       datasource?: any
       contextItem?: any
     }
-    ProductsRoot?: any // Nếu field ở trên Datasource
+    ProductsRoot?: any
   }
   page?: {
     layout?: {
@@ -57,6 +57,19 @@ const ListIcon = () => (
   </svg>
 )
 
+const ChevronDownIcon = ({ className }: { className?: string }) => (
+  <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 12 15 18 9"></polyline>
+  </svg>
+)
+
+const FilterIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+  </svg>
+)
+
+/* ── Main Component ─────────────────────────── */
 export const Default = ({ params, fields, page: sitecorePage }: SkateProductListProps): JSX.Element => {
   const locale = useLocale();
 
@@ -76,27 +89,26 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
   const [debouncedQ, setDebouncedQ] = useState('')
   const [sort, setSort] = useState<SortOption>('name-asc')
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
-
-  // Pagination
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(8)
+  const [pageSize, setPageSize] = useState(12)
   const [total, setTotal] = useState(0)
+
+  // Upgrade States
+  const [priceRange, setPriceRange] = useState<number>(1000)
+  const [availability, setAvailability] = useState<string[]>([])
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [openAccordions, setOpenAccordions] = useState<string[]>(['search', 'price', 'availability', 'pageSize'])
 
   // Debounce search
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQ(q)
-      setPage(1) // Reset to first page on search
+      setPage(1)
     }, 500)
     return () => clearTimeout(handler)
   }, [q])
 
-  // Reset page on sort/pageSize change
-  useEffect(() => {
-    setPage(1)
-  }, [sort, pageSize])
-
-  // 3. Fetch products from API
+  // Fetch data
   const loadData = useCallback(async () => {
     if (!rootPath) return
     setLoading(true)
@@ -126,10 +138,38 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
     loadData()
   }, [loadData])
 
+  // Client-side filtering logic
+  const filteredProducts = useMemo(() => {
+    return products.filter(p => {
+      // Filter by Price
+      if (p.price && p.price > priceRange) return false
+
+      // Filter by Availability (Mock logic since data might not have it)
+      if (availability.length > 0) {
+        const isAvailable = (p.price || 0) > 0;
+        if (availability.includes('in-stock') && !isAvailable) return false;
+        if (availability.includes('pre-order') && isAvailable) return false;
+      }
+
+      return true
+    })
+  }, [products, priceRange, availability])
+
+  const toggleAccordion = (id: string) => {
+    setOpenAccordions(prev => prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id])
+  }
+
+  const clearFilters = () => {
+    setQ('')
+    setPriceRange(1000)
+    setAvailability([])
+    setPage(1)
+  }
+
   if (!rootPath) {
     return (
-      <div className="p-8 text-center border-2 border-dashed border-gray-200 rounded-[10px] text-gray-400">
-        Vui lòng cấu hình field <strong>ProductsRoot</strong> trên trang hoặc Datasource.
+      <div className="p-12 text-center border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 bg-slate-50 font-bold uppercase tracking-widest italic">
+        Configure <span className="text-slate-900 mx-1 underline decoration-orange-500 underline-offset-4">ProductsRoot</span> on Datasource
       </div>
     )
   }
@@ -137,195 +177,340 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
   const totalPages = Math.ceil(total / pageSize)
 
   return (
-    <div className={`component skate-product-list ${params?.styles || ''}`} id={params?.RenderingIdentifier}>
-      <div className="max-w-7xl mx-auto p-4 space-y-6">
-        {/* Toolbar */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50 p-4 rounded-[10px] shadow-sm">
-          <div className="relative w-full md:w-80">
-            <input
-              type="text"
-              placeholder="Search products..."
-              className="w-full pl-10 pr-4 py-2 rounded-[10px] border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500 shadow-sm transition-shadow"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
-            <svg className="absolute left-3 top-2.5 text-gray-400" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-          </div>
+    <div className={`component skate-product-list bg-white min-h-screen ${params?.styles || ''}`} id={params?.RenderingIdentifier}>
+      <div className="max-w-[1440px] mx-auto flex flex-col md:flex-row min-h-screen relative">
 
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-2">
-              <span className="text-[15px] text-gray-500 font-medium">Show:</span>
-              <select
-                className="bg-white border-none ring-1 ring-gray-200 rounded-[10px] py-2 px-3 focus:ring-2 focus:ring-blue-500 shadow-sm text-[15px] outline-none cursor-pointer hover:ring-gray-300 transition-all"
-                value={pageSize}
-                onChange={(e) => setPageSize(Number(e.target.value))}
-              >
-                <option value={4}>4</option>
-                <option value={8}>8</option>
-                <option value={12}>12</option>
-                <option value={16}>16</option>
-                <option value={24}>24</option>
-              </select>
-            </div>
-
-            <select
-              className="bg-white border-none ring-1 ring-gray-200 rounded-[10px] py-2 px-4 focus:ring-2 focus:ring-blue-500 shadow-sm text-[15px] outline-none cursor-pointer hover:ring-gray-300 transition-all"
-              value={sort}
-              onChange={(e) => setSort(e.target.value as SortOption)}
-            >
-              <option value="name-asc">A-Z</option>
-              <option value="name-desc">Z-A</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
-            </select>
-
-            <div className="flex bg-white ring-1 ring-gray-200 p-1 rounded-[10px] shadow-sm">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-[8px] transition-all ${viewMode === 'grid' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
-              >
-                <GridIcon />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-1.5 rounded-[8px] transition-all ${viewMode === 'list' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
-              >
-                <ListIcon />
-              </button>
-            </div>
-          </div>
+        {/* Mobile Filter Button */}
+        <div className="md:hidden p-4 sticky top-0 bg-white/90 backdrop-blur-sm z-20 border-b border-slate-100 flex justify-between items-center">
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-xl font-black text-xs tracking-widest shadow-xl shadow-slate-200 active:scale-95 transition-all"
+          >
+            <FilterIcon /> FILTERS
+          </button>
+          <span className="text-slate-500 text-[15px] font-bold uppercase tracking-tighter italic">{total} gear items</span>
         </div>
 
-        {/* List/Grid */}
-        {loading ? (
-          <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6' : 'flex flex-col gap-4'}>
-            {[...Array(pageSize)].map((_, i) => (
-              <div key={i} className={`bg-white border border-gray-100 rounded-[10px] shadow-sm animate-pulse ${viewMode === 'grid' ? 'flex flex-col' : 'flex flex-row p-3 gap-4 items-center'}`}>
-                <div className={`${viewMode === 'grid' ? 'w-full aspect-square rounded-t-[10px]' : 'w-24 h-24 shrink-0 rounded-[10px]'} bg-gray-100`} />
-                <div className="p-5 flex-1 space-y-3 w-full">
-                  <div className="h-5 bg-gray-100 rounded-md w-3/4" />
-                  <div className="h-4 bg-gray-100 rounded-md w-1/4" />
-                  {viewMode === 'list' && <div className="h-3 bg-gray-100 rounded-md w-1/2" />}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : products.length > 0 ? (
-          <>
-            <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6' : 'flex flex-col gap-4'}>
-              {products.map((product) => (
-                <div
-                  key={product.slug}
-                  className={`group bg-white border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 ${viewMode === 'grid' ? 'flex flex-col rounded-[10px]' : 'flex flex-row items-center rounded-[10px] p-3 gap-4'
-                    }`}
-                >
-                  <Link
-                    href={`/products/${product.slug.toLowerCase().replace(/\s+/g, '-')}`}
-                    className={`${viewMode === 'grid' ? 'w-full aspect-square' : 'w-28 h-28 shrink-0 rounded-[10px]'} bg-gray-50 relative overflow-hidden`}
-                  >
-                    {product.image ? (
-                      <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-300 text-[15px] font-medium">No Image</div>
-                    )}
-                  </Link>
-                  <div className="p-5 flex-1 flex flex-col">
-                    <Link href={`/products/${product.slug.toLowerCase().replace(/\s+/g, '-')}`}>
-                      <h3 className="text-[17px] font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
-                        {product.name}
-                      </h3>
-                    </Link>
-                    <p className="text-blue-600 font-black mt-2 text-xl">
-                      ${product.price?.toLocaleString()}
-                    </p>
-                    {viewMode === 'list' && product.description && (
-                      <p className="text-gray-500 text-[15px] mt-2 line-clamp-2 leading-relaxed">{product.description}</p>
-                    )}
-
-                    <div className="mt-5">
-                      <SkateAddToCartButton
-                        product={{
-                          id: product.slug,
-                          name: product.name,
-                          price: product.price || 0,
-                          imageUrl: product.image
-                        }}
-                        className="w-full py-2.5 text-[15px] font-bold cursor-pointer tracking-wide rounded-[8px] shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
+        {/* ── LEFT SIDEBAR (Desktop) ─────────────────── */}
+        <aside className={`
+          fixed inset-0 z-50 md:relative md:inset-auto md:z-0
+          w-full md:w-[280px] bg-white text-slate-600 
+          transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1)
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+          overflow-y-auto border-r border-slate-100 scrollbar-hide
+          md:sticky md:top-0 md:h-screen shadow-xl shadow-slate-200/50 md:shadow-none
+        `}>
+          <div className="p-8 space-y-10">
+            <div className="flex justify-between items-center">
+              <h2 className="text-slate-900 font-black tracking-tighter text-3xl uppercase italic leading-none"><span className="text-[#1965e1]">Product Filters</span></h2>
+              <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-slate-900 bg-slate-100 p-2 rounded-full">
+                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+              </button>
             </div>
 
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 pt-10 pb-4">
-                <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="px-4 py-2 text-[15px] font-bold text-gray-700 bg-white border border-gray-200 rounded-[5px] hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
-                >
-                  Prev
+            <div className="space-y-8">
+              {/* Search Accordion */}
+              <div className="border-b border-slate-100 pb-8">
+                <button onClick={() => toggleAccordion('search')} className="flex justify-between items-center w-full text-left mb-6">
+                  <span className="text-slate-900 font-black uppercase tracking-widest text-[15px]">Keyword Search</span>
+                  <ChevronDownIcon className={`text-slate-400 transition-transform duration-300 ${openAccordions.includes('search') ? '' : '-rotate-90'}`} />
                 </button>
+                {openAccordions.includes('search') && (
+                  <div className="relative group">
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      className="w-full bg-slate-50 border-none ring-1 ring-slate-200 rounded-xl py-4 pl-4 pr-10 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#1965e1] transition-all outline-none text-[15px] font-bold"
+                      value={q}
+                      onChange={(e) => setQ(e.target.value)}
+                    />
+                    <svg className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-[#1965e1] transition-colors" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="6" cy="6" r="5" /><path d="M10 10l3 3" /></svg>
+                  </div>
+                )}
+              </div>
 
-                <div className="flex items-center gap-1.5">
-                  {[...Array(totalPages)].map((_, i) => {
-                    const pageNum = i + 1;
-                    if (
-                      totalPages <= 5 ||
-                      pageNum === 1 ||
-                      pageNum === totalPages ||
-                      (pageNum >= page - 1 && pageNum <= page + 1)
-                    ) {
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => setPage(pageNum)}
-                          className={`w-15 h-13 flex items-center justify-center text-[15px] font-bold rounded-[5px] transition-all shadow-sm active:scale-95 ${page === pageNum
-                            ? 'bg-blue-600 text-white border border-blue-600'
-                            : 'text-gray-700 bg-white border border-gray-200 hover:bg-gray-50'
-                            }`}
+              {/* Price Range Accordion */}
+              <div className="border-b border-slate-100 pb-8">
+                <button onClick={() => toggleAccordion('price')} className="flex justify-between items-center w-full text-left mb-6">
+                  <span className="text-slate-900 font-black uppercase tracking-widest text-[15px]">Price Cap</span>
+                  <ChevronDownIcon className={`text-slate-400 transition-transform duration-300 ${openAccordions.includes('price') ? '' : '-rotate-90'}`} />
+                </button>
+                {openAccordions.includes('price') && (
+                  <div className="space-y-6">
+                    <input
+                      type="range"
+                      min="0" max="1000" step="10"
+                      className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-[#1965e1] transition-all"
+                      value={priceRange}
+                      onChange={(e) => setPriceRange(Number(e.target.value))}
+                    />
+                    <div className="flex justify-between items-center">
+                      <span className="text-[15px] font-black text-slate-300">$0</span>
+                      <div className="flex flex-col items-end">
+                        <span className="text-[15px] font-black text-white bg-[#1965e1] px-4 py-2 rounded-lg shadow-lg shadow-[#1965e1]/20 tracking-tighter">Under ${priceRange}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Availability Accordion */}
+              <div className="border-b border-slate-100 pb-8">
+                <button onClick={() => toggleAccordion('availability')} className="flex justify-between items-center w-full text-left mb-6">
+                  <span className="text-slate-900 font-black uppercase tracking-widest text-[15px]">Availability</span>
+                  <ChevronDownIcon className={`text-slate-400 transition-transform duration-300 ${openAccordions.includes('availability') ? '' : '-rotate-90'}`} />
+                </button>
+                {openAccordions.includes('availability') && (
+                  <div className="space-y-4">
+                    {['in-stock', 'pre-order'].map(opt => (
+                      <label key={opt} className="flex items-center gap-3 cursor-pointer group">
+                        <div className="relative flex items-center justify-center">
+                          <input
+                            type="checkbox"
+                            className="peer w-5 h-5 appearance-none rounded-lg border-2 border-slate-200 bg-slate-50 checked:bg-[#1965e1] checked:border-[#1965e1] transition-all cursor-pointer"
+                            checked={availability.includes(opt)}
+                            onChange={(e) => {
+                              if (e.target.checked) setAvailability([...availability, opt])
+                              else setAvailability(availability.filter(a => a !== opt))
+                            }}
+                          />
+                          <svg className="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" /></svg>
+                        </div>
+                        <span className="text-[15px] font-black uppercase tracking-tighter text-slate-400 group-hover:text-slate-900 transition-colors">{opt.replace('-', ' ')}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Page Size Accordion */}
+              <div className="border-b border-slate-100 pb-8">
+                <button onClick={() => toggleAccordion('pageSize')} className="flex justify-between items-center w-full text-left mb-6">
+                  <span className="text-slate-900 font-black uppercase tracking-widest text-[15px]">Show Per Page</span>
+                  <ChevronDownIcon className={`text-slate-400 transition-transform duration-300 ${openAccordions.includes('pageSize') ? '' : '-rotate-90'}`} />
+                </button>
+                {openAccordions.includes('pageSize') && (
+                  <div className="grid grid-cols-2 gap-3">
+                    {[8, 12, 24, 48].map(size => (
+                      <button
+                        key={size}
+                        onClick={() => setPageSize(size)}
+                        className={`py-4 px-3 rounded-xl text-[15px] font-black border-2 transition-all ${pageSize === size ? 'bg-[#1965e1] border-[#1965e1] text-white shadow-lg shadow-[#1965e1]/30' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-300 hover:text-slate-600'}`}
+                      >
+                        {size} ITEMS
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={clearFilters}
+              className="w-full py-5 bg-slate-50 hover:bg-[#1965e1] hover:text-white text-slate-900 text-[15px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all border border-slate-100 hover:border-[#1965e1]"
+            >
+              Clear All
+            </button>
+          </div>
+        </aside>
+
+        {/* ── RIGHT CONTENT AREA ─────────────────────── */}
+        <main className="flex-1 min-w-0 bg-slate-50/50">
+          {/* Sticky Toolbar */}
+          <header className="sticky top-0 bg-white/95 backdrop-blur-xl z-30 border-b border-slate-100 px-8 py-5 flex flex-col lg:flex-row justify-between items-center gap-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <span className="w-1.5 h-1.5 bg-[#1965e1] rounded-full animate-pulse" />
+              <span className="text-slate-400 font-black uppercase tracking-[0.2em] text-[15px]">
+                {total} <span className="text-slate-900">Items Found</span>
+              </span>
+            </div>
+
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Sort</span>
+                <select
+                  className="bg-slate-100 border-none ring-1 ring-slate-200/50 rounded-xl py-2 px-4 focus:ring-2 focus:ring-[#1965e1] text-[10px] font-black outline-none cursor-pointer hover:ring-slate-300 transition-all uppercase tracking-tighter"
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value as SortOption)}
+                >
+                  <option value="name-asc">Alphabetical A-Z</option>
+                  <option value="name-desc">Alphabetical Z-A</option>
+                  <option value="price-asc">Price: Lowest first</option>
+                  <option value="price-desc">Price: Highest first</option>
+                </select>
+              </div>
+
+              <div className="h-6 w-px bg-slate-100" />
+
+              <div className="flex bg-slate-100 p-1 rounded-xl">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white text-[#1965e1] shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                  <GridIcon />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white text-[#1965e1] shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                  <ListIcon />
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <div className="p-8 lg:p-12">
+            {loading ? (
+              /* Skeleton Loader */
+              <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10' : 'flex flex-col gap-6'}>
+                {[...Array(pageSize)].map((_, i) => (
+                  <div key={i} className={`bg-white border border-slate-100 rounded-3xl animate-pulse overflow-hidden ${viewMode === 'grid' ? 'flex flex-col' : 'flex flex-row p-6 gap-6'}`}>
+                    <div className={`${viewMode === 'grid' ? 'w-full aspect-square' : 'w-40 h-40'} bg-slate-100`} />
+                    <div className="p-8 space-y-4 flex-1">
+                      <div className="h-4 bg-slate-100 rounded-full w-3/4" />
+                      <div className="h-4 bg-slate-100 rounded-full w-1/2" />
+                      <div className="h-8 bg-slate-100 rounded-2xl w-1/3 mt-8" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredProducts.length > 0 ? (
+              <>
+                {/* Product Grid/List View */}
+                <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10' : 'flex flex-col gap-8'}>
+                  {filteredProducts.map((product) => {
+                    const tags = product.description?.split(' ').slice(0, 3).filter(t => t.length > 3) || [];
+
+                    return (
+                      <div
+                        key={product.slug}
+                        className={`group bg-white border border-slate-200/60 transition-all duration-700 hover:shadow-[0_40px_80px_-15px_rgba(15,23,42,0.1)] hover:-translate-y-3 flex flex-col rounded-[2.5rem] overflow-hidden relative ${viewMode === 'list' ? 'md:flex-row items-center p-6 gap-10' : ''
+                          }`}
+                      >
+                        {/* Image Section */}
+                        <Link
+                          href={`/products/${product.slug.toLowerCase().replace(/\s+/g, '-')}`}
+                          className={`${viewMode === 'grid' ? 'w-full aspect-square' : 'w-56 h-56 shrink-0'} bg-white p-10 relative flex items-center justify-center overflow-hidden`}
                         >
-                          {pageNum}
-                        </button>
-                      );
-                    } else if (
-                      pageNum === page - 2 ||
-                      pageNum === page + 2
-                    ) {
-                      return <span key={pageNum} className="px-1 text-gray-400 font-medium">...</span>;
-                    }
-                    return null;
+                          {product.image ? (
+                            <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain transition-transform duration-1000 group-hover:scale-110 group-hover:rotate-2" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-100 font-black text-4xl uppercase italic tracking-tighter opacity-50">SKATE</div>
+                          )}
+
+                          {/* Corner Label */}
+                          <div className="absolute top-6 left-6 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all duration-500 -translate-x-4 group-hover:translate-x-0">
+                            <span className="bg-slate-900 text-white text-[15px] font-black px-3 py-1 uppercase tracking-widest rounded-sm">Quick View</span>
+                            <span className="bg-[#1965e1] text-white text-[15px] font-black px-3 py-1 uppercase tracking-widest rounded-sm">Compare</span>
+                          </div>
+                        </Link>
+
+                        {/* Content Section */}
+                        <div className="p-8 pt-0 flex-1 flex flex-col">
+                          <Link href={`/products/${product.slug.toLowerCase().replace(/\s+/g, '-')}`}>
+                            <h3 className="text-xl font-black text-slate-900 group-hover:text-[#1965e1] transition-colors line-clamp-2 uppercase tracking-tighter leading-none mb-3">
+                              {product.name}
+                            </h3>
+                          </Link>
+
+                          <div className="flex items-baseline gap-2 mt-auto">
+                            <span className="text-[#1965e1] font-black text-3xl tracking-tighter italic">
+                              ${product.price?.toLocaleString()}
+                            </span>
+                          </div>
+
+                          {viewMode === 'list' && product.description && (
+                            <p className="text-slate-500 text-sm mt-6 line-clamp-3 leading-relaxed font-medium">{product.description}</p>
+                          )}
+
+                          <div className="mt-8 flex flex-col gap-3">
+                            <SkateAddToCartButton
+                              product={{
+                                id: product.slug,
+                                name: product.name,
+                                price: product.price || 0,
+                                imageUrl: product.image
+                              }}
+                              className="w-full cursor-pointer tracking-[0.2em] rounded-2xl shadow-2xl shadow-slate-200 transition-all active:scale-95 group-hover:shadow-[#1965e1]/20"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )
                   })}
                 </div>
 
-                <button
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="px-4 py-2 text-[15px] font-bold text-gray-700 bg-white border border-gray-200 rounded-[5px] hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
-                >
-                  Next
-                </button>
+                {/* Modern Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-4 pt-24 pb-12">
+                    <button
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="w-14 h-14 flex items-center justify-center bg-white border-2 border-slate-100 rounded-[1.5rem] hover:border-slate-900 disabled:opacity-20 transition-all group active:scale-90"
+                    >
+                      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" className="transition-transform group-hover:-translate-x-1"><path d="M15 18l-6-6 6-6" /></svg>
+                    </button>
+
+                    <div className="flex items-center gap-3 bg-white p-2 rounded-[1.8rem] border border-slate-100 shadow-sm">
+                      {[...Array(totalPages)].map((_, i) => {
+                        const pageNum = i + 1;
+                        if (totalPages <= 5 || pageNum === 1 || pageNum === totalPages || (pageNum >= page - 1 && pageNum <= page + 1)) {
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setPage(pageNum)}
+                              className={`w-12 h-12 flex items-center justify-center text-xs font-black rounded-[1.3rem] transition-all duration-500 ${page === pageNum
+                                ? 'bg-[#1965e1] text-white shadow-xl shadow-[#1965e1]/20 scale-110'
+                                : 'text-slate-400 hover:bg-slate-50 hover:text-slate-900'
+                                }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        } else if (pageNum === page - 2 || pageNum === page + 2) {
+                          return <span key={pageNum} className="text-slate-200 font-black">•••</span>;
+                        }
+                        return null;
+                      })}
+                    </div>
+
+                    <button
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                      className="w-14 h-14 flex items-center justify-center bg-white border-2 border-slate-100 rounded-[1.5rem] hover:border-slate-900 disabled:opacity-20 transition-all group active:scale-90"
+                    >
+                      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" className="transition-transform group-hover:translate-x-1"><path d="M9 18l6-6-6-6" /></svg>
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              /* Premium Empty State */
+              <div className="py-40 flex flex-col items-center justify-center text-center bg-white rounded-[4rem] border-2 border-dashed border-slate-100 relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,rgba(25,101,225,0.03)_0%,transparent_70%)]" />
+                <div className="relative z-10">
+                  <div className="bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl mb-10 rotate-3 group-hover:rotate-0 transition-transform duration-700">
+                    <svg width="48" height="48" fill="none" stroke="#1965e1" strokeWidth="2.5"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM22 3L2 3l8 9.46V19l4 2v-8.54L22 3z" /></svg>
+                  </div>
+                  <h3 className="text-5xl font-black text-slate-900 uppercase italic tracking-tighter leading-none mb-6">Zero Gear<br /><span className="text-slate-200">Matches</span></h3>
+                  <p className="text-slate-400 font-bold max-w-sm px-10 leading-relaxed uppercase text-[15px] tracking-widest">Your current filtering criteria is too strict for our current warehouse stock.</p>
+                  <button
+                    onClick={clearFilters}
+                    className="mt-12 px-12 py-6 bg-[#1965e1] text-white text-[15px] font-black uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-[#1965e1]/20 hover:bg-slate-900 hover:shadow-slate-200 transition-all active:scale-95"
+                  >
+                    Reset Inventory View
+                  </button>
+                </div>
               </div>
             )}
-          </>
-        ) : (
-          <div className="py-24 flex flex-col items-center justify-center text-center bg-gray-50 rounded-[10px] border border-dashed border-gray-200">
-            <svg className="mx-auto h-16 w-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h3 className="text-xl font-bold text-gray-900">Không tìm thấy sản phẩm</h3>
-            <p className="mt-1 text-[15px] text-gray-500 max-w-sm">Chúng tôi không tìm thấy sản phẩm nào khớp với yêu cầu của bạn. Thử dùng từ khóa khác xem sao.</p>
-            <button
-              onClick={() => { setQ(''); setSort('name-asc'); setPage(1); }}
-              className="mt-6 px-6 py-2 bg-white border border-gray-200 text-[15px] font-bold text-gray-700 rounded-[10px] shadow-sm hover:bg-gray-50 transition-colors"
-            >
-              Xóa bộ lọc
-            </button>
           </div>
-        )}
+        </main>
       </div>
+
+      {/* Mobile Drawer Backdrop */}
+      {isSidebarOpen && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[45] md:hidden transition-all duration-500" onClick={() => setIsSidebarOpen(false)} />
+      )}
     </div>
   )
 }
