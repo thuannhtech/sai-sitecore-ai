@@ -1,18 +1,18 @@
-import { ComponentPropsCollection, Page as PageData } from '@sitecore-content-sdk/nextjs';
-import { isDesignLibraryPreviewData } from '@sitecore-content-sdk/nextjs/editing';
-import { SiteInfo } from '@sitecore-content-sdk/nextjs';
-import { draftMode } from 'next/headers';
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages, setRequestLocale } from 'next-intl/server';
-import { notFound } from 'next/navigation';
-import sites from '.sitecore/sites.json';
-import components from '.sitecore/component-map';
-import Layout, { RouteFields } from 'src/Layout';
-import Providers from 'src/Providers';
-import { getProductBySlug } from 'src/lib/products';
-import client from 'src/lib/sitecore-client';
-import { routing } from 'src/i18n/routing';
-import scConfig from 'sitecore.config';
+import { isDesignLibraryPreviewData } from "@sitecore-content-sdk/nextjs/editing";
+import { notFound } from "next/navigation";
+import { draftMode } from "next/headers";
+import { SiteInfo } from "@sitecore-content-sdk/nextjs";
+import sites from ".sitecore/sites.json";
+import { routing } from "src/i18n/routing";
+import scConfig from "sitecore.config";
+import client from "src/lib/sitecore-client";
+import Layout, { RouteFields } from "src/Layout";
+import components from ".sitecore/component-map";
+import Providers from "src/Providers";
+import { NextIntlClientProvider } from "next-intl";
+import { setRequestLocale, getMessages } from "next-intl/server";
+import { ComponentPropsCollection } from "@sitecore-content-sdk/nextjs";
+import { Page as PageData } from "@sitecore-content-sdk/nextjs";
 
 type PageProps = {
   params: Promise<{
@@ -24,77 +24,8 @@ type PageProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-const isProductDetailPath = (path?: string[]) =>
-  Array.isArray(path) && path.length === 2 && path[0] === 'products' && !!path[1];
-
-const resolveProductWildcardPage = async ({
-  path,
-  site,
-  locale,
-}: {
-  path?: string[];
-  site: string;
-  locale: string;
-}) => {
-  const candidates: string[][] = [];
-
-  if (path?.length) {
-    candidates.push(path);
-  }
-
-  if (isProductDetailPath(path)) {
-    candidates.push(['products', '*']);
-    candidates.push(['products']);
-  }
-
-  for (const candidate of candidates) {
-    try {
-      const page = await client.getPage(candidate, { site, locale });
-      if (page) {
-        return page;
-      }
-    } catch (error) {
-      console.error('Error resolving Sitecore page for candidate path:', candidate, error);
-    }
-  }
-
-  return null;
-};
-
-const injectProductIntoRenderings = ({
-  page,
-  product,
-}: {
-  page: PageData;
-  product: Awaited<ReturnType<typeof getProductBySlug>>;
-}) => {
-  const placeholders = page.layout?.sitecore?.route?.placeholders;
-  if (!placeholders || !product) {
-    return;
-  }
-
-  const findAndInject = (currentPlaceholders: Record<string, any[]>) => {
-    for (const phName in currentPlaceholders) {
-      const renderings = currentPlaceholders[phName];
-      for (const rendering of renderings) {
-        if (rendering.componentName === 'SkateProductDetail') {
-          rendering.fields = {
-            ...rendering.fields,
-            product,
-          };
-          return true;
-        }
-
-        if (rendering.placeholders && findAndInject(rendering.placeholders)) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  };
-
-  findAndInject(placeholders);
+type PageWithComponentProps = PageData & {
+  componentProps: ComponentPropsCollection;
 };
 
 export default async function Page({ params, searchParams }: PageProps) {
@@ -102,50 +33,54 @@ export default async function Page({ params, searchParams }: PageProps) {
   const editingParams = await searchParams;
   const draft = await draftMode();
 
-  const locale =
-    (draft.isEnabled && ((editingParams.sc_lang as string) || (editingParams.language as string))) ||
-    pathLocale;
+  // Resolve the actual locale: prioritize search params in draft mode (Editor), otherwise use path locale
+  const locale = (draft.isEnabled && (editingParams.sc_lang as string || editingParams.language as string)) || pathLocale;
 
+  // Set site and locale to be available in src/i18n/request.ts for fetching the dictionary
   setRequestLocale(`${site}_${locale}`);
 
-  const isProductPage = isProductDetailPath(path);
-  const slug = isProductPage ? path?.[1] : undefined;
-
-  const [page, messages, product] = await Promise.all([
+  // Fetch the page data and messages in parallel
+  const [page, messages] = await Promise.all([
     draft.isEnabled
       ? isDesignLibraryPreviewData(editingParams)
         ? client.getDesignLibraryData(editingParams)
         : client.getPreview(editingParams)
-      : resolveProductWildcardPage({ path, site, locale }),
+      : client.getPage(path ?? [], { site, locale }),
     getMessages(),
-    slug ? getProductBySlug(slug, locale) : Promise.resolve(null),
   ]);
 
+  // If the page is not found, return a 404
   if (!page) {
     notFound();
   }
 
-  if (isProductPage && !product) {
-    notFound();
-  }
+  // Fetch the component data from Sitecore (Likely will be deprecated) 
+  const componentProps = await client.getComponentData(
+    page.layout,
+    {},
+    components
+  );
 
-  if (isProductPage && product) {
-    injectProductIntoRenderings({ page: page as PageData, product });
-  }
-
-  const componentProps = await client.getComponentData(page.layout, {}, components);
+  const enrichedPage: PageWithComponentProps = {
+    ...page,
+    componentProps,
+  };
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
-      <Providers page={page} componentProps={componentProps}>
+      <Providers page={page} componentProps={enrichedPage}>
         <Layout page={page} />
       </Providers>
     </NextIntlClientProvider>
   );
 }
 
+// This function gets called at build and export time to determine
+// pages for SSG ("paths", as tokenized array).
 export const generateStaticParams = async () => {
-  if (process.env.NODE_ENV !== 'development' && scConfig.generateStaticPaths) {
+  if (process.env.NODE_ENV !== "development" && scConfig.generateStaticPaths) {
+    // Filter sites to only include the sites this starter is designed to serve.
+    // This prevents cross-site build errors when multiple starters share the same XM Cloud instance.
     const defaultSite = scConfig.defaultSite;
     const allowedSites = defaultSite
       ? sites
@@ -153,20 +88,24 @@ export const generateStaticParams = async () => {
         .map((site: SiteInfo) => site.name)
       : sites.map((site: SiteInfo) => site.name);
 
-    return await client.getAppRouterStaticParams(allowedSites, routing.locales.slice());
+    return await client.getAppRouterStaticParams(
+      allowedSites,
+      routing.locales.slice()
+    );
   }
-
   return [];
 };
 
+// Metadata fields for the page.
 export const generateMetadata = async ({ params }: PageProps) => {
   const { path, site, locale } = await params;
 
-  const page = await resolveProductWildcardPage({ path, site, locale });
-
+  // The same call as for rendering the page. Should be cached by default react behavior
+  const page = await client.getPage(path ?? [], { site, locale });
   return {
     title:
-      ((page?.layout?.sitecore?.route?.fields as RouteFields)?.Title?.value?.toString() as string) ||
-      'Page',
+      (
+        page?.layout.sitecore.route?.fields as RouteFields
+      )?.Title?.value?.toString() || "Page",
   };
 };
