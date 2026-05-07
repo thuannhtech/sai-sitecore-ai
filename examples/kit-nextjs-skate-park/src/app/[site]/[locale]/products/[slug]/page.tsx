@@ -1,12 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getProductBySlug, getAllProductSlugs } from 'src/lib/products';
-import SkateProductDetail from 'src/components/SkateProductDetail/SkateProductDetail';
-import scConfig from "sitecore.config";
-import sites from ".sitecore/sites.json";
-import { SiteInfo } from "@sitecore-content-sdk/nextjs";
+import { getProductBySlug } from 'src/lib/products';
 import client from "src/lib/sitecore-client";
-import { routing } from "src/i18n/routing";
 import Layout, { RouteFields } from "src/Layout";
 import { draftMode } from "next/headers";
 import { setRequestLocale, getMessages } from "next-intl/server";
@@ -31,58 +26,11 @@ interface ProductPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-type PageWithComponentProps = PageData & {
-  componentProps: ComponentPropsCollection;
-};
-
-
-/**
- * generateStaticParams: Fetch all product names from Sitecore to pre-render static pages.
- * Note: In multi-site/multi-locale, you'd iterate over all sites/locales.
- */
-export const generateStaticParams = async () => {
-  const results: any[] = [];
-
-  try {
-    if (process.env.NODE_ENV !== "development" && scConfig.generateStaticPaths) {
-      // Filter sites to only include the sites this starter is designed to serve.
-      // This prevents cross-site build errors when multiple starters share the same XM Cloud instance.
-      const defaultSite = scConfig.defaultSite;
-      const allowedSites = defaultSite
-        ? sites
-          .filter((site: SiteInfo) => site.name === defaultSite)
-          .map((site: SiteInfo) => site.name)
-        : sites.map((site: SiteInfo) => site.name);
-
-      const sitecorePaths = await client.getAppRouterStaticParams(
-        allowedSites,
-        routing.locales.slice()
-      );
-
-      results.push(...sitecorePaths);
-    }
-
-    // Custom product routes
-    const slugs = await getAllProductSlugs();
-    const productPaths = slugs.map((slug: string) => ({
-      slug,
-    }));
-
-    results.push(...productPaths);
-
-    return results;
-
-  } catch (error) {
-    console.error("Error generating static params:", error);
-    return [];
-  }
-};
-
 /**
  * generateMetadata: Dynamic SEO based on product data.
  */
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
-  const { path, site, locale, slug } = await params;
+  const { site, locale, slug } = await params;
 
   try {
     /**
@@ -90,7 +38,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
      */
     const [product, page] = await Promise.all([
       getProductBySlug(slug as string, locale),
-      client.getPage(path ?? [], { site, locale }),
+      client.getPage(['products', slug as string], { site, locale }),
     ]);
 
     /**
