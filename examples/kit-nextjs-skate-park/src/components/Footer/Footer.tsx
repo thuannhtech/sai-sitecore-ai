@@ -63,7 +63,7 @@ export const Default = ({ params, fields, rendering, page }: FooterProps) => {
         <div className="footer__container footer__main-row">
           <div className="footer__column">
             <AppPlaceholder
-              name="footer-primary-links"
+              name="footer-primary-links-{*}"
               rendering={rendering}
               page={page}
               componentMap={componentMap}
@@ -71,7 +71,7 @@ export const Default = ({ params, fields, rendering, page }: FooterProps) => {
           </div>
           <div className="footer__column">
             <AppPlaceholder
-              name="footer-secondary-links"
+              name="footer-secondary-links-{*}"
               rendering={rendering}
               page={page}
               componentMap={componentMap}
@@ -79,7 +79,7 @@ export const Default = ({ params, fields, rendering, page }: FooterProps) => {
           </div>
           <div className="footer__column">
             <AppPlaceholder
-              name="footer-thirth-links"
+              name="footer-thirth-links-{*}"
               rendering={rendering}
               page={page}
               componentMap={componentMap}
