@@ -195,7 +195,7 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
         <aside className={`
           fixed inset-0 z-50 md:relative md:inset-auto md:z-0
           w-full md:w-[280px] bg-white text-slate-600 
-          transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1)
+          duration-500 cubic-bezier(0.4, 0, 0.2, 1)
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
           overflow-y-auto border-r border-slate-100 scrollbar-hide
           md:sticky md:top-0 md:h-screen shadow-xl shadow-slate-200/50 md:shadow-none
@@ -213,7 +213,7 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
               <div className="border-b border-slate-100 pb-8">
                 <button onClick={() => toggleAccordion('search')} className="flex justify-between items-center w-full text-left mb-6">
                   <span className="text-slate-900 font-black uppercase tracking-widest text-[15px]">Keyword Search</span>
-                  <ChevronDownIcon className={`text-slate-400 transition-transform duration-300 ${openAccordions.includes('search') ? '' : '-rotate-90'}`} />
+                  <ChevronDownIcon className={`text-slate-400 duration-300 ${openAccordions.includes('search') ? '' : '-rotate-90'}`} />
                 </button>
                 {openAccordions.includes('search') && (
                   <div className="relative group">
@@ -233,7 +233,7 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
               <div className="border-b border-slate-100 pb-8">
                 <button onClick={() => toggleAccordion('price')} className="flex justify-between items-center w-full text-left mb-6">
                   <span className="text-slate-900 font-black uppercase tracking-widest text-[15px]">Price Cap</span>
-                  <ChevronDownIcon className={`text-slate-400 transition-transform duration-300 ${openAccordions.includes('price') ? '' : '-rotate-90'}`} />
+                  <ChevronDownIcon className={`text-slate-400 duration-300 ${openAccordions.includes('price') ? '' : '-rotate-90'}`} />
                 </button>
                 {openAccordions.includes('price') && (
                   <div className="space-y-6">
@@ -258,7 +258,7 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
               <div className="border-b border-slate-100 pb-8">
                 <button onClick={() => toggleAccordion('availability')} className="flex justify-between items-center w-full text-left mb-6">
                   <span className="text-slate-900 font-black uppercase tracking-widest text-[15px]">Availability</span>
-                  <ChevronDownIcon className={`text-slate-400 transition-transform duration-300 ${openAccordions.includes('availability') ? '' : '-rotate-90'}`} />
+                  <ChevronDownIcon className={`text-slate-400 duration-300 ${openAccordions.includes('availability') ? '' : '-rotate-90'}`} />
                 </button>
                 {openAccordions.includes('availability') && (
                   <div className="space-y-4">
@@ -287,7 +287,7 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
               <div className="border-b border-slate-100 pb-8">
                 <button onClick={() => toggleAccordion('pageSize')} className="flex justify-between items-center w-full text-left mb-6">
                   <span className="text-slate-900 font-black uppercase tracking-widest text-[15px]">Show Per Page</span>
-                  <ChevronDownIcon className={`text-slate-400 transition-transform duration-300 ${openAccordions.includes('pageSize') ? '' : '-rotate-90'}`} />
+                  <ChevronDownIcon className={`text-slate-400 duration-300 ${openAccordions.includes('pageSize') ? '' : '-rotate-90'}`} />
                 </button>
                 {openAccordions.includes('pageSize') && (
                   <div className="grid grid-cols-2 gap-3">
@@ -393,16 +393,11 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
                           className={`${viewMode === 'grid' ? 'w-full aspect-square' : 'w-56 h-56 shrink-0'} bg-white p-10 relative flex items-center justify-center overflow-hidden`}
                         >
                           {product.image ? (
-                            <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain transition-transform duration-1000 group-hover:scale-110 group-hover:rotate-2" />
+                            <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-slate-100 font-black text-4xl uppercase italic tracking-tighter opacity-50">SKATE</div>
                           )}
 
-                          {/* Corner Label */}
-                          <div className="absolute top-6 left-6 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all duration-500 -translate-x-4 group-hover:translate-x-0">
-                            <span className="bg-slate-900 text-white text-[15px] font-black px-3 py-1 uppercase tracking-widest rounded-sm">Quick View</span>
-                            <span className="bg-[#1965e1] text-white text-[15px] font-black px-3 py-1 uppercase tracking-widest rounded-sm">Compare</span>
-                          </div>
                         </Link>
 
                         {/* Content Section */}
@@ -448,7 +443,7 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
                       disabled={page === 1}
                       className="w-14 h-14 flex items-center justify-center bg-white border-2 border-slate-100 rounded-[1.5rem] hover:border-slate-900 disabled:opacity-20 transition-all group active:scale-90"
                     >
-                      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" className="transition-transform group-hover:-translate-x-1"><path d="M15 18l-6-6 6-6" /></svg>
+                      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" className=""><path d="M15 18l-6-6 6-6" /></svg>
                     </button>
 
                     <div className="flex items-center gap-3 bg-white p-2 rounded-[1.8rem] border border-slate-100 shadow-sm">
@@ -479,7 +474,7 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
                       disabled={page === totalPages}
                       className="w-14 h-14 flex items-center justify-center bg-white border-2 border-slate-100 rounded-[1.5rem] hover:border-slate-900 disabled:opacity-20 transition-all group active:scale-90"
                     >
-                      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" className="transition-transform group-hover:translate-x-1"><path d="M9 18l6-6-6-6" /></svg>
+                      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" className=""><path d="M9 18l6-6-6-6" /></svg>
                     </button>
                   </div>
                 )}
@@ -489,7 +484,7 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
               <div className="py-40 flex flex-col items-center justify-center text-center bg-white rounded-[4rem] border-2 border-dashed border-slate-100 relative overflow-hidden group">
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,rgba(25,101,225,0.03)_0%,transparent_70%)]" />
                 <div className="relative z-10">
-                  <div className="bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl mb-10 rotate-3 group-hover:rotate-0 transition-transform duration-700">
+                  <div className="bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl mb-10">
                     <svg width="48" height="48" fill="none" stroke="#1965e1" strokeWidth="2.5"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM22 3L2 3l8 9.46V19l4 2v-8.54L22 3z" /></svg>
                   </div>
                   <h3 className="text-5xl font-black text-slate-900 uppercase italic tracking-tighter leading-none mb-6">Zero Gear<br /><span className="text-slate-200">Matches</span></h3>
