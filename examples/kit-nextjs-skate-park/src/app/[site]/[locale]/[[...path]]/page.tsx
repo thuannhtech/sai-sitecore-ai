@@ -34,6 +34,16 @@ export default async function Page({ params, searchParams }: PageProps) {
 
   // Resolve the actual locale: prioritize search params in draft mode (Editor), otherwise use path locale
   const locale = (draft.isEnabled && (editingParams.sc_lang as string || editingParams.language as string)) || pathLocale;
+  const pagePath = path ?? [];
+
+  console.log("[default-route] request", {
+    site,
+    pathLocale,
+    resolvedLocale: locale,
+    path: pagePath,
+    draft: draft.isEnabled,
+    searchParamKeys: Object.keys(editingParams),
+  });
 
 
   // Set site and locale to be available in src/i18n/request.ts for fetching the dictionary
@@ -47,13 +57,27 @@ export default async function Page({ params, searchParams }: PageProps) {
       ? isDesignLibraryPreviewData(editingParams)
         ? client.getDesignLibraryData(editingParams)
         : client.getPreview(editingParams)
-      : client.getPage(path ?? [], { site, locale }),
+      : client.getPage(pagePath, { site, locale }),
     getMessages(),
 
   ]);
 
+  console.log("[default-route] result", {
+    found: !!page,
+    site,
+    resolvedLocale: locale,
+    path: pagePath,
+    routeName: page?.layout?.sitecore?.route?.name,
+    itemId: page?.layout?.sitecore?.route?.itemId,
+  });
+
   // If the page is not found, return a 404
   if (!page) {
+    console.log("[default-route] notFound", {
+      site,
+      resolvedLocale: locale,
+      path: pagePath,
+    });
     notFound();
   }
 
@@ -104,9 +128,26 @@ export const generateStaticParams = async () => {
 // Metadata fields for the page.
 export const generateMetadata = async ({ params }: PageProps) => {
   const { path, site, locale } = await params;
+  const pagePath = path ?? [];
+
+  console.log("[default-route] metadata request", {
+    site,
+    locale,
+    path: pagePath,
+  });
 
   // The same call as for rendering the page. Should be cached by default react behavior
-  const page = await client.getPage(path ?? [], { site, locale });
+  const page = await client.getPage(pagePath, { site, locale });
+
+  console.log("[default-route] metadata result", {
+    found: !!page,
+    site,
+    locale,
+    path: pagePath,
+    routeName: page?.layout?.sitecore?.route?.name,
+    itemId: page?.layout?.sitecore?.route?.itemId,
+  });
+
   return {
     title:
       (
