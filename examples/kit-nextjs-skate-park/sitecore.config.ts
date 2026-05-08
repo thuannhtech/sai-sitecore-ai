@@ -1,16 +1,4 @@
 import { defineConfig } from '@sitecore-content-sdk/nextjs/config';
-
-const parseBooleanEnv = (value: string | undefined) => {
-    if (value === undefined) {
-        return undefined;
-    }
-
-    return value.toLowerCase() === 'true';
-};
-
-const shouldGenerateStaticPaths =
-    parseBooleanEnv(process.env.SITECORE_GENERATE_STATIC_PATHS) ??
-    (process.env.VERCEL === '1' ? false : true);
 /**
  * @type {import('@sitecore-content-sdk/nextjs/config').SitecoreConfig}
  * See the documentation for `defineConfig`:
@@ -34,7 +22,6 @@ export default defineConfig({
     defaultSite: process.env.NEXT_PUBLIC_DEFAULT_SITE_NAME,
     defaultLanguage: process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE || 'en',
     editingSecret: process.env.SITECORE_EDITING_SECRET,
-    generateStaticPaths: shouldGenerateStaticPaths,
     redirects: {
         enabled: true,
         locales: ['en', 'ja-JP', 'vi-VN'],
