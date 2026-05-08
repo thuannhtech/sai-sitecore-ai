@@ -1,65 +1,224 @@
+import { ComponentPropsCollection, LayoutServicePageState, Page as SitecorePage } from '@sitecore-content-sdk/nextjs';
+import { isDesignLibraryPreviewData } from '@sitecore-content-sdk/nextjs/editing';
+import { draftMode } from 'next/headers';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { draftMode } from 'next/headers';
-import { getProductBySlug, getAllProductSlugs } from 'src/lib/products';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages, setRequestLocale } from 'next-intl/server';
+import components from '.sitecore/component-map';
+import sites from '.sitecore/sites.json';
+import Layout from 'src/Layout';
+import Providers from 'src/Providers';
 import SkateProductDetail from 'src/components/SkateProductDetail/SkateProductDetail';
-import client from "src/lib/sitecore-client";
-import Layout from "src/Layout";
-import Providers from "src/Providers";
-import { NextIntlClientProvider } from "next-intl";
-import { setRequestLocale, getMessages } from "next-intl/server";
-import components from ".sitecore/component-map";
-import { isDesignLibraryPreviewData } from "@sitecore-content-sdk/nextjs/editing";
-import { routing } from "src/i18n/routing";
-import scConfig from "sitecore.config";
-import sites from ".sitecore/sites.json";
+import { routing } from 'src/i18n/routing';
+import { getAllProductSlugs, getProductBySlug, ProductDetail } from 'src/lib/products';
+import client from 'src/lib/sitecore-client';
+import scConfig from 'sitecore.config';
 
-// 1. ISR: Revalidate every 60 seconds
-export const revalidate = 60;
-
-// Allow dynamic rendering for paths not pre-generated (e.g. new products added after build)
 export const dynamicParams = true;
 
-interface ProductPageProps {
+const PRODUCTS_ROUTE_SEGMENT = 'products';
+const WILDCARD_PRODUCT_SEGMENTS = new Set(['*', '-', '_wildcard_', '-w-']);
+const WILDCARD_ITEM_PATHS = ['*', '-', '-w-'];
+const PRODUCT_WILDCARD_QUERY = `
+  query ProductWildcardLayout($path: String!, $language: String!) {
+    item(path: $path, language: $language) {
+      rendered
+    }
+  }
+`;
+
+type ProductPageProps = {
   params: Promise<{
     site: string;
     locale: string;
     slug: string;
-    path?: string[];
     [key: string]: string | string[] | undefined;
   }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+type WildcardRenderedResponse = {
+  item: {
+    rendered: SitecorePage['layout'] | null;
+  } | null;
+};
+
+const mockProduct: ProductDetail = {
+  id: 'mock-product-id',
+  slug: '*',
+  modelName: 'Mock Product (Sitecore Editor)',
+  descriptionPlain: 'Mock product for editing the wildcard layout in Sitecore Pages.',
+  descriptionHtml: '<p>Mock product for editing the wildcard layout in Sitecore Pages.</p>',
+  price: 99.99,
+  quantity: 10,
+  images: ['https://placehold.co/800x1000/eeeeee/999999?text=Mock+Product'],
+};
+
+const normalPageMode: SitecorePage['mode'] = {
+  name: LayoutServicePageState.Normal,
+  isNormal: true,
+  isPreview: false,
+  isEditing: false,
+  isDesignLibrary: false,
+  designLibrary: { isVariantGeneration: false },
+};
+
+const buildProductRoutePath = (slug: string) => [PRODUCTS_ROUTE_SEGMENT, slug];
+
+const resolveLocale = (
+  pathLocale: string,
+  isDraft: boolean,
+  editingParams: { [key: string]: string | string[] | undefined }
+) => ((isDraft && ((editingParams.sc_lang as string) || (editingParams.language as string))) || pathLocale) as string;
+
+const getProductRouteKind = (slug: string) => WILDCARD_PRODUCT_SEGMENTS.has(slug) ? 'wildcard' : 'detail';
+
+async function resolveProduct(slug: string, locale: string, isDraft: boolean) {
+  const product = await getProductBySlug(slug, locale);
+
+  if (product) {
+    return product;
+  }
+
+  if (isDraft || WILDCARD_PRODUCT_SEGMENTS.has(slug)) {
+    return mockProduct;
+  }
+
+  return null;
 }
 
-/**
- * generateStaticParams: Cần trả về ĐẦY ĐỦ { site, locale, slug } cho route [site]/[locale]/products/[slug].
- * Vì [site]/layout.tsx không có generateStaticParams, Next.js không tự propagate site/locale
- * xuống cho trang con. Ta phải tự resolve tất cả các tham số dynamic.
- */
+async function fetchWildcardProductPage(site: string, locale: string): Promise<SitecorePage | null> {
+  for (const wildcardSegment of WILDCARD_ITEM_PATHS) {
+    const itemPath = `/sitecore/content/${site}/${site}/Home/${PRODUCTS_ROUTE_SEGMENT}/${wildcardSegment}`;
+
+    try {
+      const data = await client.getData<WildcardRenderedResponse>(PRODUCT_WILDCARD_QUERY, {
+        path: itemPath,
+        language: locale,
+      });
+      const layout = data?.item?.rendered;
+
+      if (!layout?.sitecore?.route) {
+        continue;
+      }
+
+      console.log('[ProductPage] wildcard layout resolved', {
+        site,
+        locale,
+        itemPath,
+      });
+
+      return {
+        layout,
+        locale,
+        siteName: layout.sitecore.context.site?.name || site,
+        mode: normalPageMode,
+      };
+    } catch (error) {
+      console.error('[ProductPage] wildcard item(path) fetch failed', {
+        site,
+        locale,
+        itemPath,
+        error,
+      });
+    }
+  }
+
+  return null;
+}
+
+async function getResolvedProductPage(
+  site: string,
+  locale: string,
+  slug: string,
+  editingParams: { [key: string]: string | string[] | undefined },
+  isDraft: boolean
+): Promise<SitecorePage | null> {
+  if (isDraft) {
+    return isDesignLibraryPreviewData(editingParams)
+      ? client.getDesignLibraryData(editingParams)
+      : client.getPreview(editingParams);
+  }
+
+  const routePath = buildProductRoutePath(slug);
+  const page = await client.getPage(routePath, { site, locale });
+
+  if (page) {
+    console.log('[ProductPage] detail layout resolved via routePath', {
+      site,
+      locale,
+      routePath,
+    });
+    return page;
+  }
+
+  console.warn('[ProductPage] routePath lookup returned null, trying wildcard item fallback', {
+    site,
+    locale,
+    routePath,
+  });
+
+  return fetchWildcardProductPage(site, locale);
+}
+
+function injectProductIntoPageLayout(
+  page: SitecorePage,
+  componentProps: ComponentPropsCollection,
+  product: ProductDetail
+) {
+  const placeholders = page.layout.sitecore.route?.placeholders as Record<string, any[]> | undefined;
+
+  if (!placeholders) {
+    return;
+  }
+
+  const injectIntoPlaceholders = (nestedPlaceholders: Record<string, any[]>) => {
+    for (const placeholderName of Object.keys(nestedPlaceholders)) {
+      for (const rendering of nestedPlaceholders[placeholderName]) {
+        if (rendering.componentName === 'SkateProductDetail') {
+          rendering.fields = {
+            ...rendering.fields,
+            product,
+          };
+
+          if (rendering.uid) {
+            componentProps[rendering.uid] = {
+              ...(componentProps[rendering.uid] as Record<string, unknown>),
+              product,
+            };
+          }
+        }
+
+        if (rendering.placeholders) {
+          injectIntoPlaceholders(rendering.placeholders);
+        }
+      }
+    }
+  };
+
+  injectIntoPlaceholders(placeholders);
+}
+
 export async function generateStaticParams(): Promise<{ site: string; locale: string; slug: string }[]> {
   try {
-    // Lấy tên site mặc định từ config hoặc sites.json
-    const defaultSiteName = scConfig.defaultSite || (sites as any[])[0]?.name;
+    const defaultSiteName = scConfig.defaultSite || (sites as { name?: string }[])[0]?.name;
     if (!defaultSiteName) {
       console.warn('[generateStaticParams/products] No site name found, skipping static generation.');
       return [];
     }
 
-    const locales = routing.locales.slice();
     const allParams: { site: string; locale: string; slug: string }[] = [];
 
-    for (const locale of locales) {
+    for (const locale of routing.locales) {
       try {
         const slugs = await getAllProductSlugs(locale, undefined, 200);
-        for (const slug of slugs) {
-          allParams.push({ site: defaultSiteName, locale, slug });
-        }
+        allParams.push(...slugs.map((slug: string) => ({ site: defaultSiteName, locale, slug })));
       } catch (localeError) {
         console.error(`[generateStaticParams/products] Error fetching slugs for locale ${locale}:`, localeError);
       }
     }
 
-    console.log(`[generateStaticParams/products] Generated ${allParams.length} static product paths.`);
     return allParams;
   } catch (error) {
     console.error('[generateStaticParams/products] Fatal error, returning empty:', error);
@@ -67,14 +226,9 @@ export async function generateStaticParams(): Promise<{ site: string; locale: st
   }
 }
 
-/**
- * generateMetadata: Dynamic SEO based on product data.
- */
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { slug, locale } = await params;
-  const product = await getProductBySlug(slug as string, locale);
-
-  console.log("product metadata", product);
+  const product = await getProductBySlug(slug, locale);
 
   if (!product) {
     return {
@@ -88,98 +242,41 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     openGraph: {
       title: product.modelName,
       description: product.descriptionPlain,
-      images: product.images.map((img: any) => ({ url: img })),
+      images: product.images.map((img: string) => ({ url: img })),
     },
   };
 }
 
-/**
- * Page Component: Handles data fetching and separation of concerns.
- */
 export default async function ProductPage({ params, searchParams }: ProductPageProps) {
-  const { site, locale, slug } = await params;
+  const resolvedParams = await params;
   const editingParams = await searchParams;
   const draft = await draftMode();
+  const { site, locale: pathLocale, slug } = resolvedParams;
+  const locale = resolveLocale(pathLocale, draft.isEnabled, editingParams);
+  const routeKind = getProductRouteKind(slug);
 
   setRequestLocale(`${site}_${locale}`);
 
-  // 1. Data Fetching (Server-side)
-  let product = await getProductBySlug(slug as string, locale);
+  console.log('[ProductPage] route info', {
+    site,
+    locale,
+    slug,
+    routePath: buildProductRoutePath(slug),
+    routeKind,
+    draftEnabled: draft.isEnabled,
+  });
 
-  console.log("product detail", product);
+  const [page, messages, product] = await Promise.all([
+    getResolvedProductPage(site, locale, slug, editingParams, draft.isEnabled),
+    getMessages().catch(() => ({} as Awaited<ReturnType<typeof getMessages>>)),
+    resolveProduct(slug, locale, draft.isEnabled),
+  ]);
 
-  // 2. MOCK PRODUCT cho Sitecore Pages Editor
-  // Nếu url slug là wildcard item ('-' hoặc '*') HOẶC đang trong chế độ edit mà không tìm thấy product
-  if (!product && (draft.isEnabled || slug === '-' || slug === '*' || slug === '_wildcard_')) {
-    product = {
-      id: "mock-product-id",
-      modelName: 'Mock Product (Sitecore Editor)',
-      descriptionPlain: 'Đây là product giả lập để bạn có thể edit layout trong Sitecore Pages.',
-      descriptionHtml: '<p>Đây là product giả lập để bạn có thể edit layout trong Sitecore Pages.</p>',
-      price: 99.99,
-      quantity: 10,
-      images: ['https://placehold.co/800x1000/eeeeee/999999?text=Mock+Product'],
-      productType: "Skateboard",
-    } as any;
-  }
-
-  // 3. Error Handling: 404 if product doesn't exist
   if (!product) {
     notFound();
   }
 
-  // 4. Fetch Layout Data từ Sitecore JSS (Hỗ trợ Preview Mode trong Sitecore Pages)
-  // Sitecore Content SDK v1.x (Edge API) có thể resolve wildcard '*' khác với
-  // JSS convention cũ dùng '-'. Thử cả hai để tương thích.
-  let page: Awaited<ReturnType<typeof client.getPage>> | null = null;
-  let messages: Awaited<ReturnType<typeof getMessages>>;
-
-  try {
-    messages = await getMessages();
-  } catch {
-    messages = {} as any;
-  }
-
-  if (draft.isEnabled) {
-    // Preview mode: lấy layout từ Sitecore Pages Editor
-    try {
-      page = isDesignLibraryPreviewData(editingParams)
-        ? await client.getDesignLibraryData(editingParams)
-        : await client.getPreview(editingParams);
-    } catch (previewError) {
-      console.error('[ProductPage] Preview layout fetch failed:', previewError);
-    }
-  } else {
-    // Live mode: thử lần lượt các đường dẫn wildcard
-    // Sitecore item '*' có thể được truy cập qua '*' (Content SDK v1.x Edge) hoặc '-' (JSS classic)
-    const wildcardPaths: string[][] = [
-      ['products', '*'],  // Tên item thực trong Sitecore (wildcard)
-      ['products', '-'],  // Quy ước JSS cũ (dash thay cho wildcard)
-    ];
-
-    for (const wildcardPath of wildcardPaths) {
-      try {
-        const candidate = await client.getPage(wildcardPath, { site, locale });
-        if (candidate) {
-          console.log(`[ProductPage] ✓ Layout found at /${wildcardPath.join('/')} (site=${site}, locale=${locale})`);
-          page = candidate;
-          break;
-        }
-        console.warn(`[ProductPage] ✗ No layout at /${wildcardPath.join('/')} (site=${site}, locale=${locale}) - returned null`);
-      } catch (pathError) {
-        console.error(`[ProductPage] ✗ Error fetching layout at /${wildcardPath.join('/')}:`, pathError);
-      }
-    }
-
-    if (!page) {
-      console.error(`[ProductPage] All wildcard paths failed for slug="${slug}", site="${site}", locale="${locale}". Rendering without Sitecore layout.`);
-    }
-  }
-
   if (!page) {
-    // Fallback: render pure component nếu tất cả layout paths đều thất bại.
-    // Header/footer sẽ không hiện vì chúng được render từ Sitecore placeholders.
-    // Kiểm tra Vercel logs để xem wildcard path nào bị lỗi.
     return (
       <main className="min-h-screen bg-white">
         <SkateProductDetail product={product} />
@@ -187,38 +284,9 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     );
   }
 
-  // 5. Inject product data vào Sitecore Layout để component SkateProductDetail có thể nhận được
   const componentProps = await client.getComponentData(page.layout, {}, components);
+  injectProductIntoPageLayout(page, componentProps, product);
 
-  const injectProductIntoComponentProps = (placeholders: any) => {
-    for (const ph in placeholders) {
-      placeholders[ph].forEach((rendering: any) => {
-        if (rendering.componentName === 'SkateProductDetail') {
-          // Inject into fields since AppPlaceholder guarantees fields are passed to Server Components
-          rendering.fields = {
-            ...rendering.fields,
-            product: product
-          };
-
-          if (rendering.uid) {
-            componentProps[rendering.uid] = {
-              ...componentProps[rendering.uid] as any,
-              product: product
-            };
-          }
-        }
-        if (rendering.placeholders) {
-          injectProductIntoComponentProps(rendering.placeholders);
-        }
-      });
-    }
-  };
-
-  if (page.layout?.sitecore?.route?.placeholders) {
-    injectProductIntoComponentProps(page.layout.sitecore.route.placeholders);
-  }
-
-  // 6. Render Sitecore Layout
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <Providers page={page} componentProps={componentProps}>
