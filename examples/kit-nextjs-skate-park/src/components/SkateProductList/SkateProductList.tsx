@@ -94,7 +94,7 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
   const [total, setTotal] = useState(0)
 
   // Upgrade States
-  const [priceRange, setPriceRange] = useState<number>(1000)
+  const [priceRange, setPriceRange] = useState<number>(99999)
   const [availability, setAvailability] = useState<string[]>([])
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [openAccordions, setOpenAccordions] = useState<string[]>(['search', 'price', 'availability', 'pageSize'])
@@ -250,35 +250,6 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
                         <span className="text-[15px] font-black text-white bg-[#1965e1] px-4 py-2 rounded-lg shadow-lg shadow-[#1965e1]/20 tracking-tighter">Under ${priceRange}</span>
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Availability Accordion */}
-              <div className="border-b border-slate-100 pb-8">
-                <button onClick={() => toggleAccordion('availability')} className="flex justify-between items-center w-full text-left mb-6">
-                  <span className="text-slate-900 font-black uppercase tracking-widest text-[15px]">Availability</span>
-                  <ChevronDownIcon className={`text-slate-400 duration-300 ${openAccordions.includes('availability') ? '' : '-rotate-90'}`} />
-                </button>
-                {openAccordions.includes('availability') && (
-                  <div className="space-y-4">
-                    {['in-stock', 'pre-order'].map(opt => (
-                      <label key={opt} className="flex items-center gap-3 cursor-pointer group">
-                        <div className="relative flex items-center justify-center">
-                          <input
-                            type="checkbox"
-                            className="peer w-5 h-5 appearance-none rounded-lg border-2 border-slate-200 bg-slate-50 checked:bg-[#1965e1] checked:border-[#1965e1] transition-all cursor-pointer"
-                            checked={availability.includes(opt)}
-                            onChange={(e) => {
-                              if (e.target.checked) setAvailability([...availability, opt])
-                              else setAvailability(availability.filter(a => a !== opt))
-                            }}
-                          />
-                          <svg className="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" /></svg>
-                        </div>
-                        <span className="text-[15px] font-black uppercase tracking-tighter text-slate-400 group-hover:text-slate-900 transition-colors">{opt.replace('-', ' ')}</span>
-                      </label>
-                    ))}
                   </div>
                 )}
               </div>
