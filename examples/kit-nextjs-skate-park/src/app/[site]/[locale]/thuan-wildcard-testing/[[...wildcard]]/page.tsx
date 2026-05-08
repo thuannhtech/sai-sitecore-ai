@@ -26,13 +26,6 @@ export default async function ThuanWildcardTestingPage({
   const resolvedParams = await params;
   const resolvedPath = buildPath(resolvedParams.wildcard);
 
-  console.log("[thuan-wildcard-testing] route hit", {
-    site: resolvedParams.site,
-    locale: resolvedParams.locale,
-    wildcard: resolvedParams.wildcard ?? [],
-    path: resolvedPath,
-  });
-
   return DefaultPage({
     params: Promise.resolve({
       ...resolvedParams,
@@ -45,13 +38,6 @@ export default async function ThuanWildcardTestingPage({
 export async function generateMetadata({ params }: PageProps) {
   const resolvedParams = await params;
   const resolvedPath = buildPath(resolvedParams.wildcard);
-
-  console.log("[thuan-wildcard-testing] metadata hit", {
-    site: resolvedParams.site,
-    locale: resolvedParams.locale,
-    wildcard: resolvedParams.wildcard ?? [],
-    path: resolvedPath,
-  });
 
   return generateDefaultMetadata({
     params: Promise.resolve({
