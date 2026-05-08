@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getAllProducts, getDynamicProductsRoot } from '../../../lib/products'
 
-export const revalidate = 60 // ISR caching for 60s
+export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
   try {
