@@ -7,6 +7,8 @@ import * as SkateShipmentMethod from 'src/components/SkateShipmentMethod/SkateSh
 import * as SkateProductList from 'src/components/SkateProductList/SkateProductList';
 import * as SkatePaymentMethod from 'src/components/SkatePaymentMethod/SkatePaymentMethod';
 import * as SkateBraintreePayment from 'src/components/SkatePaymentMethod/SkateBraintreePayment';
+import * as SkateLoginLayout from 'src/components/SkateLoginLayout/SkateLoginLayout';
+import * as SkateContainer from 'src/components/SkateContainer/SkateContainer';
 import * as SkateCheckoutStep from 'src/components/SkateCheckoutStep/SkateCheckoutStep';
 import * as SkateOrderSuccess from 'src/components/SkateCheckout/SkateOrderSuccess';
 import * as SkateMiniCart from 'src/components/SkateCart/SkateMiniCart';
@@ -35,6 +37,8 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['SkateProductList', { ...SkateProductList }],
   ['SkatePaymentMethod', { ...SkatePaymentMethod }],
   ['SkateBraintreePayment', { ...SkateBraintreePayment }],
+  ['SkateLoginLayout', { ...SkateLoginLayout }],
+  ['SkateContainer', { ...SkateContainer }],
   ['SkateCheckoutStep', { ...SkateCheckoutStep }],
   ['SkateOrderSuccess', { ...SkateOrderSuccess }],
   ['SkateMiniCart', { ...SkateMiniCart }],

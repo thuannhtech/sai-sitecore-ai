@@ -1,19 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { authService } from 'src/lib/ordercloud/auth';
 
 export async function POST(req: NextRequest) {
   try {
-    const { firstName, lastName, email, password, newsletter } = await req.json() || {};
+    const body = await req.json();
+    const { FirstName, LastName, Email, Password, AccountType } = body || {};
 
-    if (!firstName || !lastName || !email || !password) {
-      return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+    if (!FirstName || !LastName || !Email || !Password) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // TODO: Call your registration endpoint / IdP signup here
-    // Example: await fetch(process.env.AUTH_API + '/register', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ firstName, lastName, email, password, newsletter })});
+    // Decode password from Base64 (sent from client)
+    const decodedPassword = Buffer.from(Password, 'base64').toString('utf8');
 
-    // Mock response for scaffolding only
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    // Map fields for OrderCloud
+    const userData = {
+      Username: Email,
+      Password: decodedPassword,
+      FirstName: FirstName,
+      LastName: LastName,
+      Email: Email,
+      xp: {
+        AccountType: AccountType || '0' // Default to Personal (0) if not specified
+      }
+    };
+
+    const result = await authService.register(userData);
+
+    return NextResponse.json({ ok: true, user: result });
+  } catch (error: any) {
+    console.error('[API Register Error]', error);
+    
+    // Extract meaningful error message from OrderCloud response if possible
+    const message = error.response?.data?.Errors?.[0]?.Message || error.message || 'Internal Server Error';
+    
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -4,7 +4,7 @@
 */
 
 .sc-BasicForm {
-  max-width: 100% !important; /* Để form giãn hết chiều rộng của Step Wrapper */
+  max-width: 100%; /* Để form giãn hết chiều rộng của Step Wrapper */
   padding: 0 !important; /* Bỏ padding vì Step Wrapper đã có padding */
   box-shadow: none !important; /* Bỏ shadow vì Step Wrapper đã có shadow */
   background: transparent !important;

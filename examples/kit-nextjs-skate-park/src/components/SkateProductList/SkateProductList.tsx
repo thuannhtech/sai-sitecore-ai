@@ -161,7 +161,7 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
 
   const clearFilters = () => {
     setQ('')
-    setPriceRange(1000)
+    setPriceRange(99999)
     setAvailability([])
     setPage(1)
   }
@@ -174,7 +174,8 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
     )
   }
 
-  const totalPages = Math.ceil(total / pageSize)
+  //const totalPages = Math.ceil(total / pageSize)
+  const totalPages = 3;
 
   return (
     <div className={`component skate-product-list bg-white min-h-screen ${params?.styles || ''}`} id={params?.RenderingIdentifier}>
@@ -298,9 +299,9 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
 
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-3">
-                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Sort</span>
+                <span className="text-[14px] font-black text-slate-300 uppercase tracking-widest">Sort</span>
                 <select
-                  className="bg-slate-100 border-none ring-1 ring-slate-200/50 rounded-xl py-2 px-4 focus:ring-2 focus:ring-[#1965e1] text-[10px] font-black outline-none cursor-pointer hover:ring-slate-300 transition-all uppercase tracking-tighter"
+                  className="bg-slate-100 border-none ring-1 ring-slate-200/50 rounded-xl py-2 px-4 focus:ring-2 focus:ring-[#1965e1] text-[14px] font-black outline-none cursor-pointer hover:ring-slate-300 transition-all uppercase tracking-tighter"
                   value={sort}
                   onChange={(e) => setSort(e.target.value as SortOption)}
                 >
@@ -412,7 +413,7 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
                     <button
                       onClick={() => setPage(p => Math.max(1, p - 1))}
                       disabled={page === 1}
-                      className="w-14 h-14 flex items-center justify-center bg-white border-2 border-slate-100 rounded-[1.5rem] hover:border-slate-900 disabled:opacity-20 transition-all group active:scale-90"
+                      className="cursor-pointer w-14 h-14 flex items-center justify-center bg-white rounded-[1.5rem] hover:border-slate-900 disabled:opacity-20 transition-all group active:scale-90"
                     >
                       <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" className=""><path d="M15 18l-6-6 6-6" /></svg>
                     </button>
@@ -425,7 +426,7 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
                             <button
                               key={pageNum}
                               onClick={() => setPage(pageNum)}
-                              className={`w-12 h-12 flex items-center justify-center text-xs font-black rounded-[1.3rem] transition-all duration-500 ${page === pageNum
+                              className={`cursor-pointer w-14 h-14 flex items-center justify-center text-2xl font-black rounded-[1.3rem] transition-all duration-500 ${page === pageNum
                                 ? 'bg-[#1965e1] text-white shadow-xl shadow-[#1965e1]/20 scale-110'
                                 : 'text-slate-400 hover:bg-slate-50 hover:text-slate-900'
                                 }`}
@@ -443,7 +444,7 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
                     <button
                       onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                       disabled={page === totalPages}
-                      className="w-14 h-14 flex items-center justify-center bg-white border-2 border-slate-100 rounded-[1.5rem] hover:border-slate-900 disabled:opacity-20 transition-all group active:scale-90"
+                      className="cursor-pointer w-14 h-14 flex items-center justify-center bg-white rounded-[1.5rem] hover:border-slate-900 disabled:opacity-20 transition-all group active:scale-90"
                     >
                       <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" className=""><path d="M9 18l6-6-6-6" /></svg>
                     </button>

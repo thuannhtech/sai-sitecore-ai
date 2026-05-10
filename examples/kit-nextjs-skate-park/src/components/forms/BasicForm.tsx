@@ -9,7 +9,12 @@ type FieldType =
   | 'checkbox'
   | 'select'
   | 'textarea'
-  | 'link';
+  | 'link'
+  | 'button'
+  | 'number'
+  | 'hidden'
+  | 'rich text'
+  | 'radio';
 
 type FormOption = { label: string; value: string };
 
@@ -39,6 +44,7 @@ type FormDefinition = {
   successRedirect: string | null;
   fields: FormField[];
   script?: string;
+  style?: string;
 };
 
 interface BasicFormProps {
@@ -122,10 +128,15 @@ export default function BasicForm(props: BasicFormProps) {
             : { label: l, value: l };
         });
 
+      let type = String(getFieldValue(f, 'Type') || 'text').toLowerCase();
+      if (type === 'hiddenfield') type = 'hidden';
+      if (type === 'richtext' || type === 'rich-text') type = 'rich text';
+      if (type === 'radiobutton' || type === 'radio-button') type = 'radio';
+
       return {
         key: String(getFieldValue(f, 'Key') || f.name || f.displayName || ''),
         label: String(getFieldValue(f, 'Label') || ''),
-        type: (String(getFieldValue(f, 'Type') || 'text').toLowerCase()) as FieldType,
+        type: type as FieldType,
         placeholder: String(getFieldValue(f, 'Placeholder') || ''),
         required: !!getFieldValue(f, 'Required'),
         minLength: parseInt(getFieldValue(f, 'MinLength'), 10) || undefined,
@@ -152,6 +163,7 @@ export default function BasicForm(props: BasicFormProps) {
       successRedirect: getFieldValue(rootItem, 'SuccessRedirect')?.href || null,
       fields: mappedFields,
       script: script,
+      style: rootItem?.fields?.Style?.value || '',
     };
   };
 
@@ -230,7 +242,7 @@ export default function BasicForm(props: BasicFormProps) {
 
   return (
     <>
-      <form ref={formRef} name={formDef.name} onSubmit={onSubmit} className="sc-BasicForm space-y-6 max-w-lg mx-auto p-8 bg-white shadow-xl rounded-3xl border border-gray-100">
+      <form ref={formRef} name={formDef.name} onSubmit={onSubmit} className="sc-BasicForm space-y-6">
         {formDef.title && <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tight">{formDef.title}</h2>}
 
         {error && <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">{error}</div>}
@@ -241,7 +253,7 @@ export default function BasicForm(props: BasicFormProps) {
 
             return (
               <div key={f.key} className="flex flex-col gap-1.5">
-                {f.type !== 'link' && (
+                {f.type !== 'link' && f.type !== 'hidden' && f.type !== 'button' && (
                   <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">
                     {f.label} {f.required && <span className="text-red-500">*</span>}
                   </label>
@@ -277,9 +289,38 @@ export default function BasicForm(props: BasicFormProps) {
                   <a href={f.defaultValue} className="text-blue-600 hover:underline font-bold text-sm">
                     {f.label || f.key}
                   </a>
+                ) : f.type === 'button' ? (
+                  <button
+                    type="button"
+                    name={f.key}
+                    className="w-full py-4 bg-gray-100 text-gray-900 font-bold uppercase tracking-widest rounded-2xl hover:bg-gray-200 transition-all"
+                  >
+                    {f.label || f.placeholder || 'Action'}
+                  </button>
+                ) : f.type === 'hidden' ? (
+                  <input type="hidden" name={f.key} defaultValue={val} />
+                ) : f.type === 'rich text' ? (
+                  <div className="prose prose-slate max-w-none" dangerouslySetInnerHTML={{ __html: val }} />
+                ) : f.type === 'radio' ? (
+                  <div className="flex flex-wrap gap-6 py-2">
+                    {f.options?.map((opt) => (
+                      <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer group">
+                        <input
+                          type="radio"
+                          name={f.key}
+                          value={opt.value}
+                          defaultChecked={val === opt.value}
+                          className="w-5 h-5 border-gray-300 text-blue-600 focus:ring-blue-500 transition-all"
+                        />
+                        <span className="text-sm font-medium text-gray-600 group-hover:text-gray-900 transition-colors">
+                          {opt.label}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
                 ) : (
                   <input
-                    type={f.type}
+                    type={f.type === 'number' ? 'number' : f.type}
                     name={f.key}
                     defaultValue={val}
                     placeholder={f.placeholder}
@@ -310,52 +351,61 @@ export default function BasicForm(props: BasicFormProps) {
           )}
         </div>
       </form>
-      <div className='hidden-debug'>
-        {formDef.script && <RawHtmlInjector htmlString={formDef.script} />}
-      </div>
+        <div className='hidden-assets'>
+          <DynamicAssetsInjector scripts={formDef.script} style={formDef.style} />
+        </div>
 
     </>
   );
 }
 
-// Component helper để nhúng an toàn HTML chứa cả <style> và <script>
-function RawHtmlInjector({ htmlString }: { htmlString: string }) {
-  console.log("RawHtmlInjector", htmlString);
+// Component helper để nhúng Script (từ URL) và Style (CSS raw)
+function DynamicAssetsInjector({ scripts, style }: { scripts?: string; style?: string }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
 
-  // Xử lý unescape nếu chuỗi bị bọc trong dấu ngoặc kép (do JSON serialize)
-  let cleanHtml = htmlString;
-  if (typeof cleanHtml === 'string') {
-    if (cleanHtml.startsWith('"') && cleanHtml.endsWith('"')) {
-      try { cleanHtml = JSON.parse(cleanHtml); } catch (e) { }
+  // Hàm helper để giải mã các ký tự đặc biệt và xuống dòng từ Sitecore Multi-line text
+  const cleanSitecoreText = (text: string) => {
+    if (!text) return '';
+    let result = text;
+    // Xử lý nếu chuỗi bị bọc trong ngoặc kép (JSON literal)
+    if (result.startsWith('"') && result.endsWith('"')) {
+      try { result = JSON.parse(result); } catch (e) { }
     }
-
-    // Giải mã (Unescape) HTML Entities do Sitecore có thể encode chuỗi nhập vào
-    cleanHtml = cleanHtml
+    // Giải mã HTML Entities cơ bản
+    result = result
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
       .replace(/&#39;/g, "'")
       .replace(/&amp;/g, '&');
-
-    // Chuyển \n \t thành ký tự thực (nếu đang là chuỗi literal)
-    cleanHtml = cleanHtml.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
-  }
+    // Chuyển \n literal thành xuống dòng thực
+    return result.replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+  };
 
   React.useEffect(() => {
-    console.log("RawHtmlInjector received cleanHtml:", cleanHtml);
-    if (!containerRef.current || !cleanHtml) return;
+    const rawScripts = cleanSitecoreText(scripts || '');
+    if (!rawScripts) return;
 
-    // Tìm tất cả các thẻ <script> bên trong chuỗi HTML vừa nhúng
-    const scripts = containerRef.current.querySelectorAll('script');
-    scripts.forEach((oldScript) => {
-      // Trình duyệt không chạy script nhúng qua innerHTML, ta phải clone nó ra thẻ mới
-      const newScript = document.createElement('script');
-      Array.from(oldScript.attributes).forEach((attr) => newScript.setAttribute(attr.name, attr.value));
-      newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-      oldScript.parentNode?.replaceChild(newScript, oldScript);
+    // Tách các link JS theo từng dòng
+    const scriptUrls = rawScripts
+      .split('\n')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0 && !s.startsWith('//') && !s.startsWith('#'));
+
+    scriptUrls.forEach((url) => {
+      if (document.querySelector(`script[src="${url}"]`)) return;
+      const script = document.createElement('script');
+      script.src = url;
+      script.async = true;
+      document.body.appendChild(script);
     });
-  }, [cleanHtml]);
+  }, [scripts]);
 
-  return <div ref={containerRef} dangerouslySetInnerHTML={{ __html: cleanHtml }} />;
+  const cleanStyle = cleanSitecoreText(style || '');
+
+  return (
+    <div ref={containerRef} style={{ display: 'none' }}>
+      {cleanStyle && <style dangerouslySetInnerHTML={{ __html: cleanStyle }} />}
+    </div>
+  );
 }
