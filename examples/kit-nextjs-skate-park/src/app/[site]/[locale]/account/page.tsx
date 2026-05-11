@@ -15,63 +15,88 @@ export default async function AccountPage({ params }: { params: { locale: string
   }
 
   return (
-    <div className="max-w-4xl mx-auto py-20 px-6">
-      <div className="mb-12">
-        <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tight mb-2">My Account</h1>
-        <p className="text-gray-500">Manage your profile and account settings.</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div className="w-full min-h-screen bg-white">
+      <div className="flex flex-col md:flex-row min-h-screen">
         {/* Navigation Sidebar */}
-        <div className="md:col-span-1">
-          <nav className="flex flex-col gap-2">
-            <button className="text-left p-4 bg-gray-900 text-white rounded-2xl font-bold transition-all">
+        <aside className="w-full md:w-72 bg-gray-50/50 border-r border-gray-100 p-8 flex flex-col gap-8">
+          <div>
+            <h1 className="text-2xl font-black text-gray-900 uppercase tracking-tight mb-1">My Account</h1>
+            <p className="text-[13px] text-gray-500 font-medium">Manage your settings</p>
+          </div>
+
+          <nav className="flex flex-col gap-1.5">
+            <button className="flex items-center gap-3 text-left p-4 bg-white text-gray-900 rounded-2xl font-bold shadow-sm border border-gray-100 transition-all">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-600"></span>
               Profile Information
             </button>
-            <button className="text-left p-4 bg-white text-gray-600 hover:bg-gray-50 rounded-2xl font-medium transition-all">
+            <button className="flex items-center gap-3 text-left p-4 text-gray-500 hover:bg-gray-100/50 rounded-2xl font-semibold transition-all">
+              <span className="w-1.5 h-1.5 rounded-full bg-transparent"></span>
               Order History
             </button>
-            <button className="text-left p-4 bg-white text-gray-600 hover:bg-gray-50 rounded-2xl font-medium transition-all">
+            <button className="flex items-center gap-3 text-left p-4 text-gray-500 hover:bg-gray-100/50 rounded-2xl font-semibold transition-all">
+              <span className="w-1.5 h-1.5 rounded-full bg-transparent"></span>
               Addresses
             </button>
+            <button className="flex items-center gap-3 text-left p-4 text-gray-500 hover:bg-gray-100/50 rounded-2xl font-semibold transition-all">
+              <span className="w-1.5 h-1.5 rounded-full bg-transparent"></span>
+              Payment Methods
+            </button>
           </nav>
-        </div>
+
+          <div className="mt-auto pt-8 border-t border-gray-100">
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4">Support</p>
+            <button className="w-full text-left p-4 text-gray-600 hover:bg-gray-100 rounded-2xl font-medium transition-all text-sm">
+              Contact Us
+            </button>
+          </div>
+        </aside>
 
         {/* Profile Content */}
-        <div className="md:col-span-2">
-          <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
-            <h2 className="text-xl font-bold mb-6">Profile Details</h2>
+        <main className="flex-1 p-8 md:p-16 bg-white">
+          <div className="max-w-3xl">
+            <header className="mb-12">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Profile Details</h2>
+              <p className="text-gray-500">View and update your personal information.</p>
+            </header>
             
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[13px] font-bold text-gray-400 uppercase tracking-wider block mb-1">First Name</label>
-                  <p className="text-[16px] font-medium text-gray-900">{user.FirstName}</p>
+            <div className="bg-gray-50/30 rounded-[32px] border border-gray-100 p-8 md:p-12">
+              <div className="space-y-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-[0.1em] block">First Name</label>
+                    <p className="text-lg font-bold text-gray-900">{user.FirstName}</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-[0.1em] block">Last Name</label>
+                    <p className="text-lg font-bold text-gray-900">{user.LastName}</p>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-[13px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Last Name</label>
-                  <p className="text-[16px] font-medium text-gray-900">{user.LastName}</p>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black text-gray-400 uppercase tracking-[0.1em] block">Email Address</label>
+                  <p className="text-lg font-bold text-gray-900">{user.Email}</p>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-100">
+                    Verified
+                  </span>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black text-gray-400 uppercase tracking-[0.1em] block">Username</label>
+                  <p className="text-lg font-bold text-gray-900">{user.Username}</p>
                 </div>
               </div>
 
-              <div>
-                <label className="text-[13px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Email Address</label>
-                <p className="text-[16px] font-medium text-gray-900">{user.Email}</p>
+              <div className="mt-16 pt-10 border-t border-gray-100 flex gap-4">
+                 <button className="px-10 py-4 bg-gray-900 text-white font-bold rounded-2xl hover:bg-gray-800 transition-all shadow-lg shadow-gray-200">
+                   Edit Profile
+                 </button>
+                 <button className="px-10 py-4 bg-white text-gray-900 font-bold rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all">
+                   Change Password
+                 </button>
               </div>
-
-              <div>
-                <label className="text-[13px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Username</label>
-                <p className="text-[16px] font-medium text-gray-900">{user.Username}</p>
-              </div>
-            </div>
-
-            <div className="mt-10 pt-10 border-t border-gray-50">
-               <button className="px-8 py-3 bg-gray-100 text-gray-900 font-bold rounded-2xl hover:bg-gray-200 transition-all">
-                 Edit Profile
-               </button>
             </div>
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );
