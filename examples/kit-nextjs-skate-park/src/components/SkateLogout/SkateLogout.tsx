@@ -1,15 +1,17 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { Field } from '@sitecore-content-sdk/nextjs';
 import { useRouter } from 'src/i18n/navigation';
 import { useUserStore } from 'src/lib/user/store';
 import { Loader2, LogOut } from 'lucide-react';
 
 /**
- * Logout Page with a 3-second countdown.
+ * SkateLogout Component
+ * Designed to be used in a Sitecore placeholder on the logout page.
  * Handles clearing local state (Zustand) and server state (Cookies).
  */
-export default function LogoutPage() {
+export const Default = (props: any) => {
   const router = useRouter();
   const clearUser = useUserStore((state) => state.clearUser);
   const [countdown, setCountdown] = useState(3);
@@ -45,7 +47,7 @@ export default function LogoutPage() {
   }, [clearUser, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8F9FB]">
+    <div className="flex items-center justify-center py-20 px-4">
       <div className="max-w-md w-full p-10 bg-white rounded-[40px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] text-center space-y-8 border border-gray-100">
         <div className="relative inline-flex items-center justify-center w-24 h-24">
           <div className="absolute inset-0 bg-red-50 rounded-full animate-ping opacity-20"></div>
@@ -74,4 +76,4 @@ export default function LogoutPage() {
       </div>
     </div>
   );
-}
+};

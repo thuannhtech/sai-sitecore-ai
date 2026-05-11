@@ -61,7 +61,7 @@ export const SkateAccountIndicator: React.FC<SkateAccountIndicatorProps> = ({ us
           }`}
       >
         <Link
-          href="/account"
+          href="/account/my-account"
           className="flex items-center gap-3 px-4 py-3 text-sm font-medium !text-gray-700 hover:bg-gray-50 transition-colors mx-2 rounded-xl"
         >
           <Settings size={16} className="!text-gray-400" />
@@ -71,7 +71,7 @@ export const SkateAccountIndicator: React.FC<SkateAccountIndicatorProps> = ({ us
         <div className="h-px bg-gray-50 my-1 mx-2"></div>
 
         <Link
-          href="/logout"
+          href="/account/logout"
           className="flex items-center gap-3 px-4 py-3 text-sm font-medium !text-red-600 hover:bg-red-50 transition-colors mx-2 rounded-xl"
         >
           <LogOut size={16} className="!text-red-600" />
