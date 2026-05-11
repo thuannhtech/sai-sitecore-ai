@@ -28,6 +28,8 @@ import * as BasicForm from 'src/components/forms/BasicForm';
 import * as BlogListing from 'src/components/BlogListing/BlogListing';
 import * as BannerSlider from 'src/components/BannerSlider/BannerSlider';
 import * as BannerSlideItem from 'src/components/BannerSlideItem/BannerSlideItem';
+import * as UserHydrator from 'src/components/AccountIndicator/UserHydrator';
+import * as SkateAccountIndicator from 'src/components/AccountIndicator/SkateAccountIndicator';
 
 export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['BYOCWrapper', BYOCClientWrapper],
@@ -58,6 +60,8 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['BlogListing', { ...BlogListing }],
   ['BannerSlider', { ...BannerSlider }],
   ['BannerSlideItem', { ...BannerSlideItem }],
+  ['UserHydrator', { ...UserHydrator }],
+  ['SkateAccountIndicator', { ...SkateAccountIndicator }],
 ]);
 
 export default componentMap;

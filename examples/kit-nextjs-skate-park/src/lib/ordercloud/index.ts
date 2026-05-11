@@ -7,9 +7,8 @@ import { config } from 'src/lib/config';
  */
 Configuration.Set({
   baseApiUrl: config.ordercloud.baseApiUrl,
-  clientID: config.ordercloud.clientId || '',
+  timeoutInMilliseconds: 20 * 1000,
   cookieOptions: {
-    prefix: 'skate-park',
     secure: process.env.NODE_ENV === 'production',
   }
 });

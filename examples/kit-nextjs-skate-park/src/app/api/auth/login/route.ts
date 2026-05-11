@@ -1,34 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { authService } from 'src/lib/ordercloud/auth';
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password, remember } = await req.json();
+    const body = await req.json();
+    const { email, password } = body || {};
+
     if (!email || !password) {
-      return NextResponse.json({ message: 'Missing credentials' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing credentials' }, { status: 400 });
     }
 
-    // TODO: Integrate with your IdP (Auth0, Cognito, Azure AD B2C, etc.)
-    await new Promise((res) => setTimeout(res, 1000));
-    const ok = true;
+    // Decode password from Base64 (consistent with registration)
+    const decodedPassword = Buffer.from(password, 'base64').toString('utf8');
 
-    if (!ok) {
-      return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
-    }
+    // Perform Login via OrderCloud Service
+    // Using email as the username as defined in the registration process
+    const authResponse = await authService.login(email, decodedPassword);
 
-    // Example: Set a secure cookie/session here
-    // const res = NextResponse.json({ ok: true })
-    // res.headers.append('Set-Cookie', `session=...; Path=/; HttpOnly; SameSite=Lax; Secure`)
-    // return res
-    
-    return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json(
-      { message: e?.message || 'Server error' },
-      { status: 500 }
-    );
+    // Return the auth response (tokens) and user info to the client
+    return NextResponse.json({
+      ok: true,
+      access_token: authResponse.access_token,
+      refresh_token: authResponse.refresh_token,
+      expires_in: authResponse.expires_in,
+    });
+
+  } catch (error: any) {
+    const errorData = error.response?.data;
+    console.error('[API Login Error Detail]', JSON.stringify(errorData, null, 2));
+
+    // Extract meaningful error message from OrderCloud response
+    const message = errorData?.error_description || errorData?.Errors?.[0]?.Message || error.message || 'Invalid credentials';
+
+    return NextResponse.json({ error: message }, { status: 401 });
   }
 }
 
 export function GET() {
-  return NextResponse.json({ message: 'Method not allowed' }, { status: 405 });
+  return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
 }

@@ -14,7 +14,9 @@ type FieldType =
   | 'number'
   | 'hidden'
   | 'rich text'
-  | 'radio';
+  | 'radio'
+  | 'row'
+  | 'label';
 
 type FormOption = { label: string; value: string };
 
@@ -31,6 +33,7 @@ type FormField = {
   helpText?: string;
   validationMessage?: string;
   defaultValue?: string;
+  children?: FormField[];
 };
 
 type FormDefinition = {
@@ -104,6 +107,8 @@ export default function BasicForm(props: BasicFormProps) {
     let fieldItems: any[] = [];
     const isResolver = !!data.items;
 
+    console.log("data: ", data);
+
     if (isResolver) {
       rootItem = data.items?.[0];
       fieldItems = data.items?.slice(1) || [];
@@ -114,14 +119,14 @@ export default function BasicForm(props: BasicFormProps) {
 
     if (!rootItem) return null;
 
-    const mappedFields: FormField[] = fieldItems.map((f: any) => {
+    const mapSingleField = (f: any): FormField => {
       // Parse Options cho Select
       const optionsStr = String(getFieldValue(f, 'Options') || '');
       const options = optionsStr
         .split('\n')
-        .map(l => l.trim())
+        .map((l: string) => l.trim())
         .filter(Boolean)
-        .map(l => {
+        .map((l: string) => {
           const idx = l.indexOf('|');
           return idx > -1
             ? { label: l.slice(0, idx).trim(), value: l.slice(idx + 1).trim() }
@@ -131,7 +136,17 @@ export default function BasicForm(props: BasicFormProps) {
       let type = String(getFieldValue(f, 'Type') || 'text').toLowerCase();
       if (type === 'hiddenfield') type = 'hidden';
       if (type === 'richtext' || type === 'rich-text') type = 'rich text';
-      if (type === 'radiobutton' || type === 'radio-button') type = 'radio';
+      if (type === 'radiobutton' || type === 'radio-button' || type === 'radiobutton') type = 'radio';
+      if (type === 'label') type = 'label';
+
+      // Nhận diện FormRow qua template name hoặc item name
+      const isRow =
+        f.templateName === 'FormRow' ||
+        f.template?.name === 'FormRow' ||
+        String(f.name || '').startsWith('FormRow');
+      if (isRow) type = 'row';
+
+      const childItems = f.children?.results || f.children || [];
 
       return {
         key: String(getFieldValue(f, 'Key') || f.name || f.displayName || ''),
@@ -146,8 +161,51 @@ export default function BasicForm(props: BasicFormProps) {
         helpText: String(getFieldValue(f, 'HelpText') || ''),
         validationMessage: String(getFieldValue(f, 'ValidationMessage') || ''),
         defaultValue: String(getFieldValue(f, 'DefaultValue') || ''),
-      };
+        children: isRow && childItems.length > 0 ? childItems.map(mapSingleField) : undefined,
+        url: f.url, // Lưu tạm URL để xử lý cây
+      } as FormField & { url?: string };
+    };
+
+    // Bước 1: Map tất cả thành FormField (vẫn là mảng phẳng)
+    const allMapped = fieldItems.map(mapSingleField);
+
+    // Bước 2: Xây dựng cấu trúc cây dựa trên URL (đối với trường hợp Resolver trả về flat list)
+    const rootPath = rootItem.url || '';
+    const finalFields: FormField[] = [];
+
+    allMapped.forEach((f) => {
+      const url = (f as any).url || '';
+      const parentPath = url.substring(0, url.lastIndexOf('/'));
+
+      // Nếu là con trực tiếp của Form hoặc không có path (fallback)
+      if (parentPath === rootPath || !parentPath || !rootPath) {
+        finalFields.push(f);
+      } else {
+        // Tìm Row cha trong danh sách đã map
+        const parentRow = allMapped.find((p) => (p as any).url === parentPath && p.type === 'row');
+        if (parentRow) {
+          parentRow.children = parentRow.children || [];
+
+          // Kiểm tra nếu đã có field cùng Key trong Row này (đặc biệt hữu ích cho Radio Group)
+          const existingField = parentRow.children.find((c) => c.key === f.key);
+
+          if (existingField && existingField.type === 'radio' && f.type === 'radio') {
+            // Gộp options lại thay vì tạo field mới
+            existingField.options = [...(existingField.options || []), ...(f.options || [])];
+          } else {
+            // Tránh add trùng item vật lý (dựa trên URL)
+            if (!parentRow.children.find((c) => (c as any).url === (f as any).url)) {
+              parentRow.children.push(f);
+            }
+          }
+        } else {
+          // Nếu không tìm thấy row cha, vẫn đẩy ra ngoài để không mất data
+          finalFields.push(f);
+        }
+      }
     });
+
+    const mappedFields = finalFields;
 
     const script = rootItem?.fields?.Script?.value || '';
     console.log("script", script);
@@ -249,86 +307,120 @@ export default function BasicForm(props: BasicFormProps) {
 
         <div className="space-y-4">
           {formDef.fields.map((f) => {
-            const val = savedData[f.key] || f.defaultValue;
+            const renderFieldContent = (field: FormField) => {
+              const val = savedData[field.key] || field.defaultValue;
 
-            return (
-              <div key={f.key} className="flex flex-col gap-1.5">
-                {f.type !== 'link' && f.type !== 'hidden' && f.type !== 'button' && (
-                  <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">
-                    {f.label} {f.required && <span className="text-red-500">*</span>}
-                  </label>
-                )}
-
-                {f.type === 'textarea' ? (
-                  <textarea
-                    name={f.key}
-                    defaultValue={val}
-                    placeholder={f.placeholder}
-                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all min-h-[120px]"
-                  />
-                ) : f.type === 'select' ? (
-                  <select
-                    name={f.key}
-                    defaultValue={val}
-                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
-                  >
-                    <option value="">{f.placeholder || 'Chọn...'}</option>
-                    {f.options?.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                  </select>
-                ) : f.type === 'checkbox' ? (
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <input
-                      type="checkbox"
-                      name={f.key}
-                      defaultChecked={val === 'true' || val === '1' || val === true}
-                      className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{f.helpText || f.label}</span>
-                  </label>
-                ) : f.type === 'link' ? (
-                  <a href={f.defaultValue} className="text-blue-600 hover:underline font-bold text-sm">
-                    {f.label || f.key}
-                  </a>
-                ) : f.type === 'button' ? (
-                  <button
-                    type="button"
-                    name={f.key}
-                    className="w-full py-4 bg-gray-100 text-gray-900 font-bold uppercase tracking-widest rounded-2xl hover:bg-gray-200 transition-all"
-                  >
-                    {f.label || f.placeholder || 'Action'}
-                  </button>
-                ) : f.type === 'hidden' ? (
-                  <input type="hidden" name={f.key} defaultValue={val} />
-                ) : f.type === 'rich text' ? (
-                  <div className="prose prose-slate max-w-none" dangerouslySetInnerHTML={{ __html: val }} />
-                ) : f.type === 'radio' ? (
-                  <div className="flex flex-wrap gap-6 py-2">
-                    {f.options?.map((opt) => (
-                      <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer group">
-                        <input
-                          type="radio"
-                          name={f.key}
-                          value={opt.value}
-                          defaultChecked={val === opt.value}
-                          className="w-5 h-5 border-gray-300 text-blue-600 focus:ring-blue-500 transition-all"
-                        />
-                        <span className="text-sm font-medium text-gray-600 group-hover:text-gray-900 transition-colors">
-                          {opt.label}
-                        </span>
-                      </label>
+              if (field.type === 'row') {
+                return (
+                  <div key={field.key} className="flex flex-col md:flex-row md:flex-wrap items-start">
+                    {field.children?.map((child) => (
+                      <div key={child.key} className={child.type === 'label' ? 'w-full' : 'flex-1 w-full'}>
+                        {renderFieldContent(child)}
+                      </div>
                     ))}
                   </div>
-                ) : (
-                  <input
-                    type={f.type === 'number' ? 'number' : f.type}
-                    name={f.key}
-                    defaultValue={val}
-                    placeholder={f.placeholder}
-                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                  />
-                )}
-              </div>
-            );
+                );
+              }
+
+              if (field.type === 'label') {
+                return (
+                  <div key={field.key} className="pt-2 pb-1">
+                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                      {field.label}
+                    </label>
+                  </div>
+                );
+              }
+
+              return (
+                <div key={field.key} className="flex flex-col gap-1.5">
+                  {field.type !== 'link' && field.type !== 'hidden' && field.type !== 'button' && (
+                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                      {field.label} {field.required && <span className="text-red-500">*</span>}
+                    </label>
+                  )}
+
+                  {field.type === 'textarea' ? (
+                    <textarea
+                      name={field.key}
+                      defaultValue={val}
+                      placeholder={field.placeholder}
+                      className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all min-h-[120px]"
+                    />
+                  ) : field.type === 'select' ? (
+                    <select
+                      name={field.key}
+                      defaultValue={val}
+                      className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
+                    >
+                      <option value="">{field.placeholder || 'Chọn...'}</option>
+                      {field.options?.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : field.type === 'checkbox' ? (
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        name={field.key}
+                        defaultChecked={val === 'true' || val === '1' || val === true}
+                        className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-[15px] font-medium text-gray-600 group-hover:text-gray-900 transition-colors">
+                        {field.helpText || field.label}
+                      </span>
+                    </label>
+                  ) : field.type === 'link' ? (
+                    <a href={field.defaultValue} className="text-blue-600 hover:underline font-bold text-[15px]">
+                      {field.label || field.key}
+                    </a>
+                  ) : field.type === 'button' ? (
+                    <button
+                      type="button"
+                      name={field.key}
+                      className="w-full py-4 bg-gray-100 text-gray-900 font-bold uppercase tracking-widest rounded-2xl hover:bg-gray-200 transition-all text-[15px]"
+                    >
+                      {field.label || field.placeholder || 'Action'}
+                    </button>
+                  ) : field.type === 'hidden' ? (
+                    <input type="hidden" name={field.key} defaultValue={val} />
+                  ) : field.type === 'rich text' ? (
+                    <div className="prose prose-slate max-w-none" dangerouslySetInnerHTML={{ __html: val }} />
+                  ) : field.type === 'radio' ? (
+                    <div className="flex flex-wrap radio-group gap-10">
+                      {field.options?.map((opt) => (
+                        <label key={opt.value}>
+                          <div className="flex items-center gap-2.5 cursor-pointer group">
+                            <input
+                              type="radio"
+                              name={field.key}
+                              value={opt.value}
+                              defaultChecked={val === opt.value}
+                              className="w-5 h-5 border-gray-300 text-blue-600 focus:ring-blue-500 transition-all"
+                            />
+                            <span className="text-[15px] font-medium text-gray-600 group-hover:text-gray-900 transition-colors">
+                              {opt.label}
+                            </span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <input
+                      type={field.type === 'number' ? 'number' : field.type}
+                      name={field.key}
+                      defaultValue={val}
+                      placeholder={field.placeholder}
+                      className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    />
+                  )}
+                </div>
+              );
+            };
+
+            return renderFieldContent(f);
           })}
         </div>
 
@@ -344,16 +436,16 @@ export default function BasicForm(props: BasicFormProps) {
           {formDef.secondaryButtonText && (
             <a
               href={formDef.secondaryButtonUrl || '#'}
-              className="w-full py-4 bg-white text-gray-900 border border-gray-200 font-bold uppercase tracking-widest rounded-2xl hover:bg-gray-50 text-center transition-all"
+              className="w-full py-4 bg-white text-gray-900 border border-gray-200 font-bold uppercase tracking-widest rounded-2xl hover:bg-gray-50 text-center transition-all text-[15px]"
             >
               {formDef.secondaryButtonText}
             </a>
           )}
         </div>
       </form>
-        <div className='hidden-assets'>
-          <DynamicAssetsInjector scripts={formDef.script} style={formDef.style} />
-        </div>
+      <div className='hidden-assets'>
+        <DynamicAssetsInjector scripts={formDef.script} style={formDef.style} />
+      </div>
 
     </>
   );

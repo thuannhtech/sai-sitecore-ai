@@ -13,6 +13,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { setRequestLocale, getMessages } from "next-intl/server";
 import { ComponentPropsCollection } from "@sitecore-content-sdk/nextjs";
 import { Page as PageData } from "@sitecore-content-sdk/nextjs";
+import { getServerUser } from 'src/lib/ordercloud/server-auth';
 
 type PageProps = {
   params: Promise<{
@@ -70,9 +71,11 @@ export default async function Page({ params, searchParams }: PageProps) {
   };
 
 
+  const user = await getServerUser();
+
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
-      <Providers page={page} componentProps={enrichedPage}>
+      <Providers page={page} componentProps={enrichedPage} user={user}>
         <Layout page={page} />
       </Providers>
     </NextIntlClientProvider>

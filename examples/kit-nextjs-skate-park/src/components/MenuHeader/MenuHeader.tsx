@@ -7,6 +7,7 @@ import React from 'react';
 import { Link } from 'src/i18n/navigation';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { SkateCartToggle } from '../SkateCart/SkateCartToggle';
+import { SkateAccountIndicator } from '../AccountIndicator/SkateAccountIndicator';
 
 interface Fields {
     Image: ImageField;
@@ -18,7 +19,8 @@ type MenuHeaderBarProps = {
     fields: Fields;
 };
 
-export const Default: React.FC<MenuHeaderBarProps> = ({ params, fields }) => {
+export const Default: React.FC<MenuHeaderBarProps> = async (props) => {
+    const { params, fields } = props;
     const styles = `${params.GridParameters || ''} ${params.styles || ''}`.trim();
     const id = params.RenderingIdentifier || undefined;
 
@@ -39,6 +41,9 @@ export const Default: React.FC<MenuHeaderBarProps> = ({ params, fields }) => {
 
             {/* Utility Section (Language & Search) */}
             <div className="utility-section">
+
+                {/* Account Indicator */}
+                <SkateAccountIndicator />
 
                 {/* Cart Toggle */}
                 <SkateCartToggle />

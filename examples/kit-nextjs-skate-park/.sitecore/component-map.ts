@@ -58,6 +58,8 @@ import * as BlogDetail from 'src/components/Blog/BlogDetail';
 import * as BannerSlider from 'src/components/BannerSlider/BannerSlider';
 import * as BannerSlideItem from 'src/components/BannerSlideItem/BannerSlideItem';
 import * as BannerImage from 'src/components/BannerImage/BannerImage';
+import * as UserHydrator from 'src/components/AccountIndicator/UserHydrator';
+import * as SkateAccountIndicator from 'src/components/AccountIndicator/SkateAccountIndicator';
 
 export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['BYOCWrapper', BYOCServerWrapper],
@@ -113,6 +115,8 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['BannerSlider', { ...BannerSlider, componentType: 'client' }],
   ['BannerSlideItem', { ...BannerSlideItem, componentType: 'client' }],
   ['BannerImage', { ...BannerImage }],
+  ['UserHydrator', { ...UserHydrator, componentType: 'client' }],
+  ['SkateAccountIndicator', { ...SkateAccountIndicator, componentType: 'client' }],
 ]);
 
 export default componentMap;

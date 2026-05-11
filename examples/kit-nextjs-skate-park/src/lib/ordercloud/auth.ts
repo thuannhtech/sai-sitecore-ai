@@ -1,5 +1,6 @@
-import { Auth, Me, Tokens, Users } from './index';
+import { Me, Users, ApiRole, Auth, Tokens } from './index';
 import { config } from 'src/lib/config';
+import { userService } from './user';
 
 /**
  * Service for handling User Authentication with OrderCloud.
@@ -11,19 +12,25 @@ export const authService = {
    */
   login: async (username: string, password: string) => {
     try {
-      const authResponse = await Auth.Login(
-        username, 
-        password, 
-        config.ordercloud.clientId!, 
-        ['FullAccess', 'MeAddressAdmin', 'MeCreditCardAdmin']
+
+      const clientID = config.ordercloud.storeFrontClientId!;
+      const scope: ApiRole[] = ['FullAccess'];
+      const accessToken = await Auth.Login(
+        username,
+        password,
+        clientID,
+        scope
       );
-      return authResponse;
+
+      Tokens.SetAccessToken(accessToken.access_token);
+
+      return accessToken;
     } catch (error) {
       console.error('[OrderCloud] Login Error:', error);
       throw error;
     }
   },
-  
+
   /**
    * Register a new Buyer User.
    * Server-side: Uses Client Credentials and Users.Create for maximum reliability.
@@ -32,18 +39,18 @@ export const authService = {
     try {
       // 1. Get an elevated token using Client Secret
       const authResponse = await Auth.ClientCredentials(
-        config.ordercloud.clientSecret!, 
-        config.ordercloud.clientId!, 
-        ['BuyerUserAdmin']
+        config.ordercloud.adminClientSecret!,
+        config.ordercloud.adminClientId!,
+        ['FullAccess']
       );
 
       // 2. Create the user directly in the specified Buyer Organization
       const response = await Users.Create(
-        config.ordercloud.buyerId!, 
+        config.ordercloud.buyerId!,
         {
           ...userData,
           Active: true,
-        }, 
+        },
         { accessToken: authResponse.access_token }
       );
 
@@ -60,6 +67,6 @@ export const authService = {
   },
 
   getToken: () => Tokens.GetAccessToken(),
-  
+
   isAuthenticated: () => !!Tokens.GetAccessToken(),
 };
