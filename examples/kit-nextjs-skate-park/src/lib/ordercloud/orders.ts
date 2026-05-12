@@ -1,6 +1,5 @@
 import { Address, Cart } from './index';
 import { cartService } from './cart';
-import { tokenHelper } from './token-helper';
 
 export interface OrderAddressInput {
   firstName: string;
@@ -39,7 +38,14 @@ export const orderService = {
   /**
    * Create or return the current active order from the shopper cart.
    */
-      const accessToken = await tokenHelper.getValidToken();
+  createOrder: async () => {
+    try {
+      const accessToken = await cartService.getAccessTokenFromCookies();
+
+      if (!accessToken) {
+        throw new Error('Missing OrderCloud access token');
+      }
+
       return await cartService.ensureCart(accessToken);
     } catch (error) {
       console.error('[OrderCloud] CreateOrder Error:', error);
@@ -52,8 +58,7 @@ export const orderService = {
    */
   getOrder: async () => {
     try {
-      const accessToken = await tokenHelper.getValidToken();
-      return await cartService.getCart(accessToken);
+      return await cartService.getCart();
     } catch (error) {
       console.error('[OrderCloud] GetOrder Error:', error);
       throw error;
@@ -65,7 +70,11 @@ export const orderService = {
    */
   setShippingAddress: async (address: OrderAddressInput) => {
     try {
-      const accessToken = await tokenHelper.getValidToken();
+      const accessToken = await cartService.getAccessTokenFromCookies();
+
+      if (!accessToken) {
+        throw new Error('Missing OrderCloud access token');
+      }
 
       return await Cart.SetShippingAddress(mapAddressInput(address), { accessToken });
     } catch (error) {
@@ -79,7 +88,10 @@ export const orderService = {
    */
   setBillingAddress: async (address: OrderAddressInput) => {
     try {
-      const accessToken = await tokenHelper.getValidToken();
+      const accessToken = await cartService.getAccessTokenFromCookies();
+      if (!accessToken) {
+        throw new Error('Missing OrderCloud access token');
+      }
 
       return await Cart.SetBillingAddress(mapAddressInput(address), { accessToken });
     } catch (error) {

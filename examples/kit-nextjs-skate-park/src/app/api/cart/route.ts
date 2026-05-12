@@ -4,9 +4,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const accessToken = await tokenHelper.getValidToken();
-    const cart = await cartService.getCart(accessToken);
-    const items = await cartService.getLineItems(accessToken);
+    const cart = await cartService.getCart();
+    const items = await cartService.getLineItems();
 
     return NextResponse.json({
       ok: true,

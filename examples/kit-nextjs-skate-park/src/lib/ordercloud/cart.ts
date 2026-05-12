@@ -1,4 +1,4 @@
-import { authService } from './auth';
+import { cookies } from 'next/headers';
 import { Cart, LineItem, Order } from './index';
 import { tokenHelper } from './token-helper';
 
@@ -18,9 +18,15 @@ export interface UpdateCartLineItemQuantityInput {
  * This service is designed to be used on the server (API routes, Server Actions).
  */
 export const cartService = {
+  getAccessTokenFromCookies: async () => {
+    const cookieStore = await cookies();
+    return cookieStore.get('skate-park.access-token')?.value;
+  },
+
   ensureCart: async (accessToken: string) => {
     const cart = await Cart.Get({ accessToken });
 
+    console.log('Current cart:', cart); // Debug log
     if (cart.ID) {
       return cart;
     }
@@ -31,10 +37,15 @@ export const cartService = {
   /**
    * Get the current active cart for the authenticated shopper.
    */
-  getCart: async (accessToken: string) => {
+  getCart: async () => {
     try {
-      try {
-        return await Cart.Get({ accessToken });
+      const accessToken = await cartService.getAccessTokenFromCookies();
+
+      if (!accessToken) {
+        throw new Error('Missing OrderCloud access token');
+      }
+
+      return await Cart.Get({ accessToken });
       } catch (e: any) {
         if (e.response?.status === 404 || e.status === 404) {
           return null;
@@ -50,17 +61,16 @@ export const cartService = {
   /**
    * Get all line items from the current active cart.
    */
-  getLineItems: async (accessToken: string) => {
+  getLineItems: async () => {
     try {
-      try {
-        const response = await Cart.ListLineItems(undefined, { accessToken });
-        return response.Items || [];
-      } catch (e: any) {
-        if (e.response?.status === 404 || e.status === 404) {
-          return [];
-        }
-        throw e;
+      const accessToken = await cartService.getAccessTokenFromCookies();
+
+      if (!accessToken) {
+        throw new Error('Missing OrderCloud access token');
       }
+
+      const response = await Cart.ListLineItems(undefined, { accessToken });
+      return response.Items;
     } catch (error) {
       console.error('[OrderCloud] GetCartLineItems Error:', error);
       throw error;
@@ -70,45 +80,15 @@ export const cartService = {
   /**
    * Add a new line item to the current active cart.
    */
-  addLineItem: async (item: AddCartLineItemInput, providedAccessToken?: string) => {
+  addLineItem: async (item: AddCartLineItemInput) => {
     try {
-      // Check for existing token, create anonymous if missing
-      let accessToken = providedAccessToken || await tokenHelper.getAccessTokenFromCookies();
+      const accessToken = await cartService.getAccessTokenFromCookies();
 
       if (!accessToken) {
-        console.log('[OrderCloud] No token found, getting anonymous token...');
-        accessToken = await authService.getAnonymousToken();
-        // Save token to cookie for future requests
-        await tokenHelper.setAccessTokenInCookies(accessToken);
+        throw new Error('Missing OrderCloud access token');
       }
 
-      const cart = await cartService.ensureCart(accessToken);
-
-      console.log('[OrderCloud] Adding line item to cart', {
-        cartId: cart.ID,
-        productId: item.ProductID,
-        quantity: item.Quantity,
-      });
-
-      const existingItems = await Cart.ListLineItems(undefined, { accessToken });
-      const existingItem = existingItems.Items?.find(
-        existing => existing.ProductID === item.ProductID
-      );
-
-      if (existingItem) {
-        const currentQuantity = existingItem.Quantity ?? 0;
-        const lineItemId = existingItem.ID;
-
-        if (!lineItemId) {
-          throw new Error('Existing line item is missing its ID');
-        }
-
-        return await Cart.PatchLineItem(
-          lineItemId,
-          { Quantity: currentQuantity + item.Quantity },
-          { accessToken }
-        );
-      }
+      await cartService.ensureCart(accessToken);
 
       const lineItem: LineItem = {
         ProductID: item.ProductID,
@@ -128,8 +108,14 @@ export const cartService = {
   /**
    * Update the quantity of an existing line item in the current active cart.
    */
-  updateLineItemQuantity: async (item: UpdateCartLineItemQuantityInput, accessToken: string) => {
+  updateLineItemQuantity: async (item: UpdateCartLineItemQuantityInput) => {
     try {
+      const accessToken = await cartService.getAccessTokenFromCookies();
+
+      if (!accessToken) {
+        throw new Error('Missing OrderCloud access token');
+      }
+
       return await Cart.PatchLineItem(
         item.LineItemID,
         {
@@ -149,8 +135,14 @@ export const cartService = {
   /**
    * Remove a line item from the current active cart.
    */
-  removeLineItem: async (lineItemID: string, accessToken: string) => {
+  removeLineItem: async (lineItemID: string) => {
     try {
+      const accessToken = await cartService.getAccessTokenFromCookies();
+
+      if (!accessToken) {
+        throw new Error('Missing OrderCloud access token');
+      }
+
       await Cart.DeleteLineItem(lineItemID, { accessToken });
     } catch (error) {
       console.error(`[OrderCloud] RemoveCartLineItem Error for LineItem ${lineItemID}:`, error);
