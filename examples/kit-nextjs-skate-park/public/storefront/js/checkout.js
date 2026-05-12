@@ -263,7 +263,7 @@ const SkateCheckoutBridge = {
     // 6. Validation Logic
     validate(data) {
         const errors = [];
-        const requiredFields = ['FullName', 'PhoneNumber', 'Address'];
+        const requiredFields = ['FirstName', 'LastName','Email', 'PhoneNumber', 'Address'];
 
         requiredFields.forEach(field => {
             if (!data[field] || data[field].trim() === '') {
