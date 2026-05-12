@@ -1,15 +1,52 @@
-import { Me } from './index';
+import { Address, Cart } from './index';
+import { cartService } from './cart';
+
+export interface OrderAddressInput {
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state?: string;
+  zipCode?: string;
+  country: string;
+  companyName?: string;
+}
+
+const withFallback = (value?: string) => {
+  const normalized = value?.trim();
+  return normalized ? normalized : 'N/A';
+};
+
+const mapAddressInput = (address: OrderAddressInput): Address => ({
+  FirstName: address.firstName,
+  LastName: address.lastName,
+  Phone: address.phone,
+  Street1: address.addressLine1,
+  City: withFallback(address.city),
+  State: withFallback(address.state),
+  Zip: withFallback(address.zipCode),
+  Country: 'SC',
+  CompanyName: withFallback(address.companyName),
+});
 
 /**
- * Service for managing the Checkout and Ordering process.
+ * Service for managing the active cart-order during checkout.
  */
 export const orderService = {
   /**
-   * Create an initial order for the current user.
+   * Create or return the current active order from the shopper cart.
    */
-  createOrder: async (orderData: any = {}) => {
+  createOrder: async () => {
     try {
-      return await Me.CreateOrder(orderData);
+      const accessToken = await cartService.getAccessTokenFromCookies();
+
+      if (!accessToken) {
+        throw new Error('Missing OrderCloud access token');
+      }
+
+      return await cartService.ensureCart(accessToken);
     } catch (error) {
       console.error('[OrderCloud] CreateOrder Error:', error);
       throw error;
@@ -17,38 +54,49 @@ export const orderService = {
   },
 
   /**
-   * Add a product to an existing order (Line Item).
+   * Get the current active order from the shopper cart.
    */
-  addItem: async (orderId: string, item: { ProductID: string; Quantity: number }) => {
+  getOrder: async () => {
     try {
-      return await Me.CreateLineItem(orderId, item);
+      return await cartService.getCart();
     } catch (error) {
-      console.error(`[OrderCloud] AddItem Error for Order ${orderId}:`, error);
+      console.error('[OrderCloud] GetOrder Error:', error);
       throw error;
     }
   },
 
   /**
-   * Submit the order to finalize the transaction.
+   * Set the shipping address on the current active order.
    */
-  submitOrder: async (orderId: string) => {
+  setShippingAddress: async (address: OrderAddressInput) => {
     try {
-      return await Me.SubmitOrder(orderId);
+      const accessToken = await cartService.getAccessTokenFromCookies();
+
+      if (!accessToken) {
+        throw new Error('Missing OrderCloud access token');
+      }
+
+      return await Cart.SetShippingAddress(mapAddressInput(address), { accessToken });
     } catch (error) {
-      console.error(`[OrderCloud] SubmitOrder Error for ID ${orderId}:`, error);
+      console.error('[OrderCloud] SetShippingAddress Error:', error);
       throw error;
     }
   },
 
   /**
-   * Get current order details.
+   * Set the billing address on the current active order.
    */
-  getOrder: async (orderId: string) => {
+  setBillingAddress: async (address: OrderAddressInput) => {
     try {
-      return await Me.GetOrder(orderId);
+      const accessToken = await cartService.getAccessTokenFromCookies();
+      if (!accessToken) {
+        throw new Error('Missing OrderCloud access token');
+      }
+
+      return await Cart.SetBillingAddress(mapAddressInput(address), { accessToken });
     } catch (error) {
-      console.error(`[OrderCloud] GetOrder Error for ID ${orderId}:`, error);
+      console.error('[OrderCloud] SetBillingAddress Error:', error);
       throw error;
     }
-  }
+  },
 };
