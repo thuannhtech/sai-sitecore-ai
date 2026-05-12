@@ -1,6 +1,7 @@
-import { Me, Users, ApiRole, Auth, Tokens } from './index';
+import { Me, Users, BUYER_SCROPES, Auth, Tokens, buildUserName } from './index';
 import { config } from 'src/lib/config';
 import { userService } from './user';
+import { RegisterUserRequest } from './types';
 
 /**
  * Service for handling User Authentication with OrderCloud.
@@ -13,13 +14,15 @@ export const authService = {
   login: async (username: string, password: string) => {
     try {
 
-      const clientID = config.ordercloud.storeFrontClientId!;
-      const scope: ApiRole[] = ['FullAccess'];
-      const accessToken = await Auth.Login(
-        username,
+      const clientID = config.ordercloud.adminClientId!;
+      const clientSecret = config.ordercloud.adminClientSecret!;
+      const storeUserName = buildUserName(username);
+      const accessToken = await Auth.ElevatedLogin(
+        clientSecret,
+        storeUserName,
         password,
         clientID,
-        scope
+        BUYER_SCROPES
       );
 
       Tokens.SetAccessToken(accessToken.access_token);
@@ -35,7 +38,7 @@ export const authService = {
    * Register a new Buyer User.
    * Server-side: Uses Client Credentials and Users.Create for maximum reliability.
    */
-  register: async (userData: any) => {
+  register: async (userData: RegisterUserRequest) => {
     try {
       // 1. Get an elevated token using Client Secret
       const authResponse = await Auth.ClientCredentials(
@@ -44,11 +47,14 @@ export const authService = {
         ['FullAccess']
       );
 
+      const storeUserName = buildUserName(userData.Username);
+
       // 2. Create the user directly in the specified Buyer Organization
       const response = await Users.Create(
         config.ordercloud.buyerId!,
         {
           ...userData,
+          Username: storeUserName,
           Active: true,
         },
         { accessToken: authResponse.access_token }
