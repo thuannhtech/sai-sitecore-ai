@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ShoppingBag, ShieldCheck, Truck, CreditCard, CheckCircle2 } from 'lucide-react';
+import { ShoppingBag, ShieldCheck, Truck, CreditCard, CheckCircle2, Loader2 } from 'lucide-react';
 import { useSkateCartStore } from 'src/lib/cart/store';
 
 interface SkateCartSummaryProps {
@@ -11,13 +11,14 @@ interface SkateCartSummaryProps {
 }
 
 export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout = false, onPlaceOrder, onProceedToCheckout }) => {
-  const { cart, isLoading } = useSkateCartStore();
+  const { cart, isLoading, isProcessing } = useSkateCartStore();
 
   const subtotal = cart?.subtotal || 0;
   const shipping = 0; // Mock free shipping
   const tax = subtotal * 0.08; // Mock 8% tax
   const total = subtotal + shipping + tax;
   const hasItems = cart && cart.items.length > 0;
+  const isBusy = isLoading || isProcessing;
 
   return (
     <div className="bg-gray-50 rounded-2xl p-8 lg:sticky lg:top-8 border border-gray-100 shadow-sm">
@@ -52,7 +53,7 @@ export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout =
       {/* Action Buttons */}
       <div className="space-y-3">
         <button
-          disabled={isLoading || !hasItems}
+          disabled={isBusy || !hasItems}
           className={`cursor-pointer w-full text-white py-5 rounded-2xl font-black text-lg shadow-xl transition-all flex items-center justify-center gap-3 group disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed ${isCheckout
             ? 'bg-green-600 shadow-green-100 hover:enabled:bg-green-700 place-order-btn'
             : 'bg-blue-600 shadow-blue-100 hover:enabled:bg-blue-700'
@@ -65,7 +66,12 @@ export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout =
             }
           }}
         >
-          {isCheckout ? (
+          {isBusy ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" />
+              {isCheckout ? 'PROCESSING...' : 'UPDATING CART...'}
+            </>
+          ) : isCheckout ? (
             <>
               <CheckCircle2 className="" />
               PLACE ORDER

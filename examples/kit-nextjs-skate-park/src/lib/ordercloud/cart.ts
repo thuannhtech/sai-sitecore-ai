@@ -1,5 +1,7 @@
 import { cookies } from 'next/headers';
 import { Cart, LineItem, Order } from './index';
+import { authService } from './auth';
+import { log } from 'console';
 
 export interface AddCartLineItemInput {
   ProductID: string;
@@ -17,13 +19,22 @@ export interface UpdateCartLineItemQuantityInput {
 export const cartService = {
   getAccessTokenFromCookies: async () => {
     const cookieStore = await cookies();
-    return cookieStore.get('skate-park.access-token')?.value;
+    return cookieStore.get('oc-token')?.value;
+  },
+
+  setAccessTokenInCookies: async (token: string) => {
+    const cookieStore = await cookies();
+    cookieStore.set('oc-token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 3600, // 1 hour
+    });
   },
 
   ensureCart: async (accessToken: string) => {
     const cart = await Cart.Get({ accessToken });
 
-    console.log('Current cart:', cart); // Debug log
     if (cart.ID) {
       return cart;
     }
@@ -73,13 +84,43 @@ export const cartService = {
    */
   addLineItem: async (item: AddCartLineItemInput) => {
     try {
-      const accessToken = await cartService.getAccessTokenFromCookies();
-
+      // Check for existing token, create anonymous if missing
+      let accessToken = await cartService.getAccessTokenFromCookies();
+      
       if (!accessToken) {
-        throw new Error('Missing OrderCloud access token');
+        console.log('[OrderCloud] No token found, getting anonymous token...');
+        accessToken = await authService.getAnonymousToken();
+        // Save token to cookie for future requests
+        await cartService.setAccessTokenInCookies(accessToken);
       }
 
-      await cartService.ensureCart(accessToken);
+      const cart = await cartService.ensureCart(accessToken);
+
+      console.log('[OrderCloud] Adding line item to cart', {
+        cartId: cart.ID,
+        productId: item.ProductID,
+        quantity: item.Quantity,
+      });
+
+      const existingItems = await Cart.ListLineItems(undefined, { accessToken });
+      const existingItem = existingItems.Items?.find(
+        existing => existing.ProductID === item.ProductID
+      );
+
+      if (existingItem) {
+        const currentQuantity = existingItem.Quantity ?? 0;
+        const lineItemId = existingItem.ID;
+
+        if (!lineItemId) {
+          throw new Error('Existing line item is missing its ID');
+        }
+
+        return await Cart.PatchLineItem(
+          lineItemId,
+          { Quantity: currentQuantity + item.Quantity },
+          { accessToken }
+        );
+      }
 
       const lineItem: LineItem = {
         ProductID: item.ProductID,

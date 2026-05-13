@@ -28,10 +28,13 @@ export const SkateAddToCartButton: React.FC<SkateAddToCartButtonProps> = ({
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     setIsLocalLoading(true);
     try {
       await addToCart(product, quantity);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      alert(error instanceof Error ? error.message : 'Failed to add to cart');
     } finally {
       setIsLocalLoading(false);
     }

@@ -178,6 +178,11 @@
     height: 100%;
 }
 
+
+.banner-slider__edit-grid-item .banner-slide__inner img{
+    object-fit: cover;;
+}
+
 .banner-slider__edit-grid-item .banner-slide__image {
     width: 100%;
     height: auto;

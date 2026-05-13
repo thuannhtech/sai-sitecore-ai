@@ -75,4 +75,29 @@ export const authService = {
   getToken: () => Tokens.GetAccessToken(),
 
   isAuthenticated: () => !!Tokens.GetAccessToken(),
+
+  /**
+   * Get an anonymous token using Client Credentials with the anonymous client ID.
+   * This allows unauthenticated users to browse and add items to cart.
+   */
+  getAnonymousToken: async () => {
+    try {
+      if (!config.ordercloud.anonClientId || !config.ordercloud.anonClientSecret) {
+        throw new Error('Anonymous client credentials not configured');
+      }
+
+      const authResponse = await Auth.ClientCredentials(
+        config.ordercloud.anonClientSecret,
+        config.ordercloud.anonClientId,
+        ['Shopper', 'PasswordReset'] // Limited scopes for anonymous users
+      );
+
+      Tokens.SetAccessToken(authResponse.access_token);
+
+      return authResponse.access_token;
+    } catch (error) {
+      console.error('[OrderCloud] Anonymous Token Error:', error);
+      throw error;
+    }
+  },
 };
