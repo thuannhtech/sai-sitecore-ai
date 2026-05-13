@@ -3,6 +3,7 @@ import { SkateCart, SkateLineItem, SkateProduct } from './types';
 
 const CART_API_URL = '/api/cart';
 const CART_LINE_ITEMS_API_URL = '/api/cart/line-items';
+const CART_STORAGE_KEY = 'skate_cart';
 
 interface SkateCartState {
   cart: SkateCart | null;
@@ -15,12 +16,15 @@ interface SkateCartState {
 
   // Actions
   setIsOpen: (open: boolean) => void;
+  initializeCart: () => Promise<void>;
   fetchCart: () => Promise<void>;
   addToCart: (product: SkateProduct, quantity: number) => Promise<void>;
   updateQuantity: (lineItemId: string, quantity: number) => Promise<void>;
   removeItem: (lineItemId: string) => Promise<void>;
   clearCart: () => void;
 }
+
+type CartApiRecord = Record<string, unknown>;
 
 const handleCartApiResponse = async (response: Response) => {
   const payload = await response.json().catch(() => ({}));
@@ -32,36 +36,48 @@ const handleCartApiResponse = async (response: Response) => {
   return payload;
 };
 
-const mapCartResponse = (data: any): SkateCart => {
-  const lineItems = Array.isArray(data?.items) ? data.items : [];
+const asRecord = (value: unknown): CartApiRecord =>
+  value && typeof value === 'object' ? (value as CartApiRecord) : {};
 
-  const items: SkateLineItem[] = lineItems.map((lineItem: any) => ({
-    id: lineItem.ID ?? lineItem.id ?? '',
-    productId: lineItem.ProductID ?? lineItem.productId ?? '',
+const asNumber = (value: unknown) => (typeof value === 'number' ? value : 0);
+
+const asString = (value: unknown) => (typeof value === 'string' ? value : '');
+
+const mapCartResponse = (data: unknown): SkateCart => {
+  const dataRecord = asRecord(data);
+  const lineItems = Array.isArray(dataRecord.items) ? dataRecord.items : [];
+
+  const items: SkateLineItem[] = lineItems.map((lineItem) => {
+    const lineItemRecord = asRecord(lineItem);
+    const productRecord = asRecord(lineItemRecord.Product);
+    const quantity = asNumber(lineItemRecord.Quantity);
+    const unitPrice = asNumber(lineItemRecord.UnitPrice);
+
+    return {
+      id: asString(lineItemRecord.ID) || asString(lineItemRecord.id),
+      productId: asString(lineItemRecord.ProductID) || asString(lineItemRecord.productId),
     name:
-      lineItem.Product?.Name ??
-      lineItem.Product?.Name ??
-      lineItem.productName ??
-      lineItem.Name ??
-      lineItem.ProductID ??
+      asString(productRecord.Name) ||
+      asString(lineItemRecord.productName) ||
+      asString(lineItemRecord.Name) ||
+      asString(lineItemRecord.ProductID) ||
       'Product',
-    quantity: lineItem.Quantity ?? 0,
-    unitPrice: lineItem.UnitPrice ?? 0,
-    lineTotal:
-      lineItem.LineTotal ??
-      (lineItem.Quantity && lineItem.UnitPrice ? lineItem.Quantity * lineItem.UnitPrice : 0),
+    quantity,
+    unitPrice,
+    lineTotal: asNumber(lineItemRecord.LineTotal) || (quantity && unitPrice ? quantity * unitPrice : 0),
     imageUrl:
-      lineItem.Product?.DefaultImageUrl ??
-      lineItem.Product?.ImageUrl ??
-      lineItem.ImageUrl ??
+      asString(productRecord.DefaultImageUrl) ||
+      asString(productRecord.ImageUrl) ||
+      asString(lineItemRecord.ImageUrl) ||
       undefined,
-  }));
+    };
+  });
 
   const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return {
-    id: data?.cart?.ID ?? data?.cart?.id ?? 'cart',
+    id: asString(asRecord(dataRecord.cart).ID) || asString(asRecord(dataRecord.cart).id) || 'cart',
     items,
     subtotal,
     itemCount,
@@ -80,6 +96,38 @@ const fetchCartFromApi = async (): Promise<SkateCart> => {
   return mapCartResponse(payload);
 };
 
+const getStoredCart = (): SkateCart | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const stored = localStorage.getItem(CART_STORAGE_KEY);
+
+  if (!stored) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(stored) as SkateCart;
+  } catch {
+    localStorage.removeItem(CART_STORAGE_KEY);
+    return null;
+  }
+};
+
+const persistCart = (cart: SkateCart | null) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  if (!cart) {
+    localStorage.removeItem(CART_STORAGE_KEY);
+    return;
+  }
+
+  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+};
+
 export const useSkateCartStore = create<SkateCartState>((set, get) => ({
   cart: null,
   isOpen: false,
@@ -91,12 +139,24 @@ export const useSkateCartStore = create<SkateCartState>((set, get) => ({
 
   setIsOpen: (open: boolean) => set({ isOpen: open }),
 
+  initializeCart: async () => {
+    const storedCart = getStoredCart();
+
+    if (storedCart) {
+      set({ cart: storedCart, isLoading: false, error: null });
+      return;
+    }
+
+    await get().fetchCart();
+  },
+
   fetchCart: async () => {
     set({ isLoading: true });
     try {
       const cart = await fetchCartFromApi();
+      persistCart(cart);
       set({ cart, isLoading: false });
-    } catch (err) {
+    } catch {
       set({ error: 'Failed to fetch cart', isLoading: false });
     }
   },
@@ -117,8 +177,9 @@ export const useSkateCartStore = create<SkateCartState>((set, get) => ({
 
       await handleCartApiResponse(response);
       const cart = await fetchCartFromApi();
+      persistCart(cart);
       set({ cart, isLoading: false, isOpen: true });
-    } catch (err) {
+    } catch {
       set({ error: 'Failed to add to cart', isLoading: false });
     }
   },
@@ -139,8 +200,9 @@ export const useSkateCartStore = create<SkateCartState>((set, get) => ({
 
       await handleCartApiResponse(response);
       const cart = await fetchCartFromApi();
+      persistCart(cart);
       set({ cart, isProcessing: false, processingLineItemId: null, processingAction: null });
-    } catch (err) {
+    } catch {
       set({ error: 'Failed to update quantity', isProcessing: false, processingLineItemId: null, processingAction: null });
     }
   },
@@ -160,21 +222,20 @@ export const useSkateCartStore = create<SkateCartState>((set, get) => ({
 
       await handleCartApiResponse(response);
       const cart = await fetchCartFromApi();
+      persistCart(cart);
       set({ cart, isProcessing: false, processingLineItemId: null, processingAction: null });
-    } catch (err) {
+    } catch {
       set({ error: 'Failed to remove item', isProcessing: false, processingLineItemId: null, processingAction: null });
     }
   },
   
   clearCart: () => {
     set({ cart: null });
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('skate_mock_cart');
-    }
+    persistCart(null);
   },
 }));
 
 // Export store for external JS (Sitecore scripts)
 if (typeof window !== 'undefined') {
-  (window as any).SkateCartStore = useSkateCartStore;
+  (window as Window & { SkateCartStore?: typeof useSkateCartStore }).SkateCartStore = useSkateCartStore;
 }

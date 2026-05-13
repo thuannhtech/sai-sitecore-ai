@@ -6,12 +6,22 @@ import { useSkateCartStore } from 'src/lib/cart/store';
 import Link from 'next/link';
 
 export const SkateMiniCart: React.FC = () => {
-  const { cart, isOpen, setIsOpen, fetchCart, updateQuantity, removeItem, isLoading, isProcessing } = useSkateCartStore();
+  const { cart, isOpen, setIsOpen, initializeCart, updateQuantity, removeItem, isLoading, isProcessing, processingAction } = useSkateCartStore();
+
+  const statusMessage = isLoading
+    ? cart
+      ? 'Refreshing cart...'
+      : 'Loading cart...'
+    : isProcessing
+      ? processingAction === 'remove'
+        ? 'Removing item...'
+        : 'Updating item...'
+      : '';
 
   // Load cart on mount
   useEffect(() => {
-    fetchCart();
-  }, [fetchCart]);
+    initializeCart();
+  }, [initializeCart]);
 
   return (
     <div className={`fixed inset-0 z-[100] flex justify-end transition-all duration-300 ${isOpen ? 'visible' : 'invisible pointer-events-none'}`}>
@@ -28,7 +38,7 @@ export const SkateMiniCart: React.FC = () => {
             <div className="flex flex-col items-center gap-3 rounded-3xl bg-white/95 px-6 py-5 shadow-lg border border-gray-200">
               <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
               <span className="text-sm font-semibold text-gray-700">
-                {isLoading ? (cart ? 'Updating cart...' : 'Loading cart...') : 'Updating item...'}
+                {statusMessage}
               </span>
             </div>
           </div>
@@ -61,7 +71,7 @@ export const SkateMiniCart: React.FC = () => {
                 <ShoppingCart className="h-12 w-12 text-gray-200" />
               </div>
               <h3 className="text-lg font-bold text-gray-900">Your cart is empty</h3>
-              <p className="mt-2 text-gray-500">Looks like you haven't added anything yet.</p>
+              <p className="mt-2 text-gray-500">Looks like you haven&apos;t added anything yet.</p>
               <button
                 onClick={() => setIsOpen(false)}
                 disabled={isLoading}

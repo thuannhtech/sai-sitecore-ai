@@ -82,16 +82,12 @@ export const orderService = {
 
       if (isGuest && cart.ID) {
         const existingXp = cart.xp ?? {};
-        const existingCartXp = (existingXp as any).cart ?? {};
 
         return await cartService.patchCart({
           ID: cart.ID,
           xp: {
             ...existingXp,
-            cart: {
-              ...existingCartXp,
-              shippingAddress: mapAddressInput(address),
-            },
+            shippingAddress: mapAddressInput(address)
           },
         });
       }
