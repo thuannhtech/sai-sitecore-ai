@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import type { Payment, PaymentTransaction } from './index';
 import { Cart, LineItem, Order } from './index';
 import { authService } from './auth';
 import { log } from 'console';
@@ -64,6 +65,20 @@ export const cartService = {
       }
     } catch (error) {
       console.error('[OrderCloud] GetCart Error:', error);
+      throw error;
+    }
+  },
+  patchCart: async (cart: Partial<Order>) => {
+    try {
+      const accessToken = await cartService.getAccessTokenFromCookies();
+
+      if (!accessToken) {
+        throw new Error('Missing OrderCloud access token');
+      }
+
+      return await Cart.Patch(cart, { accessToken });
+    } catch (error) {
+      console.error('[OrderCloud] PatchCart Error:', error);
       throw error;
     }
   },
@@ -186,6 +201,31 @@ export const cartService = {
       await Cart.DeleteLineItem(lineItemID, { accessToken });
     } catch (error) {
       console.error(`[OrderCloud] RemoveCartLineItem Error for LineItem ${lineItemID}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Create a payment on the current active cart.
+   */
+  createPayment: async (payment: Payment, accessToken: string) => {
+    try {
+      await cartService.ensureCart(accessToken);
+      return await Cart.CreatePayment(payment, { accessToken });
+    } catch (error) {
+      console.error('[OrderCloud] CreatePayment Error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Add a payment transaction to a cart payment.
+   */
+  createPaymentTransaction: async (paymentID: string, paymentTransaction: PaymentTransaction, accessToken: string) => {
+    try {
+      return await Cart.CreatePaymentTransaction(paymentID, paymentTransaction, { accessToken });
+    } catch (error) {
+      console.error('[OrderCloud] CreatePaymentTransaction Error:', error);
       throw error;
     }
   },
