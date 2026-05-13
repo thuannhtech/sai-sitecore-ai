@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { SkateCart, SkateProduct } from './types';
-import { mockCartService } from './mockService';
+import { SkateCart, SkateLineItem, SkateProduct } from './types';
+import { Order, LineItem } from 'src/lib/ordercloud';
 
 interface SkateCartState {
   cart: SkateCart | null;
@@ -17,6 +17,24 @@ interface SkateCartState {
   clearCart: () => void;
 }
 
+// Helper to map OrderCloud Order + LineItems to SkateCart
+const mapToSkateCart = (ocOrder: Order, ocItems: LineItem[]): SkateCart => {
+  return {
+    id: ocOrder.ID!,
+    itemCount: ocItems.reduce((sum, item) => sum + (item.Quantity || 0), 0),
+    subtotal: ocOrder.Total || 0,
+    items: ocItems.map((item) => ({
+      id: item.ID!,
+      productId: item.ProductID!,
+      name: item.xp?.ProductName || item.ProductID!, // Using xp or ProductID as fallback
+      quantity: item.Quantity || 0,
+      unitPrice: item.UnitPrice || 0,
+      lineTotal: item.LineTotal || 0,
+      imageUrl: item.xp?.ImageUrl || '/images/product-placeholder.png', // Using xp or placeholder
+    })),
+  };
+};
+
 export const useSkateCartStore = create<SkateCartState>((set, get) => ({
   cart: null,
   isOpen: false,
@@ -28,48 +46,90 @@ export const useSkateCartStore = create<SkateCartState>((set, get) => ({
   fetchCart: async () => {
     set({ isLoading: true });
     try {
-      const cart = await mockCartService.getCart();
-      set({ cart, isLoading: false });
-    } catch (err) {
-      set({ error: 'Failed to fetch cart', isLoading: false });
+      const response = await fetch('/api/cart');
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.error || 'Failed to fetch cart');
+
+      if (data.cart) {
+        set({ cart: mapToSkateCart(data.cart, data.items || []), isLoading: false });
+      } else {
+        set({ cart: null, isLoading: false });
+      }
+    } catch (err: any) {
+      console.error('Fetch cart error:', err);
+      set({ error: err.message, isLoading: false });
     }
   },
 
   addToCart: async (product: SkateProduct, quantity: number) => {
     set({ isLoading: true });
     try {
-      const cart = await mockCartService.addToCart(product, quantity);
-      set({ cart, isLoading: false, isOpen: true }); // Mở mini cart khi add thành công
-    } catch (err) {
-      set({ error: 'Failed to add to cart', isLoading: false });
+      const response = await fetch('/api/cart/line-items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          ProductID: product.id, 
+          Quantity: quantity,
+          // We can pass extra data in xp if needed by the backend
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to add to cart');
+
+      // Refresh cart after adding
+      await get().fetchCart();
+      set({ isOpen: true }); // Open mini cart on success
+    } catch (err: any) {
+      console.error('Add to cart error:', err);
+      set({ error: err.message, isLoading: false });
     }
   },
 
   updateQuantity: async (lineItemId: string, quantity: number) => {
     set({ isLoading: true });
     try {
-      const cart = await mockCartService.updateQuantity(lineItemId, quantity);
-      set({ cart, isLoading: false });
-    } catch (err) {
-      set({ error: 'Failed to update quantity', isLoading: false });
+      const response = await fetch('/api/cart/line-items', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ LineItemID: lineItemId, Quantity: quantity }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to update quantity');
+
+      // Refresh cart
+      await get().fetchCart();
+    } catch (err: any) {
+      console.error('Update quantity error:', err);
+      set({ error: err.message, isLoading: false });
     }
   },
 
   removeItem: async (lineItemId: string) => {
     set({ isLoading: true });
     try {
-      const cart = await mockCartService.removeItem(lineItemId);
-      set({ cart, isLoading: false });
-    } catch (err) {
-      set({ error: 'Failed to remove item', isLoading: false });
+      const response = await fetch('/api/cart/line-items', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ LineItemID: lineItemId }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to remove item');
+
+      // Refresh cart
+      await get().fetchCart();
+    } catch (err: any) {
+      console.error('Remove item error:', err);
+      set({ error: err.message, isLoading: false });
     }
   },
   
   clearCart: () => {
     set({ cart: null });
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('skate_mock_cart');
-    }
+    // No need to clear localStorage as we're using server-side cookies now
   },
 }));
 
