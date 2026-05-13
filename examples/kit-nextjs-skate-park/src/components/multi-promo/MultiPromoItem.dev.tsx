@@ -28,8 +28,6 @@ export const Default: React.FC<MultiPromoItemProps> = (props) => {
     return null;
   }
 
-  console.log('itemProps', itemProps);
-
   return (
     <div className="multi-promo__item">
       {(isPageEditing || image?.value?.src) && (

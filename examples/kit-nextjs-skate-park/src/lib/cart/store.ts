@@ -165,12 +165,10 @@ export const useSkateCartStore = create<SkateCartState>((set, get) => ({
       set({ error: 'Failed to remove item', isProcessing: false, processingLineItemId: null, processingAction: null });
     }
   },
-  
+
   clearCart: () => {
     set({ cart: null });
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('skate_mock_cart');
-    }
+    // No need to clear localStorage as we're using server-side cookies now
   },
 }));
 

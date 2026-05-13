@@ -2,8 +2,27 @@
  * Account Sign-Up Module
  * Handles the registration form submission and interaction with the OrderCloud API.
  */
-(function() {
+(function () {
     console.log('account-signup.js initialized');
+
+    // --- SweetAlert2 Notification Component ---
+    const loadSweetAlert = () => {
+        return new Promise((resolve) => {
+            if (window.Swal) return resolve(window.Swal);
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+            script.onload = () => resolve(window.Swal);
+            document.head.appendChild(script);
+        });
+    };
+
+    const showNotification = async (options) => {
+        const Swal = await loadSweetAlert();
+        return Swal.fire({
+            confirmButtonColor: '#000000', // Black for skate theme
+            ...options
+        });
+    };
 
     const init = () => {
         const form = document.querySelector('form[name="SignUp"]');
@@ -11,6 +30,11 @@
             console.warn('Sign Up form not found in DOM yet. Retrying...');
             return;
         }
+
+        if (form.dataset.initialized) {
+            return;
+        }
+        form.dataset.initialized = 'true';
 
         console.log('Sign Up form detected, attaching listeners.');
 
@@ -22,17 +46,29 @@
 
             // --- 1. Client-side Validation ---
             if (!data.FirstName || !data.LastName || !data.Email || !data.Password) {
-                alert('Please fill in all required fields.');
+                await showNotification({
+                    title: 'Missing Fields',
+                    text: 'Please fill in all required fields.',
+                    icon: 'warning'
+                });
                 return;
             }
 
             if (data.Password !== data.ConfirmPassword) {
-                alert('Passwords do not match. Please try again.');
+                await showNotification({
+                    title: 'Password Mismatch',
+                    text: 'Passwords do not match. Please try again.',
+                    icon: 'error'
+                });
                 return;
             }
 
             if (data.Password.length < 6) {
-                alert('Password must be at least 6 characters long.');
+                await showNotification({
+                    title: 'Weak Password',
+                    text: 'Password must be at least 6 characters long.',
+                    icon: 'warning'
+                });
                 return;
             }
 
@@ -49,6 +85,7 @@
             submitBtn.textContent = 'Creating Account...';
 
             try {
+
                 // --- 3. API Call ---
                 const response = await fetch('/api/auth/register', {
                     method: 'POST',
@@ -63,17 +100,25 @@
                 }
 
                 // --- 4. Success Handling ---
-                alert('Registration successful! You can now sign in.');
-                
+                await showNotification({
+                    title: 'Welcome!',
+                    text: 'Registration successful! You can now sign in.',
+                    icon: 'success'
+                });
+
                 // Optional: Clear form or redirect
                 form.reset();
-                
+
                 // If there's a login modal or page, we could redirect here:
                 // window.location.href = '/login';
-                
+
             } catch (error) {
                 console.error('Registration error:', error);
-                alert('Registration Failed: ' + error.message);
+                await showNotification({
+                    title: 'Registration Failed',
+                    text: error.message,
+                    icon: 'error'
+                });
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
@@ -87,6 +132,6 @@
     } else {
         init();
         // Fallback for dynamically injected forms (Sitecore Experience Editor etc.)
-        setTimeout(init, 2000); 
+        setTimeout(init, 2000);
     }
 })();

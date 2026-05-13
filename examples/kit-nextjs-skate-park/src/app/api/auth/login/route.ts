@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authService } from 'src/lib/ordercloud/auth';
+import { userService } from 'src/lib/ordercloud/user';
+import { cookies } from 'next/headers';
+import { tokenHelper } from 'lib/ordercloud/token-helper';
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,6 +19,22 @@ export async function POST(req: NextRequest) {
     // Perform Login via OrderCloud Service
     // Using email as the username as defined in the registration process
     const authResponse = await authService.login(email, decodedPassword);
+
+    // Init user cookie
+    const accessToken = authResponse.access_token;
+
+    await tokenHelper.setAccessTokenInCookies(accessToken);
+
+    const user = await userService.getUser(accessToken);
+    if (user) {
+      const cookieStore = await cookies();
+      cookieStore.set('skate-park.user-data', JSON.stringify({ ...user, isGuest: false }), {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7, // 1 week
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+      });
+    }
 
     // Return the auth response (tokens) and user info to the client
     return NextResponse.json({

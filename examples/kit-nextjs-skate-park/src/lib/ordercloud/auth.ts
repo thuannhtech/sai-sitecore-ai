@@ -1,5 +1,6 @@
 import { Me, Users, BUYER_SCROPES, Auth, Tokens, buildUserName } from './index';
 import { config } from 'src/lib/config';
+import { isUserToken } from './token-utils';
 import { userService } from './user';
 import { RegisterUserRequest } from './types';
 

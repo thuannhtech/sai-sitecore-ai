@@ -74,7 +74,7 @@ export const SkateMiniCart: React.FC = () => {
             <div className="space-y-6">
               {cart.items.map((item) => (
                 <div key={item.id} className="flex gap-4">
-                  <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-gray-50 border border-gray-100">
+                  <div className="h-30 w-30 shrink-0 overflow-hidden rounded-2xl bg-gray-50 border border-gray-100">
                     {item.imageUrl ? (
                       <img
                         src={item.imageUrl}
@@ -85,19 +85,19 @@ export const SkateMiniCart: React.FC = () => {
                       <div className="w-full h-full flex items-center justify-center text-gray-300 text-[15px] font-medium text-center leading-tight">No Image</div>
                     )}
                   </div>
-                  <div className="flex flex-1 flex-col justify-between py-1">
+                  <div className="flex flex-1 flex-col justify-between py-1 text-[20px]">
                     <div>
                       <div className="flex justify-between gap-2">
-                        <h4 className="font-bold text-gray-900 line-clamp-1">{item.name}</h4>
+                        <p className="font-bold text-gray-900 line-clamp-1 text-[15px]">{item.name}</p>
                         <button
                           onClick={() => removeItem(item.id)}
                           disabled={isLoading}
                           className="text-gray-400 hover:text-red-500 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-8 w-8" />
                         </button>
                       </div>
-                      <p className="mt-1 text-sm font-bold text-blue-600">
+                      <p className="mt-1 text-md font-bold text-blue-600">
                         ${item.unitPrice.toLocaleString()}
                       </p>
                     </div>
@@ -109,15 +109,15 @@ export const SkateMiniCart: React.FC = () => {
                           disabled={isLoading || item.quantity <= 1}
                           className="p-1 text-gray-400 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          <Minus className="h-4 w-4" />
+                          <Minus className="h-6 w-6" />
                         </button>
-                        <span className="w-8 text-center text-sm font-bold">{item.quantity}</span>
+                        <span className="w-8 text-center text-[14px] font-bold">{item.quantity}</span>
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
                           disabled={isLoading}
                           className="p-1 text-gray-400 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          <Plus className="h-4 w-4" />
+                          <Plus className="h-6 w-6" />
                         </button>
                       </div>
                       <span className="font-bold text-gray-900">
@@ -138,7 +138,6 @@ export const SkateMiniCart: React.FC = () => {
               <span className="text-gray-500 font-medium">Subtotal</span>
               <span className="text-2xl font-black text-gray-900">${cart.subtotal.toLocaleString()}</span>
             </div>
-            <p className="text-xs text-gray-400 text-center">Shipping and taxes calculated at checkout.</p>
             <div className="grid gap-3">
 
               <Link
