@@ -55,7 +55,8 @@ export const cartService = {
         throw new Error('Missing OrderCloud access token');
       }
 
-      return await Cart.Get({ accessToken });
+      try {
+        return await Cart.Get({ accessToken });
       } catch (e: any) {
         if (e.response?.status === 404 || e.status === 404) {
           return null;
@@ -93,8 +94,15 @@ export const cartService = {
         throw new Error('Missing OrderCloud access token');
       }
 
-      const response = await Cart.ListLineItems(undefined, { accessToken });
-      return response.Items;
+      try {
+        const response = await Cart.ListLineItems(undefined, { accessToken });
+        return response.Items || [];
+      } catch (e: any) {
+        if (e.response?.status === 404 || e.status === 404) {
+          return [];
+        }
+        throw e;
+      }
     } catch (error) {
       console.error('[OrderCloud] GetCartLineItems Error:', error);
       throw error;

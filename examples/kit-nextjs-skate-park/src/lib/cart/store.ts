@@ -51,6 +51,8 @@ const mapCartResponse = (data: any): SkateCart => {
       lineItem.LineTotal ??
       (lineItem.Quantity && lineItem.UnitPrice ? lineItem.Quantity * lineItem.UnitPrice : 0),
     imageUrl:
+      lineItem.xp?.ImageUrl ??
+      lineItem.Product?.xp?.ImageUrl ??
       lineItem.Product?.DefaultImageUrl ??
       lineItem.Product?.ImageUrl ??
       lineItem.ImageUrl ??
@@ -112,6 +114,7 @@ export const useSkateCartStore = create<SkateCartState>((set, get) => ({
         body: JSON.stringify({
           ProductID: product.orderCloudId ?? product.id,
           Quantity: quantity,
+          ImageUrl: product.imageUrl,
         }),
       });
 
