@@ -28,7 +28,7 @@ export const cartService = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 3600, // 1 hour
+      maxAge: 36000, // 1 hour
     });
   },
 
