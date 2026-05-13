@@ -19,6 +19,10 @@ export const config = {
     buyerId: process.env.ORDERCLOUD_BUYER_ID,
     baseApiUrl: process.env.NEXT_PUBLIC_ORDERCLOUD_BASE_API_URL || 'https://australiaeast-sandbox.ordercloud.io',
   },
+  workato: {
+    processOrderUrl: process.env.WORKATO_PROCESS_ORDER_URL,
+    apiToken: process.env.WORKATO_API_TOKEN,
+  },
 };
 
 // Server-side validation to prevent runtime errors for missing critical secrets

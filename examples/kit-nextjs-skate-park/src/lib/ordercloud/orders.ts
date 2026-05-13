@@ -76,7 +76,28 @@ export const orderService = {
         throw new Error('Missing OrderCloud access token');
       }
 
+      const cart = await cartService.getCart();
+
+      const isGuest = cart.FromUser?.Username === 'SitecoreAIBuyerAnonymousUser';
+
+      if (isGuest && cart.ID) {
+        const existingXp = cart.xp ?? {};
+        const existingCartXp = (existingXp as any).cart ?? {};
+
+        return await cartService.patchCart({
+          ID: cart.ID,
+          xp: {
+            ...existingXp,
+            cart: {
+              ...existingCartXp,
+              shippingAddress: mapAddressInput(address),
+            },
+          },
+        });
+      }
+
       return await Cart.SetShippingAddress(mapAddressInput(address), { accessToken });
+
     } catch (error) {
       console.error('[OrderCloud] SetShippingAddress Error:', error);
       throw error;
