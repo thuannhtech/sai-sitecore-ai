@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cartService } from 'lib/ordercloud/cart';
 import { orderService } from 'lib/ordercloud/orders';
-import { Orders, Cart, Me } from 'lib/ordercloud';
+import { Cart, LineItem, LineItems } from 'lib/ordercloud';
 import {
   buildOrderConfirmationEmailInformation,
   workatoService,
@@ -64,12 +64,11 @@ export async function GET(request: NextRequest) {
     // Lấy LineItems: 
     // Nếu có orderId, lấy từ danh sách đơn hàng đã gửi (Outgoing)
     // Nếu không, lấy từ giỏ hàng hiện tại
-    let lineItems = [];
+    let lineItems: LineItem[] = [];
     try {
       const accessToken = await cartService.getAccessTokenFromCookies();
       if (orderId) {
-        // Sử dụng Me.ListLineItems để lấy sản phẩm của đơn hàng đã chốt (đã gửi)
-        const liResponse = await Me.ListLineItems(orderId, { accessToken });
+        const liResponse = await LineItems.List('Outgoing', orderId, undefined, { accessToken });
         lineItems = liResponse.Items || [];
       } else {
         lineItems = await cartService.getLineItems();
@@ -124,6 +123,7 @@ export async function POST(request: NextRequest) {
     // 3. Thực hiện Đặt hàng (Truyền thêm paymentConfig)
     const checkoutResult = await checkoutService.placeOrder(payload, paymentConfig);
     const { orderId, paymentSummary } = checkoutResult;
+    const resolvedOrderId = orderId ?? '';
 
     // 4. Xử lý Workato / Email (Phần này giữ nguyên logic cũ)
     let workatoResponse: unknown;
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
             from: "dmx@brother.com.sg",
             customerName: `${asString(asRecord(contactAddress).FirstName)} ${asString(asRecord(contactAddress).LastName)}`.trim(),
             customerEmail: asString(fromUser.Email) || asString(orderXp.Email),
-            orderId: orderId || asString(orderRecord.ID),
+            orderId: resolvedOrderId || asString(orderRecord.ID),
             orderDate: asString(orderRecord.DateSubmitted) || new Date().toISOString().split('T')[0],
             currency: asString(orderRecord.Currency) || 'HKD',
             shippingAddress: formatAddress(contactAddress),
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
           });
 
         workatoResponse = await workatoService.submitOrder({
-          OrderId: orderId,
+          OrderId: resolvedOrderId,
           EmailInformation: emailInformation,
           Succeeded: true,
         });
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-      orderId: orderId,
+      orderId: resolvedOrderId,
       workato: workatoResponse,
       message: workatoWarning
     });

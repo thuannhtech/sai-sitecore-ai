@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Field } from '@sitecore-content-sdk/nextjs';
 import { useRouter } from 'src/i18n/navigation';
+import { useSkateCartStore } from 'src/lib/cart/store';
 import { useUserStore } from 'src/lib/user/store';
 import { Loader2, LogOut } from 'lucide-react';
 
@@ -53,7 +54,7 @@ export const Default = (props: any) => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [clearUser, router]);
+  }, [clearCart, clearUser, router]);
 
   return (
     <div className="flex items-center justify-center py-20 px-4">

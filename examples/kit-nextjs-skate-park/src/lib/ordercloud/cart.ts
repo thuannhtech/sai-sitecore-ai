@@ -2,7 +2,6 @@ import { cookies } from 'next/headers';
 import type { Payment, PaymentTransaction } from './index';
 import { Cart, LineItem, LineItems, Order } from './index';
 import { authService } from './auth';
-import { log } from 'console';
 
 export interface AddCartLineItemInput {
   ProductID: string;
@@ -31,7 +30,7 @@ export const cartService = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 36000, // 1 hour
+      maxAge: 36000,
     });
   },
 
@@ -57,7 +56,7 @@ export const cartService = {
       }
 
       try {
-      return await Cart.Get({ accessToken });
+        return await Cart.Get({ accessToken });
       } catch (e: any) {
         if (e.response?.status === 404 || e.status === 404) {
           return null;
@@ -69,6 +68,7 @@ export const cartService = {
       throw error;
     }
   },
+
   patchCart: async (cart: Partial<Order>) => {
     try {
       const accessToken = await cartService.getAccessTokenFromCookies();
@@ -85,7 +85,7 @@ export const cartService = {
   },
 
   /**
-   * Get all line items from the current active cart or a specific order.
+   * Get all line items from the current active cart or a specific submitted order.
    */
   getLineItems: async (orderId?: string) => {
     try {
@@ -96,9 +96,10 @@ export const cartService = {
       }
 
       try {
-        // Sử dụng Cart.ListLineItems (Me endpoint) để Shopper có quyền xem đơn hàng của chính mình
-        const response = await Cart.ListLineItems(orderId, { accessToken });
-          
+        const response = orderId
+          ? await LineItems.List('Outgoing', orderId, undefined, { accessToken })
+          : await Cart.ListLineItems(undefined, { accessToken });
+
         return response.Items || [];
       } catch (e: any) {
         if (e.response?.status === 404 || e.status === 404) {
@@ -117,13 +118,11 @@ export const cartService = {
    */
   addLineItem: async (item: AddCartLineItemInput) => {
     try {
-      // Check for existing token, create anonymous if missing
       let accessToken = await cartService.getAccessTokenFromCookies();
-      
+
       if (!accessToken) {
         console.log('[OrderCloud] No token found, getting anonymous token...');
         accessToken = await authService.getAnonymousToken();
-        // Save token to cookie for future requests
         await cartService.setAccessTokenInCookies(accessToken);
       }
 
@@ -137,7 +136,7 @@ export const cartService = {
 
       const existingItems = await Cart.ListLineItems(undefined, { accessToken });
       const existingItem = existingItems.Items?.find(
-        existing => existing.ProductID === item.ProductID
+        (existing) => existing.ProductID === item.ProductID
       );
 
       if (existingItem) {
@@ -159,8 +158,8 @@ export const cartService = {
         ProductID: item.ProductID,
         Quantity: item.Quantity,
         xp: {
-          ImageUrl: item.ImageUrl
-        }
+          ImageUrl: item.ImageUrl,
+        },
       };
 
       return await Cart.CreateLineItem(lineItem, { accessToken });
@@ -231,7 +230,11 @@ export const cartService = {
   /**
    * Add a payment transaction to a cart payment.
    */
-  createPaymentTransaction: async (paymentID: string, paymentTransaction: PaymentTransaction, accessToken: string) => {
+  createPaymentTransaction: async (
+    paymentID: string,
+    paymentTransaction: PaymentTransaction,
+    accessToken: string
+  ) => {
     try {
       return await Cart.CreatePaymentTransaction(paymentID, paymentTransaction, { accessToken });
     } catch (error) {

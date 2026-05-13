@@ -86,6 +86,9 @@ export const orderService = {
       }
 
       const cart = await cartService.getCart();
+      if (!cart) {
+        throw new Error('Cart not found');
+      }
 
       const isGuest = cart.FromUser?.Username === 'SitecoreAIBuyerAnonymousUser';
 
