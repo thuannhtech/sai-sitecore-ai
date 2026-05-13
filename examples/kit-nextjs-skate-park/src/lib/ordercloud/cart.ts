@@ -2,7 +2,6 @@ import { cookies } from 'next/headers';
 import type { Payment, PaymentTransaction } from './index';
 import { Cart, LineItem, Order } from './index';
 import { authService } from './auth';
-import { log } from 'console';
 
 export interface AddCartLineItemInput {
   ProductID: string;
@@ -109,7 +108,7 @@ export const cartService = {
     try {
       // Check for existing token, create anonymous if missing
       let accessToken = await cartService.getAccessTokenFromCookies();
-      
+
       if (!accessToken) {
         console.log('[OrderCloud] No token found, getting anonymous token...');
         accessToken = await authService.getAnonymousToken();
