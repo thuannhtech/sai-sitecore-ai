@@ -1,5 +1,6 @@
 import { Me, Users, BUYER_SCROPES, Auth, Tokens, buildUserName } from './index';
 import { config } from 'src/lib/config';
+import { isUserToken } from './token-utils';
 import { userService } from './user';
 import { RegisterUserRequest } from './types';
 
@@ -74,7 +75,10 @@ export const authService = {
 
   getToken: () => Tokens.GetAccessToken(),
 
-  isAuthenticated: () => !!Tokens.GetAccessToken(),
+  isAuthenticated: () => {
+    const token = Tokens.GetAccessToken();
+    return isUserToken(token);
+  },
 
   /**
    * Get an anonymous token using Client Credentials with the anonymous client ID.

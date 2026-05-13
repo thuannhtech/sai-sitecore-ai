@@ -16,10 +16,13 @@ export const UserHydrator: React.FC<UserHydratorProps> = ({ user }) => {
   const hasHydrated = useRef(false);
 
   if (!hasHydrated.current) {
+    const isGuest = (user as any)?.isGuest ?? true;
+    
     // Update the store's state directly during the first render
     useUserStore.setState({ 
       user, 
-      isAuthenticated: !!user, 
+      isAuthenticated: !!user && !isGuest, 
+      isGuest,
       loading: false 
     });
     hasHydrated.current = true;

@@ -12,15 +12,13 @@ interface SkateAccountIndicatorProps {
 }
 
 export const SkateAccountIndicator: React.FC<SkateAccountIndicatorProps> = ({ user: initialUser }) => {
-  const { user: storeUser, isAuthenticated: storeAuth, clearUser } = useUserStore();
+  const { user: storeUser, isAuthenticated, isGuest, clearUser } = useUserStore();
   const { clearCart } = useSkateCartStore();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const router = useRouter();
 
-  const user = storeUser || initialUser;
-  const isAuthenticated = storeAuth || !!initialUser;
-  const displayName = user ? `${user.FirstName} ${user.LastName}` : 'Sign in / Sign up';
+  const user: any = storeUser || initialUser;
+  const displayName = isGuest ? 'Sign in / Sign up' : `${user.FirstName} ${user.LastName}`.trim();
 
   const handleLogout = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -87,7 +85,7 @@ export const SkateAccountIndicator: React.FC<SkateAccountIndicatorProps> = ({ us
         </div>
         <div className="flex flex-col">
           <span className="text-[13px] font-bold text-white leading-none mb-0.5">
-            {user?.FirstName}
+            {user?.FirstName} {user?.LastName}
           </span>
           <div className="flex items-center gap-1">
             <span className="text-[11px] text-white/70 font-medium uppercase tracking-wider">Account</span>

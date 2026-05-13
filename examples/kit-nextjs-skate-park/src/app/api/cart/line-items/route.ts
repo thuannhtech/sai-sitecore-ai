@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cartService } from 'src/lib/ordercloud/cart';
+import { tokenHelper } from 'src/lib/ordercloud/token-helper';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,10 +14,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const accessToken = await tokenHelper.getValidToken();
     const lineItem = await cartService.addLineItem({
       ProductID,
       Quantity,
-    });
+    }, accessToken);
 
     return NextResponse.json({
       ok: true,
@@ -42,8 +44,9 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
+    const accessToken = await tokenHelper.getValidToken();
     if (Quantity === 0) {
-      await cartService.removeLineItem(LineItemID);
+      await cartService.removeLineItem(LineItemID, accessToken);
 
       return NextResponse.json({
         ok: true,
@@ -55,7 +58,7 @@ export async function PATCH(req: NextRequest) {
     const lineItem = await cartService.updateLineItemQuantity({
       LineItemID,
       Quantity,
-    });
+    }, accessToken);
 
     return NextResponse.json({
       ok: true,
@@ -78,7 +81,8 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'LineItemID is required' }, { status: 400 });
     }
 
-    await cartService.removeLineItem(LineItemID);
+    const accessToken = await tokenHelper.getValidToken();
+    await cartService.removeLineItem(LineItemID, accessToken);
 
     return NextResponse.json({
       ok: true,

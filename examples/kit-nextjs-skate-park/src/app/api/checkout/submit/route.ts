@@ -128,8 +128,7 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = parsed.data;
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('skate-park.access-token')?.value;
+    const accessToken = await tokenHelper.getValidToken();
 
     if (!accessToken) {
       const response: CheckoutSubmitResponse = {

@@ -79,7 +79,7 @@
                 }
 
                 // --- 4. Success Handling ---
-                document.cookie = `skate-park.access-token=${result.access_token}; path=/; max-age=${result.expires_in}; SameSite=Lax`;
+                document.cookie = `oc-token=${result.access_token}; path=/; max-age=${result.expires_in}; SameSite=Lax`;
 
                 // Call the profile API to let the server set the user-data cookie
                 LoadingOverlay.show('Loading your profile...');

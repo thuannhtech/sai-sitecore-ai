@@ -9,7 +9,7 @@ export async function POST() {
     const cookieStore = await cookies();
     
     // Clear the authentication and profile cookies
-    cookieStore.delete('skate-park.access-token');
+    cookieStore.delete('oc-token');
     cookieStore.delete('skate-park.user-data');
 
     return NextResponse.json({
