@@ -20,8 +20,27 @@
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
 
+            // Helper for premium alerts
+            const showAlert = async (title, text, icon = 'error') => {
+                if (typeof Swal === 'undefined') {
+                    await new Promise((resolve) => {
+                        const script = document.createElement('script');
+                        script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+                        script.onload = resolve;
+                        document.head.appendChild(script);
+                    });
+                }
+                return Swal.fire({
+                    title,
+                    text,
+                    icon,
+                    confirmButtonColor: '#000000',
+                    heightAuto: false
+                });
+            };
+
             if (!data.email || !data.password) {
-                alert('Please enter both email and password.');
+                showAlert('Missing Info', 'Please enter both email and password.', 'warning');
                 return;
             }
 
@@ -31,9 +50,19 @@
 
             // --- 2. UI Feedback ---
             const submitBtn = form.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Signing in...';
+
+            // Ensure LoadingOverlay is available
+            if (typeof LoadingOverlay === 'undefined') {
+                await new Promise((resolve) => {
+                    const script = document.createElement('script');
+                    script.src = '/storefront/js/loading-overlay.js';
+                    script.onload = resolve;
+                    document.head.appendChild(script);
+                });
+            }
+
+            LoadingOverlay.show('Signing you in...');
 
             try {
                 // --- 3. API Call ---
@@ -50,12 +79,10 @@
                 }
 
                 // --- 4. Success Handling ---
-                // Store the token in a cookie so the SDK and Sitecore can use it
-                // Note: We use a simple cookie for this POC. 
-                // In production, consider using the OrderCloud SDK's cookie management.
                 document.cookie = `skate-park.access-token=${result.access_token}; path=/; max-age=${result.expires_in}; SameSite=Lax`;
 
                 // Call the profile API to let the server set the user-data cookie
+                LoadingOverlay.show('Loading your profile...');
                 await fetch('/api/customer/me');
 
                 // Redirect to account or home
@@ -63,10 +90,11 @@
 
             } catch (error) {
                 console.error('Login error:', error);
-                alert('Login Failed: ' + error.message);
-            } finally {
+                LoadingOverlay.hide();
+                showAlert('Login Failed', error.message, 'error');
                 submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
+            } finally {
+                // ...
             }
         });
     };

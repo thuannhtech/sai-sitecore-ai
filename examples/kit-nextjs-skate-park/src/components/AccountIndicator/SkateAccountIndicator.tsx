@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { User, LogOut, Settings, ChevronDown } from 'lucide-react';
+import { User, LogOut, Settings, ChevronDown, Loader2 } from 'lucide-react';
 import { useUserStore } from 'src/lib/user/store';
+import { useSkateCartStore } from 'src/lib/cart/store';
 import { Link, useRouter } from 'src/i18n/navigation';
 import { MeUser } from 'ordercloud-javascript-sdk';
 
@@ -11,12 +12,52 @@ interface SkateAccountIndicatorProps {
 }
 
 export const SkateAccountIndicator: React.FC<SkateAccountIndicatorProps> = ({ user: initialUser }) => {
-  const { user: storeUser, isAuthenticated: storeAuth } = useUserStore();
+  const { user: storeUser, isAuthenticated: storeAuth, clearUser } = useUserStore();
+  const { clearCart } = useSkateCartStore();
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const router = useRouter();
 
   const user = storeUser || initialUser;
   const isAuthenticated = storeAuth || !!initialUser;
   const displayName = user ? `${user.FirstName} ${user.LastName}` : 'Sign in / Sign up';
+
+  const handleLogout = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isLoggingOut) return;
+
+    try {
+      setIsLoggingOut(true);
+
+      // 1. Call API to clear server-side cookies
+      await fetch('/api/auth/logout', { method: 'POST' });
+
+      // 2. Clear local data
+      if (typeof window !== 'undefined') {
+        // Clear stores
+        clearUser();
+        clearCart();
+
+        // Clear all session storage (as requested: "xóa hết các sessionStorage")
+        sessionStorage.clear();
+
+        // Also clear common localStorage keys just in case
+        localStorage.removeItem('skate_mock_cart');
+        localStorage.removeItem('ordercloud.token'); // Standard SDK token location
+      }
+
+      // 3. Redirect home via full reload to ensure clean state
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if API fails, we should clear local state and redirect
+      clearUser();
+      clearCart();
+      window.location.href = '/';
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   if (!isAuthenticated) {
     return (
@@ -62,7 +103,7 @@ export const SkateAccountIndicator: React.FC<SkateAccountIndicatorProps> = ({ us
       >
         <Link
           href="/account/my-account"
-          className="flex items-center gap-3 px-4 py-3 text-sm font-medium !text-gray-700 hover:bg-gray-50 transition-colors mx-2 rounded-xl"
+          className="flex items-center gap-3 px-4 py-3 text-[14px] font-medium !text-gray-700 hover:bg-gray-50 transition-colors mx-2 rounded-xl"
         >
           <Settings size={16} className="!text-gray-400" />
           <span>My Account</span>
@@ -70,13 +111,18 @@ export const SkateAccountIndicator: React.FC<SkateAccountIndicatorProps> = ({ us
 
         <div className="h-px bg-gray-50 my-1 mx-2"></div>
 
-        <Link
-          href="/account/logout"
-          className="flex items-center gap-3 px-4 py-3 text-sm font-medium !text-red-600 hover:bg-red-50 transition-colors mx-2 rounded-xl"
+        <button
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          className="w-[calc(100%-16px)] flex items-center gap-3 px-4 py-3 text-[14px] font-medium !text-red-600 hover:bg-red-50 transition-colors mx-2 rounded-xl text-left disabled:opacity-50"
         >
-          <LogOut size={16} className="!text-red-600" />
-          <span>Logout</span>
-        </Link>
+          {isLoggingOut ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <LogOut size={16} className="!text-red-600" />
+          )}
+          <span>{isLoggingOut ? 'Logout' : 'Logout'}</span>
+        </button>
       </div>
     </div>
   );
