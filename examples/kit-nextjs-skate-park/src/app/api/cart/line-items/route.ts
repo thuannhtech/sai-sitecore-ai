@@ -14,10 +14,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const accessToken = await tokenHelper.getValidToken();
     const lineItem = await cartService.addLineItem({
       ProductID,
       Quantity,
+      ImageUrl,
     });
 
     return NextResponse.json({
