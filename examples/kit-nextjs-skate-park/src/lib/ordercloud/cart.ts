@@ -7,6 +7,7 @@ import { log } from 'console';
 export interface AddCartLineItemInput {
   ProductID: string;
   Quantity: number;
+  ImageUrl?: string;
 }
 
 export interface UpdateCartLineItemQuantityInput {
@@ -16,6 +17,7 @@ export interface UpdateCartLineItemQuantityInput {
 
 /**
  * Service for managing the current shopper cart through OrderCloud's Cart endpoints.
+ * This service is designed to be used on the server (API routes, Server Actions).
  */
 export const cartService = {
   getAccessTokenFromCookies: async () => {
@@ -54,7 +56,14 @@ export const cartService = {
         throw new Error('Missing OrderCloud access token');
       }
 
+      try {
       return await Cart.Get({ accessToken });
+      } catch (e: any) {
+        if (e.response?.status === 404 || e.status === 404) {
+          return null;
+        }
+        throw e;
+      }
     } catch (error) {
       console.error('[OrderCloud] GetCart Error:', error);
       throw error;
@@ -86,8 +95,15 @@ export const cartService = {
         throw new Error('Missing OrderCloud access token');
       }
 
-      const response = await Cart.ListLineItems(undefined, { accessToken });
-      return response.Items;
+      try {
+        const response = await Cart.ListLineItems(undefined, { accessToken });
+        return response.Items || [];
+      } catch (e: any) {
+        if (e.response?.status === 404 || e.status === 404) {
+          return [];
+        }
+        throw e;
+      }
     } catch (error) {
       console.error('[OrderCloud] GetCartLineItems Error:', error);
       throw error;
@@ -140,6 +156,9 @@ export const cartService = {
       const lineItem: LineItem = {
         ProductID: item.ProductID,
         Quantity: item.Quantity,
+        xp: {
+          ImageUrl: item.ImageUrl
+        }
       };
 
       return await Cart.CreateLineItem(lineItem, { accessToken });

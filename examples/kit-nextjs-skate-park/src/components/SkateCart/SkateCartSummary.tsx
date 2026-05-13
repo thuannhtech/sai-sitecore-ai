@@ -40,12 +40,12 @@ export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout =
           <span className="text-gray-900">${tax.toLocaleString()}</span>
         </div>
         <div className="pt-4 border-t border-gray-200 flex justify-between items-end">
-          <span className="text-lg font-bold text-gray-900">Total</span>
+          <span className="tex-[15px] font-bold text-gray-900">Total</span>
           <div className="text-right">
             <span className="block text-3xl font-black text-blue-600 leading-none">
               ${total.toLocaleString()}
             </span>
-            <span className="text-xs text-gray-400 font-medium uppercase mt-1 block">incl. all taxes</span>
+            <span className="text-[13px] text-gray-400 font-medium uppercase mt-1 block">incl. all taxes</span>
           </div>
         </div>
       </div>
@@ -85,11 +85,11 @@ export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout =
         </button>
 
         <div className="p-4 bg-white/50 rounded-xl border border-dashed border-gray-200">
-          <p className="text-xs text-gray-500 flex items-center gap-2 mb-2">
+          <p className="text-[13px] text-gray-500 flex items-center gap-2 mb-2">
             <Truck size={14} className="text-blue-600" />
             Delivery in 3-5 business days
           </p>
-          <p className="text-xs text-gray-500 flex items-center gap-2">
+          <p className="text-[13px] text-gray-500 flex items-center gap-2">
             <ShieldCheck size={14} className="text-blue-600" />
             Secure checkout guaranteed
           </p>
@@ -98,7 +98,7 @@ export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout =
 
       {/* Promo Code Option */}
       <div className="mt-8 pt-8 border-t border-gray-200">
-        <button className="text-sm font-bold text-blue-600 hover:text-blue-700 flex items-center gap-2 transition-colors">
+        <button className="text-[15px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-2 transition-colors">
           <ShoppingBag size={16} />
           Have a promo code?
         </button>

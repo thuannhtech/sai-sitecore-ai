@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { Me } from './index';
 import { MeUser } from 'ordercloud-javascript-sdk';
+import { tokenHelper } from './token-helper';
 
 /**
  * Server-side helper to get the authenticated user from cookies.
@@ -21,7 +22,7 @@ export const getServerUser = async (): Promise<MeUser | null> => {
     }
 
     // 2. Fallback to API call if no cached data but token exists
-    const token = cookieStore.get('skate-park.access-token')?.value;
+    const token = cookieStore.get('oc-token')?.value;
 
     if (!token) {
       return null;
@@ -29,7 +30,11 @@ export const getServerUser = async (): Promise<MeUser | null> => {
 
     // Call OrderCloud Me.Get with the token from cookies
     const user = await Me.Get({ accessToken: token });
-    return user;
+    
+    // Identify guest status based on the Client ID in the token OR profile naming conventions
+    const isGuest = tokenHelper.isAnonymousToken(token) || tokenHelper.isGuestProfile(user);
+
+    return { ...user, isGuest } as any;
   } catch (error) {
     // If token is invalid or expired, return null
     console.warn('[OrderCloud Server Auth] No valid session found');

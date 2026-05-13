@@ -7,7 +7,7 @@ const SkateCheckoutBridge = {
     config: {
         forms: {
             SHIPPING: 'CheckoutShippingAddressForm',
-            BILLING: 'CheckoutBillingAddressFrom'
+            BILLING: 'CheckoutBillingAddressForm'
         },
         selectors: {
             errorMsg: 'form-error-message',
@@ -56,6 +56,44 @@ const SkateCheckoutBridge = {
                 this.handlePaymentSelection(defaultPaymentBtn);
             }
         }
+
+
+        document.querySelector('input[name="AsSameShippingAddress"]')?.addEventListener("change", function (e) {
+            if (e.target.checked) {
+
+                const shippingAddress = {};
+                const inputs = document.querySelector("form[name='CheckoutShippingAddressForm']").querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    if (input.name) {
+                        shippingAddress[input.name] = input.type === 'checkbox' ? input.checked : input.value;
+                    }
+                });
+
+
+                const billingAddressForm = document.querySelector("form[name='CheckoutBillingAddressForm']");
+                const setFormData = (data, targetForm) => {
+                    Object.entries(data).forEach(([name, value]) => {
+                        const elements = targetForm.querySelectorAll(`[name="${name}"]`);
+                        elements.forEach((el) => {
+                            if (el.type === "checkbox") {
+                                el.checked = Boolean(value);
+                            }
+                            else if (el.type === "radio") {
+                                el.checked = el.value == value;
+                            }
+                            else {
+                                el.value = value ?? "";
+                            }
+
+                            // Trigger change/input event if needed
+                            el.dispatchEvent(new Event("input", { bubbles: true }));
+                            el.dispatchEvent(new Event("change", { bubbles: true }));
+                        });
+                    });
+                };
+                setFormData(shippingAddress, billingAddressForm);
+            }
+        });
     },
 
     rehydrateStep(wrapperSelector, formName, data) {
@@ -72,7 +110,9 @@ const SkateCheckoutBridge = {
     // 3. Event Binding
     bindEvents() {
         // Use capture phase to intercept events before React/Sitecore
-        document.addEventListener('submit', (e) => this.handleSubmit(e), true);
+        document.addEventListener('submit', (e) => {
+            this.handleSubmit(e);
+        }, true);
 
         // Reset field error when user starts typing
         document.addEventListener('input', (e) => {
@@ -103,6 +143,9 @@ const SkateCheckoutBridge = {
                 this.handlePaymentSelection(paymentBtn);
             }
         }, true);
+
+
+
     },
 
     // Logic xử lý khi chọn Shipping Method
@@ -149,7 +192,7 @@ const SkateCheckoutBridge = {
             btn.innerHTML = isLoading ? `<span class="animate-pulse">${text}</span>` : originalText;
         };
 
-        const proceedWithOrder = (transactionData = null) => {
+        const proceedWithOrder = async (transactionData = null) => {
             const orderObject = {
                 orderDate: new Date().toISOString(),
                 shippingAddress: checkoutState.shippingAddress,
@@ -161,23 +204,34 @@ const SkateCheckoutBridge = {
                 },
                 transaction: transactionData, // Lưu toàn bộ payload (nonce, details, deviceData...)
                 cart: {
+                    id: cartState.cart?.id || '',
                     items: cartState.cart?.items || [],
                     subtotal: cartState.cart?.subtotal || 0,
-                    itemCount: cartState.cart?.items?.length || 0
+                    itemCount: cartState.cart?.itemCount || 0
                 }
             };
 
-            console.log("🚀 [BRIDGE] Submitting Order with Transaction:", orderObject);
+            console.log('[BRIDGE] Submitting order:', orderObject);
 
-            setTimeout(() => {
-                const orderId = `SK-ORD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+            try {
+                const response = await fetch('/api/checkout/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(orderObject)
+                });
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || 'Unable to submit order.');
+                }
+
                 const orders = JSON.parse(localStorage.getItem('skate_orders') || '[]');
-
-                orderObject.orderId = orderId;
-                orders.push(orderObject);
+                orders.push(result.order);
                 localStorage.setItem('skate_orders', JSON.stringify(orders));
 
-                console.log("✅ [SUCCESS] Order saved:", orderId);
+                console.log('[SUCCESS] Order submitted:', result.orderId);
 
                 if (window.SkateCheckoutStore) window.SkateCheckoutStore.getState().resetCheckout();
                 if (window.SkateCartStore) {
@@ -186,9 +240,13 @@ const SkateCheckoutBridge = {
                 }
 
                 setTimeout(() => {
-                    window.location.href = `/thank-you?token=${orderId}`;
+                    window.location.href = result.redirectUrl || `/thank-you?token=${result.orderId}`;
                 }, 100);
-            }, 2000);
+            } catch (error) {
+                console.error('[BRIDGE] Submit order error:', error);
+                setBtnLoading(false);
+                alert('Khong the dat hang: ' + (error.message || 'Unknown error'));
+            }
         };
 
         // 1. Kiểm tra validation cơ bản
@@ -263,7 +321,7 @@ const SkateCheckoutBridge = {
     // 6. Validation Logic
     validate(data) {
         const errors = [];
-        const requiredFields = ['FirstName', 'LastName','Email', 'PhoneNumber', 'Address'];
+        const requiredFields = ['FirstName', 'LastName', 'Email', 'PhoneNumber', 'Address'];
 
         requiredFields.forEach(field => {
             if (!data[field] || data[field].trim() === '') {
@@ -322,7 +380,7 @@ const SkateCheckoutBridge = {
         summaryDiv.innerHTML = `
             <div class="flex justify-between items-center">
                 <p class="text-gray-700 font-medium leading-relaxed">
-                    ${data.FullName || data.name || ''}, ${data.PhoneNumber || data.phone || ''}, ${data.Address || data.addressLine1 || ''}
+                    ${data.FirstName || ''} ${data.LastName || ''}, ${data.PhoneNumber || ''}, ${data.Address || ''}
                 </p>
                 <button type="button" class="edit-address-btn text-[10px] font-black uppercase text-blue-600 hover:underline ml-4">Edit</button>
             </div>
@@ -420,5 +478,5 @@ const SkateCheckoutBridge = {
     }
 };
 
-// Self-initialize
+
 SkateCheckoutBridge.init();

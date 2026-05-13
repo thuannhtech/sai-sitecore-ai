@@ -175,8 +175,7 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
     )
   }
 
-  //const totalPages = Math.ceil(total / pageSize)
-  const totalPages = 3;
+  const totalPages = Math.ceil(total / pageSize)
 
   return (
     <div className={`component skate-product-list bg-white min-h-screen ${params?.styles || ''}`} id={params?.RenderingIdentifier}>

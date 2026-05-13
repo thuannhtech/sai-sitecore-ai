@@ -8,9 +8,9 @@ export const userService = {
   /**
    * Get the profile information of the currently logged-in user.
    */
-  getUser: async () => {
+  getUser: async (accessToken?: string) => {
     try {
-      return await Me.Get();
+      return await Me.Get({ accessToken });
     } catch (error) {
       console.error('[OrderCloud] GetUser Error:', error);
       throw error;
@@ -20,9 +20,9 @@ export const userService = {
   /**
    * List all addresses for the current user.
    */
-  getAddresses: async () => {
+  getAddresses: async (accessToken?: string) => {
     try {
-      const response = await Me.ListAddresses();
+      const response = await Me.ListAddresses({ accessToken });
       return response.Items;
     } catch (error) {
       console.error('[OrderCloud] GetAddresses Error:', error);
@@ -33,9 +33,9 @@ export const userService = {
   /**
    * Create a new address for the current user.
    */
-  saveAddress: async (addressData: any) => {
+  saveAddress: async (addressData: any, accessToken?: string) => {
     try {
-      return await Me.CreateAddress(addressData);
+      return await Me.CreateAddress(addressData, { accessToken });
     } catch (error) {
       console.error('[OrderCloud] SaveAddress Error:', error);
       throw error;

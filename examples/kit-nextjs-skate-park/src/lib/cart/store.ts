@@ -66,9 +66,11 @@ const mapCartResponse = (data: unknown): SkateCart => {
     unitPrice,
     lineTotal: asNumber(lineItemRecord.LineTotal) || (quantity && unitPrice ? quantity * unitPrice : 0),
     imageUrl:
-      asString(productRecord.DefaultImageUrl) ||
-      asString(productRecord.ImageUrl) ||
-      asString(lineItemRecord.ImageUrl) ||
+      lineItem.xp?.ImageUrl ??
+      lineItem.Product?.xp?.ImageUrl ??
+      lineItem.Product?.DefaultImageUrl ??
+      lineItem.Product?.ImageUrl ??
+      lineItem.ImageUrl ??
       undefined,
     };
   });
@@ -172,6 +174,7 @@ export const useSkateCartStore = create<SkateCartState>((set, get) => ({
         body: JSON.stringify({
           ProductID: product.orderCloudId ?? product.id,
           Quantity: quantity,
+          ImageUrl: product.imageUrl,
         }),
       });
 
@@ -228,10 +231,12 @@ export const useSkateCartStore = create<SkateCartState>((set, get) => ({
       set({ error: 'Failed to remove item', isProcessing: false, processingLineItemId: null, processingAction: null });
     }
   },
-  
+
   clearCart: () => {
     set({ cart: null });
-    persistCart(null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('skate_mock_cart');
+    }
   },
 }));
 
