@@ -93,6 +93,7 @@ export const Default = (props: SkateProductDetailProps): JSX.Element => {
               <SkateAddToCartButton
                 product={{
                   id: product?.id || 'pdp-mock',
+                  orderCloudId: product?.orderCloudId,
                   name: product?.modelName || 'Product',
                   price: product?.price || 0,
                   imageUrl: product?.images?.[0],

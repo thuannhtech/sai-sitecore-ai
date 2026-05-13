@@ -11,6 +11,7 @@ export type ProductCard = {
   price: number;
   imageUrl?: string;
   description?: string;
+  orderCloudId?: string;
 };
 
 export type ProductDetail = {
@@ -65,6 +66,7 @@ export async function getAllProducts(language = DEFAULT_LANGUAGE, path = PRODUCT
             modelName: field(name: "ModelName") { value }
             price: field(name: "Price") { value }
             description: field(name: "Description") { value }
+            orderCloudProductId: field(name: "OrderCloudProductId") { value }
             images: field(name: "Images") { jsonValue }
           }
         }
@@ -92,6 +94,7 @@ export async function getAllProducts(language = DEFAULT_LANGUAGE, path = PRODUCT
       modelName: r?.modelName?.value || r.name,
       price: r?.price?.value ? parseFloat(r.price.value) : 0,
       description: r?.description?.value ? r.description.value.replace(/<[^>]*>/g, ' ').slice(0, 150) : '',
+      orderCloudId: r?.orderCloudProductId?.value || undefined,
       imageUrl,
     };
   });
@@ -126,6 +129,7 @@ export async function getProductBySlug(slug: string | undefined, language = DEFA
           description: field(name: "Description") { value }
           price: field(name: "Price") { value }
           quantity: field(name: "Quantity") { value }
+          orderCloudProductId: field(name: "OrderCloudProductId") { value }
           images: field(name: "Images") { 
             jsonValue 
             ... on MultilistField {
@@ -181,7 +185,7 @@ export async function getProductBySlug(slug: string | undefined, language = DEFA
     price: i?.price?.value ? parseFloat(i.price.value) : 0,
     quantity: i?.quantity?.value ? parseInt(i.quantity.value, 10) : 0,
     images: images,
-    orderCloudId: i?.oc?.value || undefined,
+    orderCloudId: i?.orderCloudProductId?.value || undefined,
     status: i?.status?.value || '',
     createdDate: i?.createdDate?.value || '',
   };

@@ -12,6 +12,8 @@ export const config = {
     storeFrontClientId: process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID_HK,
     adminClientId: process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID,
     adminClientSecret: process.env.ORDERCLOUD_CLIENT_SECRET, // ⚠️ Keep this server-side only
+    anonClientId: process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID_ANNO,
+    anonClientSecret: process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_SECRET_ANNO, // Can be public for anon access
     username: process.env.ORDERCLOUD_USERNAME,
     password: process.env.ORDERCLOUD_PASSWORD,
     buyerId: process.env.ORDERCLOUD_BUYER_ID,

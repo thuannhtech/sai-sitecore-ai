@@ -25,7 +25,8 @@ export async function GET(req: Request) {
       price: p.price,
       description: p.description || '',
       url: `/products/${p.slug}`,
-      slug: p.slug
+      slug: p.slug,
+      orderCloudId: p.orderCloudId,
     }))
 
     // Filter

@@ -1,5 +1,6 @@
 export interface SkateProduct {
   id: string;
+  orderCloudId?: string;
   name: string;
   price: number;
   imageUrl?: string;

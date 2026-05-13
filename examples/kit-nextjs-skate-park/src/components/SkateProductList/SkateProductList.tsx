@@ -39,6 +39,7 @@ type Product = {
   description?: string
   url?: string
   slug: string
+  orderCloudId?: string
 }
 
 type SortOption = 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc'
@@ -394,6 +395,7 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
                             <SkateAddToCartButton
                               product={{
                                 id: product.slug,
+                                orderCloudId: product.orderCloudId,
                                 name: product.name,
                                 price: product.price || 0,
                                 imageUrl: product.image
@@ -454,20 +456,6 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
             ) : (
               /* Premium Empty State */
               <div className="py-40 flex flex-col items-center justify-center text-center bg-white rounded-[4rem] border-2 border-dashed border-slate-100 relative overflow-hidden group">
-                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,rgba(25,101,225,0.03)_0%,transparent_70%)]" />
-                <div className="relative z-10">
-                  <div className="bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl mb-10">
-                    <svg width="48" height="48" fill="none" stroke="#1965e1" strokeWidth="2.5"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM22 3L2 3l8 9.46V19l4 2v-8.54L22 3z" /></svg>
-                  </div>
-                  <h3 className="text-5xl font-black text-slate-900 uppercase italic tracking-tighter leading-none mb-6">Zero Gear<br /><span className="text-slate-200">Matches</span></h3>
-                  <p className="text-slate-400 font-bold max-w-sm px-10 leading-relaxed uppercase text-[15px] tracking-widest">Your current filtering criteria is too strict for our current warehouse stock.</p>
-                  <button
-                    onClick={clearFilters}
-                    className="mt-12 px-12 py-6 bg-[#1965e1] text-white text-[15px] font-black uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-[#1965e1]/20 hover:bg-slate-900 hover:shadow-slate-200 transition-all active:scale-95"
-                  >
-                    Reset Inventory View
-                  </button>
-                </div>
               </div>
             )}
           </div>
