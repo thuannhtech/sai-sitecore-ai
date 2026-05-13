@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { SkateCart, SkateLineItem, SkateProduct } from './types';
-import { SkateCart, SkateLineItem, SkateProduct } from './types';
 import { Order, LineItem } from 'src/lib/ordercloud';
 
 const CART_API_URL = '/api/cart';
@@ -53,6 +52,8 @@ const mapCartResponse = (data: any): SkateCart => {
       lineItem.LineTotal ??
       (lineItem.Quantity && lineItem.UnitPrice ? lineItem.Quantity * lineItem.UnitPrice : 0),
     imageUrl:
+      lineItem.xp?.ImageUrl ??
+      lineItem.Product?.xp?.ImageUrl ??
       lineItem.Product?.DefaultImageUrl ??
       lineItem.Product?.ImageUrl ??
       lineItem.ImageUrl ??
@@ -114,6 +115,7 @@ export const useSkateCartStore = create<SkateCartState>((set, get) => ({
         body: JSON.stringify({
           ProductID: product.orderCloudId ?? product.id,
           Quantity: quantity,
+          ImageUrl: product.imageUrl,
         }),
       });
 
@@ -167,7 +169,7 @@ export const useSkateCartStore = create<SkateCartState>((set, get) => ({
       set({ error: 'Failed to remove item', isProcessing: false, processingLineItemId: null, processingAction: null });
     }
   },
-  
+
   clearCart: () => {
     set({ cart: null });
     // No need to clear localStorage as we're using server-side cookies now

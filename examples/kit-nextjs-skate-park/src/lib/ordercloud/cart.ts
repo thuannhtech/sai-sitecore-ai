@@ -1,8 +1,11 @@
+import { authService } from './auth';
 import { Cart, LineItem, Order } from './index';
+import { tokenHelper } from './token-helper';
 
 export interface AddCartLineItemInput {
   ProductID: string;
   Quantity: number;
+  ImageUrl?: string;
 }
 
 export interface UpdateCartLineItemQuantityInput {
@@ -67,16 +70,16 @@ export const cartService = {
   /**
    * Add a new line item to the current active cart.
    */
-  addLineItem: async (item: AddCartLineItemInput) => {
+  addLineItem: async (item: AddCartLineItemInput, providedAccessToken?: string) => {
     try {
       // Check for existing token, create anonymous if missing
-      let accessToken = await cartService.getAccessTokenFromCookies();
-      
+      let accessToken = providedAccessToken || await tokenHelper.getAccessTokenFromCookies();
+
       if (!accessToken) {
         console.log('[OrderCloud] No token found, getting anonymous token...');
         accessToken = await authService.getAnonymousToken();
         // Save token to cookie for future requests
-        await cartService.setAccessTokenInCookies(accessToken);
+        await tokenHelper.setAccessTokenInCookies(accessToken);
       }
 
       const cart = await cartService.ensureCart(accessToken);
@@ -110,6 +113,9 @@ export const cartService = {
       const lineItem: LineItem = {
         ProductID: item.ProductID,
         Quantity: item.Quantity,
+        xp: {
+          ImageUrl: item.ImageUrl
+        }
       };
 
       return await Cart.CreateLineItem(lineItem, { accessToken });

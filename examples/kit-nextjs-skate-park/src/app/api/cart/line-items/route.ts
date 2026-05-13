@@ -5,7 +5,7 @@ import { tokenHelper } from 'src/lib/ordercloud/token-helper';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { ProductID, Quantity } = body || {};
+    const { ProductID, Quantity, ImageUrl } = body || {};
 
     if (!ProductID || typeof Quantity !== 'number' || Quantity <= 0) {
       return NextResponse.json(
@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
     const lineItem = await cartService.addLineItem({
       ProductID,
       Quantity,
+      ImageUrl,
     }, accessToken);
 
     return NextResponse.json({
