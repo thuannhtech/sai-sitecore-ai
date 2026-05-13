@@ -49,3 +49,4 @@ packages/
 
 # VS Code settings
 .vscode/
+examples/kit-nextjs-skate-park/.env.propd

@@ -422,7 +422,7 @@ export default function BasicForm(props: BasicFormProps) {
           <button
             type="submit"
             disabled={submitting}
-            className="cursor-pointer w-full py-4 bg-gray-900 text-white font-black uppercase tracking-widest rounded-2xl hover:bg-blue-600 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200"
+            className="cursor-pointer w-full py-4 bg-[#002795] text-white font-black uppercase tracking-widest rounded-2xl hover:bg-blue-600 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-100"
           >
             {submitting ? 'Sending...' : formDef.submitText}
           </button>
