@@ -51,7 +51,7 @@ export const SkateCartItemList: React.FC = () => {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       {/* Table Header (Desktop) */}
-      <div className="hidden md:grid grid-cols-12 gap-4 px-8 py-6 bg-gray-50 border-b border-gray-100 text-sm font-bold text-gray-500 uppercase tracking-wider">
+      <div className="hidden md:grid grid-cols-12 gap-4 px-8 py-6 bg-gray-50 border-b border-gray-100 text-[15px] font-bold text-gray-500 uppercase tracking-wider">
         <div className="col-span-6">Product</div>
         <div className="col-span-2 text-center">Price</div>
         <div className="col-span-2 text-center">Quantity</div>
@@ -142,7 +142,7 @@ export const SkateCartItemList: React.FC = () => {
           <ArrowLeft size={16} />
           Continue Shopping
         </Link>
-        <span className="text-sm text-gray-400 italic">
+        <span className="text-[15px] text-gray-400 italic">
           {cart.itemCount} items in your bag
         </span>
       </div>

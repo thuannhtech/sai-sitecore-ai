@@ -107,8 +107,6 @@ export default function BasicForm(props: BasicFormProps) {
     let fieldItems: any[] = [];
     const isResolver = !!data.items;
 
-    console.log("data: ", data);
-
     if (isResolver) {
       rootItem = data.items?.[0];
       fieldItems = data.items?.slice(1) || [];
@@ -208,7 +206,6 @@ export default function BasicForm(props: BasicFormProps) {
     const mappedFields = finalFields;
 
     const script = rootItem?.fields?.Script?.value || '';
-    console.log("script", script);
 
     return {
       id: rootItem.id || '',
@@ -229,7 +226,6 @@ export default function BasicForm(props: BasicFormProps) {
     if (initialFields) {
       const def = transformForm(initialFields);
       if (def) {
-        console.log("def", def);
         setFormDef(def);
         setError(null);
       } else {
@@ -296,8 +292,6 @@ export default function BasicForm(props: BasicFormProps) {
   // Lấy dữ liệu đã lưu trong session cho form này (nếu có)
   const savedData = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem(`checkout_form_${formDef.name}`) || '{}') : {};
 
-  console.log("formDef", formDef);
-
   return (
     <>
       <form ref={formRef} name={formDef.name} onSubmit={onSubmit} className="sc-BasicForm space-y-6">
@@ -334,7 +328,7 @@ export default function BasicForm(props: BasicFormProps) {
 
               return (
                 <div key={field.key} className="flex flex-col gap-1.5">
-                  {field.type !== 'link' && field.type !== 'hidden' && field.type !== 'button' && (
+                  {field.type !== 'checkbox' && field.type !== 'link' && field.type !== 'hidden' && field.type !== 'button' && (
                     <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
                       {field.label} {field.required && <span className="text-red-500">*</span>}
                     </label>
