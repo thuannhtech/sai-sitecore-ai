@@ -8,6 +8,7 @@ import {
   CheckoutSubmitRequestSchema,
   CheckoutSubmitResponse,
 } from './models';
+import { tokenHelper } from 'lib/ordercloud/token-helper';
 
 const GET_PAYMENT_CONFIG = `
   query GetPaymentConfig($path: String!) {

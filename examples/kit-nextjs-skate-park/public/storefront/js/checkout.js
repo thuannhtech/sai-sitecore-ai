@@ -58,7 +58,6 @@ const SkateCheckoutBridge = {
         }
 
 
-        // Listen for checkbox change
         document.querySelector('input[name="AsSameShippingAddress"]')?.addEventListener("change", function (e) {
             if (e.target.checked) {
 
@@ -95,7 +94,6 @@ const SkateCheckoutBridge = {
                 setFormData(shippingAddress, billingAddressForm);
             }
         });
-
     },
 
     rehydrateStep(wrapperSelector, formName, data) {
