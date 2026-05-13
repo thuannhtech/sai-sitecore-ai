@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import type { Payment, PaymentTransaction } from './index';
 import { Cart, LineItem, Order } from './index';
 import { authService } from './auth';
+import { log } from 'console';
 
 export interface AddCartLineItemInput {
   ProductID: string;
@@ -56,7 +57,7 @@ export const cartService = {
       }
 
       try {
-        return await Cart.Get({ accessToken });
+      return await Cart.Get({ accessToken });
       } catch (e: any) {
         if (e.response?.status === 404 || e.status === 404) {
           return null;
@@ -95,14 +96,8 @@ export const cartService = {
       }
 
       try {
-        const response = await Cart.ListLineItems(undefined, { accessToken });
-        return response.Items || [];
-      } catch (e: any) {
-        if (e.response?.status === 404 || e.status === 404) {
-          return [];
-        }
-        throw e;
-      }
+      const response = await Cart.ListLineItems(undefined, { accessToken });
+      return response.Items;
     } catch (error) {
       console.error('[OrderCloud] GetCartLineItems Error:', error);
       throw error;
@@ -116,7 +111,7 @@ export const cartService = {
     try {
       // Check for existing token, create anonymous if missing
       let accessToken = await cartService.getAccessTokenFromCookies();
-
+      
       if (!accessToken) {
         console.log('[OrderCloud] No token found, getting anonymous token...');
         accessToken = await authService.getAnonymousToken();
