@@ -1,4 +1,4 @@
-import { Address, Cart } from './index';
+import { Address, Cart, Orders } from './index';
 import { cartService } from './cart';
 
 export interface OrderAddressInput {
@@ -54,10 +54,19 @@ export const orderService = {
   },
 
   /**
-   * Get the current active order from the shopper cart.
+   * Get an order by ID or the current active cart order.
    */
-  getOrder: async () => {
+  getOrder: async (orderId?: string) => {
     try {
+      const accessToken = await cartService.getAccessTokenFromCookies();
+      if (!accessToken) {
+        throw new Error('Missing OrderCloud access token');
+      }
+
+      if (orderId) {
+        return await Orders.Get('Outgoing', orderId, { accessToken });
+      }
+
       return await cartService.getCart();
     } catch (error) {
       console.error('[OrderCloud] GetOrder Error:', error);

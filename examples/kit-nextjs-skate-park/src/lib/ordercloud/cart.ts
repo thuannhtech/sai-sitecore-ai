@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import type { Payment, PaymentTransaction } from './index';
-import { Cart, LineItem, Order } from './index';
+import { Cart, LineItem, LineItems, Order } from './index';
 import { authService } from './auth';
 import { log } from 'console';
 
@@ -85,9 +85,9 @@ export const cartService = {
   },
 
   /**
-   * Get all line items from the current active cart.
+   * Get all line items from the current active cart or a specific order.
    */
-  getLineItems: async () => {
+  getLineItems: async (orderId?: string) => {
     try {
       const accessToken = await cartService.getAccessTokenFromCookies();
 
@@ -96,7 +96,9 @@ export const cartService = {
       }
 
       try {
-        const response = await Cart.ListLineItems(undefined, { accessToken });
+        // Sử dụng Cart.ListLineItems (Me endpoint) để Shopper có quyền xem đơn hàng của chính mình
+        const response = await Cart.ListLineItems(orderId, { accessToken });
+          
         return response.Items || [];
       } catch (e: any) {
         if (e.response?.status === 404 || e.status === 404) {

@@ -234,9 +234,7 @@ export const useSkateCartStore = create<SkateCartState>((set, get) => ({
 
   clearCart: () => {
     set({ cart: null });
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('skate_mock_cart');
-    }
+    persistCart(null);
   },
 }));
 

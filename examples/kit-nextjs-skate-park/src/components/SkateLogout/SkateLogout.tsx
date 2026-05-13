@@ -14,14 +14,23 @@ import { Loader2, LogOut } from 'lucide-react';
 export const Default = (props: any) => {
   const router = useRouter();
   const clearUser = useUserStore((state) => state.clearUser);
+  const clearCart = useSkateCartStore((state) => state.clearCart);
   const [countdown, setCountdown] = useState(3);
 
   useEffect(() => {
     const performLogout = async () => {
-      // 1. Clear Zustand store immediately
+      // 1. Clear Zustand stores immediately
       clearUser();
+      clearCart();
 
-      // 2. Clear cookies via server-side API
+      // 2. Clear local data
+      if (typeof window !== 'undefined') {
+        sessionStorage.clear();
+        localStorage.removeItem('ordercloud.token');
+        localStorage.removeItem('skate_mock_cart');
+      }
+
+      // 3. Clear cookies via server-side API
       try {
         await fetch('/api/auth/logout', { method: 'POST' });
       } catch (err) {
