@@ -75,10 +75,7 @@ export const authService = {
 
   getToken: () => Tokens.GetAccessToken(),
 
-  isAuthenticated: () => {
-    const token = Tokens.GetAccessToken();
-    return isUserToken(token);
-  },
+  isAuthenticated: () => !!Tokens.GetAccessToken(),
 
   /**
    * Get an anonymous token using Client Credentials with the anonymous client ID.
