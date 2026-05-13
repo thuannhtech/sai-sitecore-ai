@@ -96,8 +96,14 @@ export const cartService = {
       }
 
       try {
-      const response = await Cart.ListLineItems(undefined, { accessToken });
-      return response.Items;
+        const response = await Cart.ListLineItems(undefined, { accessToken });
+        return response.Items || [];
+      } catch (e: any) {
+        if (e.response?.status === 404 || e.status === 404) {
+          return [];
+        }
+        throw e;
+      }
     } catch (error) {
       console.error('[OrderCloud] GetCartLineItems Error:', error);
       throw error;
