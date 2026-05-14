@@ -190,7 +190,8 @@ export async function POST(request: NextRequest) {
       ok: true,
       orderId: resolvedOrderId,
       workato: workatoResponse,
-      message: workatoWarning
+      message: workatoWarning,
+      redirectUrl: `/thank-you?token=${resolvedOrderId}`
     });
 
   } catch (error: unknown) {

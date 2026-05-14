@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { MeUser } from 'ordercloud-javascript-sdk';
 import { useUserStore } from 'src/lib/user/store';
+import { tokenHelper } from 'src/lib/ordercloud/token-helper';
 
 interface UserHydratorProps {
   user: MeUser | null;
@@ -10,8 +11,7 @@ interface UserHydratorProps {
 
 export const UserHydrator: React.FC<UserHydratorProps> = ({ user }) => {
   useEffect(() => {
-    const isGuest = user?.Username === 'SitecoreAIBuyerAnonymousUser';
-
+    const isGuest = tokenHelper.isGuestProfile(user);
     useUserStore.setState({ 
       user, 
       isAuthenticated: !!user && !isGuest, 

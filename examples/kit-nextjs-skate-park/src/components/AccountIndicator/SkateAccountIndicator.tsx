@@ -18,6 +18,11 @@ export const SkateAccountIndicator: React.FC<SkateAccountIndicatorProps> = ({ us
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const user: any = storeUser || initialUser;
+
+  console.log("storeUser ", storeUser)
+  console.log("initialUser ", initialUser)
+  console.log("isGuest ", isGuest)
+  
   const displayName = isGuest
     ? 'Sign in / Sign up'
     : `${user?.FirstName ?? ''} ${user?.LastName ?? ''}`.trim() || 'Account';
