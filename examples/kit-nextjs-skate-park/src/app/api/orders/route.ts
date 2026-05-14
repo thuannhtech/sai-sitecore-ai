@@ -120,8 +120,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const order = await orderService.getOrder();
+
+
     // 3. Thực hiện Đặt hàng (Truyền thêm paymentConfig)
-    const checkoutResult = await checkoutService.placeOrder(payload, paymentConfig);
+    const checkoutResult = await checkoutService.placeOrder(payload, paymentConfig, order);
     const { orderId, paymentSummary } = checkoutResult;
     const resolvedOrderId = orderId ?? '';
 
@@ -130,7 +133,6 @@ export async function POST(request: NextRequest) {
     let workatoWarning: string | null = null;
 
     try {
-        const order = await orderService.getOrder(orderId);
         const lineItems = await cartService.getLineItems();
         
         const orderRecord = asRecord(order);
@@ -148,13 +150,13 @@ export async function POST(request: NextRequest) {
           };
         });
 
-        const email = fromUser.Email || orderXp.Email;
+        const email = orderXp.Email ? asString(orderXp.Email) : asString(fromUser.Email);
 
         const emailInformation = buildOrderConfirmationEmailInformation({
             to: [{ "Email": email ? asString(email) : '' }],
             from: "dmx@brother.com.sg",
             customerName: `${asString(asRecord(contactAddress).FirstName)} ${asString(asRecord(contactAddress).LastName)}`.trim(),
-            customerEmail: asString(fromUser.Email) || asString(orderXp.Email),
+            customerEmail: email,
             orderId: resolvedOrderId || asString(orderRecord.ID),
             orderDate: asString(orderRecord.DateSubmitted) || new Date().toISOString().split('T')[0],
             currency: asString(orderRecord.Currency) || 'HKD',

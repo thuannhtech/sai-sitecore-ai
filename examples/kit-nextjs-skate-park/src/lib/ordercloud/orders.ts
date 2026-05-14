@@ -7,6 +7,7 @@ export interface OrderAddressInput {
   phone?: string;
   addressLine1: string;
   addressLine2?: string;
+  email?: string;
   city: string;
   state?: string;
   zipCode?: string;
@@ -103,7 +104,8 @@ export const orderService = {
           ID: cart.ID,
           xp: {
             ...existingXp,
-            shippingAddress: mapAddressInput(address)
+            Email: address.email,
+            ShippingAddress: mapAddressInput(address)
           },
         });
       }

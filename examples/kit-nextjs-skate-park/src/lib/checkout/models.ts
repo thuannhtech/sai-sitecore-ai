@@ -4,9 +4,6 @@ import { z } from 'zod';
  * Frontend Payload Schema (from checkout.js)
  */
 export const OrderPlacementRequestSchema = z.object({
-  orderDate: z.string(),
-  shippingAddress: z.any(),
-  billingAddress: z.any(),
   shippingMethod: z.object({
     id: z.string(),
     name: z.string(),

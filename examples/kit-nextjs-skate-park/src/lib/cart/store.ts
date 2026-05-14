@@ -3,6 +3,7 @@ import { SkateCart, SkateLineItem, SkateProduct } from './types';
 
 const CART_API_URL = '/api/cart';
 const CART_LINE_ITEMS_API_URL = '/api/cart/line-items';
+const CART_PROMOTIONS_API_URL = '/api/cart/promotions';
 const CART_STORAGE_KEY = 'cart_data';
 const CART_STORAGE_TTL = 20 * 60 * 1000; // 20 minutes
 
@@ -22,6 +23,7 @@ interface SkateCartState {
   addToCart: (product: SkateProduct, quantity: number) => Promise<void>;
   updateQuantity: (lineItemId: string, quantity: number) => Promise<void>;
   removeItem: (lineItemId: string) => Promise<void>;
+  applyPromotion: (code: string) => Promise<void>;
   clearCart: () => void;
 }
 
@@ -46,6 +48,7 @@ const asString = (value: unknown) => (typeof value === 'string' ? value : '');
 
 const mapCartResponse = (data: unknown): SkateCart => {
   const dataRecord = asRecord(data);
+  const cartRecord = asRecord(dataRecord.cart);
   const lineItems = Array.isArray(dataRecord.items) ? dataRecord.items : [];
 
   const items: SkateLineItem[] = lineItems.map((lineItem) => {
@@ -76,13 +79,22 @@ const mapCartResponse = (data: unknown): SkateCart => {
     };
   });
 
-  const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
+  const derivedSubtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const subtotal = asNumber(cartRecord.Subtotal) || asNumber(cartRecord.subtotal) || derivedSubtotal;
+  const promotionDiscount =
+    asNumber(cartRecord.PromotionDiscount) || asNumber(cartRecord.promotionDiscount);
+  const total =
+    asNumber(cartRecord.Total) ||
+    asNumber(cartRecord.total) ||
+    Math.max(subtotal - promotionDiscount, 0);
 
   return {
-    id: asString(asRecord(dataRecord.cart).ID) || asString(asRecord(dataRecord.cart).id) || 'cart',
+    id: asString(cartRecord.ID) || asString(cartRecord.id) || 'cart',
     items,
     subtotal,
+    promotionDiscount,
+    total,
     itemCount,
   };
 };
@@ -252,6 +264,28 @@ export const useSkateCartStore = create<SkateCartState>((set, get) => ({
       set({ cart, isProcessing: false, processingLineItemId: null, processingAction: null });
     } catch {
       set({ error: 'Failed to remove item', isProcessing: false, processingLineItemId: null, processingAction: null });
+    }
+  },
+
+  applyPromotion: async (code: string) => {
+    set({ isProcessing: true, processingLineItemId: null, processingAction: null, error: null });
+    try {
+      const response = await fetch(CART_PROMOTIONS_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code }),
+      });
+
+      const payload = await handleCartApiResponse(response);
+      const cart = mapCartResponse(payload);
+      persistCart(cart);
+      set({ cart, isProcessing: false });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to apply promo code';
+      set({ error: message, isProcessing: false });
+      throw error;
     }
   },
 

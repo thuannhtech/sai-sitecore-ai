@@ -1,8 +1,7 @@
-import { Cart } from 'lib/ordercloud';
 import { cartService } from 'lib/ordercloud/cart';
 import { braintreeService } from 'lib/payment/braintree';
 import { OrderPlacementRequest, OrderPlacementResponse } from './models';
-
+import { Cart, Payment, PaymentTransaction } from 'src/lib/ordercloud';
 /**
  * Helper to build OrderCloud address object from frontend payload
  */
@@ -23,7 +22,7 @@ export const checkoutService = {
   /**
    * Orchestrates the full order placement process:
    */
-  placeOrder: async (payload: OrderPlacementRequest, paymentConfig?: any): Promise<OrderPlacementResponse> => {
+  placeOrder: async (payload: OrderPlacementRequest, paymentConfig?: any, order?: any): Promise<OrderPlacementResponse> => {
     console.log('[Checkout Service] Starting order placement...', { orderId: payload.cart.id });
 
     const accessToken = await cartService.getAccessTokenFromCookies();
@@ -33,7 +32,6 @@ export const checkoutService = {
 
     const requestOptions = { accessToken };
 
-    // 1. Xử lý thanh toán Braintree (Sử dụng config từ Sitecore truyền vào)
     let transactionId = '';
     if (payload.paymentMethod.id === 'braintree' && payload.transaction?.nonce) {
       console.log('[Checkout Service] Processing Braintree payment with Sitecore config...');
@@ -48,20 +46,42 @@ export const checkoutService = {
         paymentConfig
       );
 
-      if (!saleResult.success) {
-        throw new Error(`Payment failed: ${saleResult.message}`);
-      }
+      const payment: Payment = {
+        Type: 'CreditCard' as Payment['Type'],
+        Amount: order?.Total,
+        Currency: 'USD',
+        Accepted: saleResult.success,
+        xp: {
+          PaymentProvider: payload.paymentMethod.id,
+          PaymentMethod: payload.paymentMethod.id,
+        },
+      };
+  
+  
+      const createdPayment = await Cart.CreatePayment(payment, requestOptions);
+  
+      const transactionPayload: PaymentTransaction = {
+        Type: 'Sale',
+        DateExecuted: new Date().toISOString(),
+        Currency: 'USD',
+        Amount: order?.Total,
+        Succeeded: saleResult.success,
+        ResultMessage: saleResult.success ? 'Transaction successful' : (saleResult.message || 'Transaction failed'),
+        xp: saleResult.success ? {
+          TransactionRefID: saleResult.transactionId!
+        } : {},
+      };
+  
+      const createdTransaction = await Cart.CreatePaymentTransaction(
+        createdPayment.ID,
+        transactionPayload,
+        requestOptions
+      );
+      
       transactionId = saleResult.transactionId || '';
       console.log('[Checkout Service] Payment successful:', transactionId);
     }
 
-    // 2. Cập nhật Địa chỉ
-    console.log('[Checkout Service] Updating addresses...');
-    const shippingAddress = buildOrderCloudAddress(payload.shippingAddress);
-    const billingAddress = buildOrderCloudAddress(payload.billingAddress);
-
-    await Cart.SetShippingAddress(shippingAddress, requestOptions);
-    await Cart.SetBillingAddress(billingAddress, requestOptions);
 
     // 3. Patch Cart Metadata (Gán XP theo chuẩn hệ thống để đồng bộ Workato)
     console.log('[Checkout Service] Patching cart metadata...');
@@ -71,18 +91,10 @@ export const checkoutService = {
       {
         ShippingCost: payload.shippingMethod.price,
         xp: {
-          SubStatus: "Processing",
-          PaymentStatus: "PAID",
           PurchasedFrom: "en",
           PurchasedDate: now,
           UpdatedDate: now,
-          CustomerMessage: "Placed via Storefront",
-          // Lưu toàn bộ request payload vào đây theo yêu cầu của anh
-          storefrontCheckout: payload,
           ShippingMethodName: payload.shippingMethod.name,
-          PaymentMethod: payload.paymentMethod.id === 'braintree' ? 'Credit Card' : payload.paymentMethod.id,
-          shippingAddress: shippingAddress,
-          billingAddress: billingAddress
         }
       },
       requestOptions
@@ -90,14 +102,12 @@ export const checkoutService = {
 
     // 4. Chốt đơn (Submit Order)
     console.log('[Checkout Service] Submitting cart to OrderCloud...');
-    const submittedOrder = await Cart.Submit(requestOptions);
 
-    console.log('[Checkout Service] Order placed successfully:', submittedOrder.ID);
+    console.log('[Checkout Service] Order placed successfully:', order.ID);
 
     return {
       success: true,
-      orderId: submittedOrder.ID,
-      submittedOrder,
+      orderId: order.ID,
       paymentSummary: {
         type: payload.paymentMethod.id,
         transactionId

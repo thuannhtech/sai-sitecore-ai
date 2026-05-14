@@ -16,6 +16,9 @@ const SkateCheckoutBridge = {
             placeOrderBtn: '.place-order-btn' // Nút Place Order trong Cart Summary
         }
     },
+    
+    // Flag to prevent auto-submit during edit mode
+    isEditMode: false,
 
     // 2. Initialization
     async init() {
@@ -132,6 +135,9 @@ const SkateCheckoutBridge = {
         // Reset field error when user starts typing
         document.addEventListener('input', (e) => {
             if (e.target.name) {
+                if (this.isEditMode) {
+                    this.isEditMode = false;
+                }
                 this.clearFieldError(e.target);
             }
             // Chỉ cho phép nhập số vào trường PhoneNumber
@@ -142,6 +148,11 @@ const SkateCheckoutBridge = {
 
         // Lắng nghe sự kiện click vào nút Place Order
         document.addEventListener('click', (e) => {
+            const submitBtn = e.target.closest(this.config.selectors.submitBtn);
+            if (submitBtn && submitBtn.closest('form')) {
+                this.isEditMode = false;
+            }
+
             if (e.target.closest(this.config.selectors.placeOrderBtn)) {
                 this.handlePlaceOrder(e);
             }
@@ -339,8 +350,13 @@ const SkateCheckoutBridge = {
             e.preventDefault();
             e.stopPropagation();
 
+            if (this.isEditMode) {
+                console.log(`[${formName}] Ignoring auto-submit while editing.`);
+                return;
+            }
+
             const data = this.getFormData(form);
-            const errors = this.validate(data);
+            const errors = this.validate(formName, data);
 
             if (errors.length > 0) {
                 this.showErrors(form, errors);
@@ -366,9 +382,13 @@ const SkateCheckoutBridge = {
     },
 
     // 6. Validation Logic
-    validate(data) {
+    validate(formName, data) {
         const errors = [];
-        const requiredFields = ['FirstName', 'LastName', 'Email', 'PhoneNumber', 'Address'];
+        const requiredFields = ['FirstName', 'LastName', 'PhoneNumber', 'Address'];
+
+        if (formName !== this.config.forms.BILLING) {
+            requiredFields.push('Email');
+        }
 
         requiredFields.forEach(field => {
             if (!data[field] || data[field].trim() === '') {
@@ -376,8 +396,8 @@ const SkateCheckoutBridge = {
             }
         });
 
-        if (data.email && !data.email.includes('@')) {
-            errors.push({ field: 'email', message: 'Invalid email address' });
+        if (formName !== this.config.forms.BILLING && data.Email && !data.Email.includes('@')) {
+            errors.push({ field: 'Email', message: 'Invalid email address' });
         }
 
         return errors;
@@ -444,7 +464,6 @@ const SkateCheckoutBridge = {
                 if (input) {
                     if (input.type === 'checkbox') input.checked = data[key];
                     else input.value = data[key];
-                    input.dispatchEvent(new Event('input', { bubbles: true }));
                 }
             });
 
@@ -513,6 +532,7 @@ const SkateCheckoutBridge = {
             firstName: data.FirstName || '',
             lastName: data.LastName || '',
             phone: data.PhoneNumber || '',
+            email: data.Email || '',
             addressLine1: data.Address || '',
             addressLine2: data.AddressLine2 || '',
             city: data.City || '',

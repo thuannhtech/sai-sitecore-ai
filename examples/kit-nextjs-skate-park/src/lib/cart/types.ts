@@ -21,5 +21,7 @@ export interface SkateCart {
   id: string;
   items: SkateLineItem[];
   subtotal: number;
+  promotionDiscount: number;
+  total: number;
   itemCount: number;
 }
