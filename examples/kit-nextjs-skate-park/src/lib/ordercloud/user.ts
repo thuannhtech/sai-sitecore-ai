@@ -1,4 +1,4 @@
-import { Me } from './index';
+import { BuyerAddress, Me } from './index';
 
 /**
  * Service for managing User Profile and Addresses.
@@ -33,7 +33,7 @@ export const userService = {
   /**
    * Create a new address for the current user.
    */
-  saveAddress: async (addressData: any, accessToken?: string) => {
+  saveAddress: async (addressData: BuyerAddress, accessToken?: string) => {
     try {
       return await Me.CreateAddress(addressData, { accessToken });
     } catch (error) {

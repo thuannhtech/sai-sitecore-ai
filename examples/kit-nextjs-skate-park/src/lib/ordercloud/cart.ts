@@ -56,6 +56,7 @@ export const cartService = {
       }
 
       try {
+        await Cart.RefreshPromotions({ accessToken });
         return await Cart.Get({ accessToken });
       } catch (e: any) {
         if (e.response?.status === 404 || e.status === 404) {

@@ -1,5 +1,6 @@
-import { Address, Cart, Orders } from './index';
+import { Address, BuyerAddress, Cart, Orders } from './index';
 import { cartService } from './cart';
+import { userService } from './user';
 
 export interface OrderAddressInput {
   firstName: string;
@@ -25,11 +26,28 @@ const mapAddressInput = (address: OrderAddressInput): Address => ({
   LastName: address.lastName,
   Phone: address.phone,
   Street1: address.addressLine1,
-  City: withFallback(address.city),
-  State: withFallback(address.state),
-  Zip: withFallback(address.zipCode),
+  City: 'N/A',
+  State: 'N/A',
+  Zip: 'N/A',
   Country: 'SC',
   CompanyName: address.companyName,
+});
+
+const mapBuyerAddressInput = (
+  address: OrderAddressInput,
+  type: 'shipping' | 'billing'
+): BuyerAddress => ({
+  FirstName: address.firstName,
+  LastName: address.lastName,
+  Phone: address.phone,
+  Street1: address.addressLine1,
+  City: 'N/A',
+  State: 'N/A',
+  Zip: 'N/A',
+  Country: 'SC',
+  CompanyName: address.companyName,
+  Shipping: type === 'shipping',
+  Billing: type === 'billing',
 });
 
 /**
@@ -75,6 +93,36 @@ export const orderService = {
     }
   },
 
+  assignSavedAddress: async (type: 'shipping' | 'billing', address: OrderAddressInput) => {
+    const accessToken = await cartService.getAccessTokenFromCookies();
+
+    if (!accessToken) {
+      throw new Error('Missing OrderCloud access token');
+    }
+
+    const cart = await cartService.getCart();
+    if (!cart?.ID) {
+      throw new Error('No active cart found');
+    }
+
+    const savedAddress = await userService.saveAddress(
+      mapBuyerAddressInput(address, type),
+      accessToken
+    );
+
+    const addressID = savedAddress.ID;
+    if (!addressID) {
+      throw new Error('Address ID was not returned');
+    }
+
+    return await cartService.patchCart({
+      ID: cart.ID,
+      ...(type === 'shipping'
+        ? { ShippingAddressID: addressID }
+        : { BillingAddressID: addressID }),
+    });
+  },
+
   /**
    * Set the shipping address on the current active order.
    */
@@ -110,7 +158,7 @@ export const orderService = {
         });
       }
 
-      return await Cart.SetShippingAddress(mapAddressInput(address), { accessToken });
+      return await orderService.assignSavedAddress('shipping', address);
 
     } catch (error) {
       console.error('[OrderCloud] SetShippingAddress Error:', error);
@@ -128,7 +176,17 @@ export const orderService = {
         throw new Error('Missing OrderCloud access token');
       }
 
-      return await Cart.SetBillingAddress(mapAddressInput(address), { accessToken });
+      const cart = await cartService.getCart();
+      if (!cart) {
+        throw new Error('Cart not found');
+      }
+
+      const isGuest = cart.FromUser?.Username === 'SitecoreAIBuyerAnonymousUser';
+      if (isGuest) {
+        return await Cart.SetBillingAddress(mapAddressInput(address), { accessToken });
+      }
+
+      return await orderService.assignSavedAddress('billing', address);
     } catch (error) {
       console.error('[OrderCloud] SetBillingAddress Error:', error);
       throw error;

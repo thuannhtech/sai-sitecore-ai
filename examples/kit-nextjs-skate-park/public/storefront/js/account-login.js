@@ -5,6 +5,19 @@
     console.log('account-login.js initialized');
     let initialized = false;
 
+    const refreshCart = async () => {
+        try {
+            const cartStore = window.SkateCartStore;
+            const fetchCart = cartStore?.getState?.().fetchCart;
+
+            if (typeof fetchCart === 'function') {
+                await fetchCart();
+            }
+        } catch (error) {
+            console.warn('Cart refresh failed after login:', error);
+        }
+    };
+
     const init = () => {
         if (initialized) return;
 
@@ -50,19 +63,9 @@
 
             // --- 2. UI Feedback ---
             const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
             submitBtn.disabled = true;
-
-            // Ensure LoadingOverlay is available
-            if (typeof LoadingOverlay === 'undefined') {
-                await new Promise((resolve) => {
-                    const script = document.createElement('script');
-                    script.src = '/storefront/js/loading-overlay.js';
-                    script.onload = resolve;
-                    document.head.appendChild(script);
-                });
-            }
-
-            LoadingOverlay.show('Signing you in...');
+            submitBtn.textContent = 'Signing in...';
 
             try {
                 // --- 3. API Call ---
@@ -82,19 +85,20 @@
                 document.cookie = `oc-token=${result.access_token}; path=/; max-age=${result.expires_in}; SameSite=Lax`;
 
                 // Call the profile API to let the server set the user-data cookie
-                LoadingOverlay.show('Loading your profile...');
                 await fetch('/api/customer/me');
+
+                // Refresh the cart from the server so the UI uses the latest cart state
+                await refreshCart();
 
                 // Redirect to account or home
                 window.location.href = '/';
 
             } catch (error) {
                 console.error('Login error:', error);
-                LoadingOverlay.hide();
                 showAlert('Login Failed', error.message, 'error');
-                submitBtn.disabled = false;
             } finally {
-                // ...
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
             }
         });
     };

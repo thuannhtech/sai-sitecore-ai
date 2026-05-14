@@ -5,6 +5,19 @@
 (function () {
     console.log('account-signup.js initialized');
 
+    const refreshCart = async () => {
+        try {
+            const cartStore = window.SkateCartStore;
+            const fetchCart = cartStore?.getState?.().fetchCart;
+
+            if (typeof fetchCart === 'function') {
+                await fetchCart();
+            }
+        } catch (error) {
+            console.warn('Cart refresh failed after registration:', error);
+        }
+    };
+
     // --- SweetAlert2 Notification Component ---
     const loadSweetAlert = () => {
         return new Promise((resolve) => {
@@ -105,6 +118,9 @@
                     text: 'Registration successful! You can now sign in.',
                     icon: 'success'
                 });
+
+                // Refresh the current cart state so the UI reflects the latest server cart.
+                await refreshCart();
 
                 // Optional: Clear form or redirect
                 form.reset();
