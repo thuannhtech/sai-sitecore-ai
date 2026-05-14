@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { ShoppingBag, ShieldCheck, Truck, CreditCard, CheckCircle2, Loader2 } from 'lucide-react';
 import { useSkateCartStore } from 'src/lib/cart/store';
+import { useSkateCheckoutStore } from 'src/lib/payment/store';
 
 const DEFAULT_TAX_RATE = 0.08;
 
@@ -14,6 +15,7 @@ interface SkateCartSummaryProps {
 
 export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout = false, onPlaceOrder, onProceedToCheckout }) => {
   const { cart, isLoading, isProcessing, error, applyPromotion } = useSkateCartStore();
+  const shippingMethod = useSkateCheckoutStore((state) => state.shippingMethod);
   const [promoCode, setPromoCode] = useState('');
   const [isPromoOpen, setIsPromoOpen] = useState(false);
   const [promoMessage, setPromoMessage] = useState<string | null>(null);
@@ -22,12 +24,17 @@ export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout =
 
   const subtotal = cart?.subtotal || 0;
   const promotionDiscount = cart?.promotionDiscount || 0;
-  const shipping = 0; // Mock free shipping
+  const shipping = isCheckout ? shippingMethod?.price || 0 : 0;
   const discountedSubtotal = Math.max(subtotal - promotionDiscount, 0);
   const tax = discountedSubtotal * taxRate;
   const total = discountedSubtotal + shipping + tax;
   const hasItems = cart && cart.items.length > 0;
   const isBusy = isLoading || isProcessing;
+  const shippingLabel =
+    shippingMethod?.price && shippingMethod.price > 0
+      ? `$${shippingMethod.price.toLocaleString()}`
+      : 'FREE';
+  const shippingEta = shippingMethod?.time || '3-5 business days';
 
   useEffect(() => {
     let isMounted = true;
@@ -90,7 +97,9 @@ export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout =
         </div>
         <div className="flex justify-between text-gray-500 font-medium">
           <span>Estimated Shipping</span>
-          <span className="text-green-600 font-bold">FREE</span>
+          <span className={shipping > 0 ? 'text-gray-900 font-bold' : 'text-green-600 font-bold'}>
+            {shippingLabel}
+          </span>
         </div>
         <div className="flex justify-between text-gray-500 font-medium">
           <span>Tax ({taxLabel})</span>
@@ -150,7 +159,7 @@ export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout =
         <div className="p-4 bg-white/50 rounded-xl border border-dashed border-gray-200">
           <p className="text-[13px] text-gray-500 flex items-center gap-2 mb-2">
             <Truck size={14} className="text-blue-600" />
-            Delivery in 3-5 business days
+            Delivery in {shippingEta}
           </p>
           <p className="text-[13px] text-gray-500 flex items-center gap-2">
             <ShieldCheck size={14} className="text-blue-600" />

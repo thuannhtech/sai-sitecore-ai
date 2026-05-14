@@ -265,6 +265,9 @@ const SkateCheckoutBridge = {
 
         console.log('Shipment Method Selected:', methodData);
         window.SkateCheckoutStore.getState().setShippingMethod(methodData);
+        window.dispatchEvent(new CustomEvent('skate:shipping-method-changed', {
+            detail: methodData
+        }));
     },
 
     // Logic xử lý khi chọn Payment Method
