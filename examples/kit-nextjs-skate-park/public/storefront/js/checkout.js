@@ -13,7 +13,8 @@ const SkateCheckoutBridge = {
             errorMsg: 'form-error-message',
             inputError: 'border-red-500',
             submitBtn: 'button[type="submit"]',
-            placeOrderBtn: '.place-order-btn' // Nút Place Order trong Cart Summary
+            placeOrderBtn: '.place-order-btn',
+            stepBridgeSlot: '.checkout-step-bridge-slot'
         }
     },
     
@@ -111,9 +112,14 @@ const SkateCheckoutBridge = {
             const form = wrapper.querySelector(`form[name='${formName}']`);
             if (form) form.style.display = "none";
 
-            const content = wrapper.querySelector(".relative");
+            const content = this.getStepBridgeContainer(wrapper);
             this.renderAddressSummary(content, data, wrapper, formName);
         }
+    },
+
+    getStepBridgeContainer(wrapper) {
+        if (!wrapper) return null;
+        return wrapper.querySelector(this.config.selectors.stepBridgeSlot) || wrapper.querySelector(".relative");
     },
 
     getShippingAddressData() {
@@ -481,6 +487,8 @@ const SkateCheckoutBridge = {
 
     // Helper to render the Address Summary UI (Reusable for Shipping/Billing)
     renderAddressSummary(container, data, wrapper, formName) {
+        if (!container) return;
+
         const summaryId = `summary-${formName}`;
         const oldSummary = container.querySelector(`#${summaryId}`);
         if (oldSummary) oldSummary.remove();
@@ -549,7 +557,7 @@ const SkateCheckoutBridge = {
                 const shippingWrapper = document.querySelector(".shipping-address-step");
                 if (shippingWrapper) {
                     shippingWrapper.querySelector(`form[name='${formName}']`).style.display = "none";
-                    const content = shippingWrapper.querySelector(".relative");
+                    const content = this.getStepBridgeContainer(shippingWrapper);
                     this.renderAddressSummary(content, data, shippingWrapper, formName);
                 }
 
@@ -560,7 +568,7 @@ const SkateCheckoutBridge = {
                 const billingWrapper = document.querySelector(".billing-address-step");
                 if (billingWrapper) {
                     billingWrapper.querySelector(`form[name='${formName}']`).style.display = "none";
-                    const content = billingWrapper.querySelector(".relative");
+                    const content = this.getStepBridgeContainer(billingWrapper);
                     this.renderAddressSummary(content, data, billingWrapper, formName);
                 }
                 store.setBillingAddress(data);
@@ -653,6 +661,7 @@ const SkateCheckoutBridge = {
             }
 
             isSuccess = true;
+            btn.disabled = false;
             btn.innerHTML = '<span class="animate-pulse">SAVE</span>';
 
             this.showSuccessFeedback(form);

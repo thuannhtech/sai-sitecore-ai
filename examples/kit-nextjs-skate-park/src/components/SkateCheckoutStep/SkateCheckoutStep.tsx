@@ -72,6 +72,7 @@ export const Default = (props: SkateCheckoutStepProps): JSX.Element => {
         </summary>
 
         <div className="px-8 pb-10 pt-2 border-t border-gray-50 animate-in fade-in duration-500">
+          <div className="checkout-step-bridge-slot" data-step-number={stepNumber} />
           <div className={`relative ${isEditing ? 'min-h-[200px] border-2 border-dotted border-blue-100 rounded-xl p-4 bg-blue-50/10' : ''}`}>
             <AppPlaceholder
               name="dynamic-checkout-step-content-{*}"

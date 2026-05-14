@@ -120,17 +120,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const order = await orderService.getOrder();
 
 
     // 3. Thực hiện Đặt hàng (Truyền thêm paymentConfig)
-    const checkoutResult = await checkoutService.placeOrder(payload, paymentConfig, order);
+    const checkoutResult = await checkoutService.placeOrder(payload, paymentConfig, payload.cart.id);
     const { orderId, paymentSummary } = checkoutResult;
     const resolvedOrderId = orderId ?? '';
 
     // 4. Xử lý Workato / Email (Phần này giữ nguyên logic cũ)
     let workatoResponse: unknown;
     let workatoWarning: string | null = null;
+
+    const order = await orderService.getOrder();
+
 
     try {
         const lineItems = await cartService.getLineItems();
@@ -159,7 +161,7 @@ export async function POST(request: NextRequest) {
             customerEmail: email,
             orderId: resolvedOrderId || asString(orderRecord.ID),
             orderDate: asString(orderRecord.DateSubmitted) || new Date().toISOString().split('T')[0],
-            currency: asString(orderRecord.Currency) || 'HKD',
+            currency: "USD",
             shippingAddress: formatAddress(contactAddress),
             shippingRemark: asString(orderXp.CustomerMessage) || 'N/A',
             contactName: `${asString(asRecord(contactAddress).FirstName)} ${asString(asRecord(contactAddress).LastName)}`.trim(),
@@ -167,7 +169,7 @@ export async function POST(request: NextRequest) {
             subtotal: asNumber(orderRecord.Subtotal),
             shippingFee: asNumber(orderRecord.ShippingCost),
             discount: asNumber(orderRecord.PromotionDiscount),
-            taxAmount: asNumber(orderRecord.TaxCost),
+            taxAmount: asNumber(payload.cart.taxAmount),
             totalAmount: asNumber(orderRecord.Total),
             items: orderItems,
             paymentProvider: paymentSummary.type,

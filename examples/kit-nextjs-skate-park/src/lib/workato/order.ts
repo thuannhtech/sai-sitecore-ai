@@ -59,13 +59,15 @@ const escapeHtml = (value: string) =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
 
-const formatMoney = (amount?: number, currency = 'SGD') => {
+const formatMoney = (amount?: number, currency = 'USD') => {
   if (amount === undefined) {
     return 'TBD';
   }
 
   try {
-    return new Intl.NumberFormat('en-SG', {
+    const locale = currency === 'USD' ? 'en-US' : 'en-SG';
+
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
     }).format(amount);

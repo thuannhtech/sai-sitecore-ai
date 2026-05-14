@@ -22,7 +22,7 @@ export const checkoutService = {
   /**
    * Orchestrates the full order placement process:
    */
-  placeOrder: async (payload: OrderPlacementRequest, paymentConfig?: any, order?: any): Promise<OrderPlacementResponse> => {
+  placeOrder: async (payload: OrderPlacementRequest, paymentConfig?: any, orderId?: any): Promise<OrderPlacementResponse> => {
     console.log('[Checkout Service] Starting order placement...', { orderId: payload.cart.id });
 
     const accessToken = await cartService.getAccessTokenFromCookies();
@@ -31,7 +31,26 @@ export const checkoutService = {
     }
 
     const requestOptions = { accessToken };
-    const paymentAmount = payload.cart.total || order?.Total || payload.cart.subtotal;
+
+    console.log('[Checkout Service] Patching cart metadata...');
+    const now = new Date().toISOString().replace('Z', '+00:00');
+
+    const patchedCart = await Cart.Patch(
+      {
+        ShippingCost: payload.shippingMethod.price,
+        TaxCost: payload.cart.taxAmount,
+        xp: {
+          PurchasedFrom: "en",
+          PurchasedDate: now,
+          UpdatedDate: now,
+          ShippingMethodName: payload.shippingMethod.name,
+          GST: payload.cart.taxRatePercentage,
+        }
+      },
+      requestOptions
+    );
+
+    const paymentAmount = Number(patchedCart?.Total.toFixed(2));
 
     let transactionId = '';
     if (payload.paymentMethod.id === 'braintree' && payload.transaction?.nonce) {
@@ -85,32 +104,15 @@ export const checkoutService = {
 
 
     // 3. Patch Cart Metadata (Gán XP theo chuẩn hệ thống để đồng bộ Workato)
-    console.log('[Checkout Service] Patching cart metadata...');
-    const now = new Date().toISOString().replace('Z', '+00:00');
-
-    await Cart.Patch(
-      {
-        ShippingCost: payload.shippingMethod.price,
-        TaxCost: payload.cart.taxAmount,
-        xp: {
-          PurchasedFrom: "en",
-          PurchasedDate: now,
-          UpdatedDate: now,
-          ShippingMethodName: payload.shippingMethod.name,
-          GST: payload.cart.taxRatePercentage,
-        }
-      },
-      requestOptions
-    );
 
     // 4. Chốt đơn (Submit Order)
     console.log('[Checkout Service] Submitting cart to OrderCloud...');
 
-    console.log('[Checkout Service] Order placed successfully:', order.ID);
+    console.log('[Checkout Service] Order placed successfully:', orderId);
 
     return {
       success: true,
-      orderId: order.ID,
+      orderId: orderId,
       paymentSummary: {
         type: payload.paymentMethod.id,
         transactionId
