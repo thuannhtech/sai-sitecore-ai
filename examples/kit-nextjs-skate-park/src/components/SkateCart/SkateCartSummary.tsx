@@ -24,17 +24,18 @@ export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout =
 
   const subtotal = cart?.subtotal || 0;
   const promotionDiscount = cart?.promotionDiscount || 0;
-  const shipping = isCheckout ? shippingMethod?.price || 0 : 0;
+  const shipping = isCheckout ? cart?.shippingCost ?? shippingMethod?.price ?? 0 : 0;
   const discountedSubtotal = Math.max(subtotal - promotionDiscount, 0);
   const tax = discountedSubtotal * taxRate;
   const total = discountedSubtotal + shipping + tax;
   const hasItems = cart && cart.items.length > 0;
   const isBusy = isLoading || isProcessing;
+  const effectiveShippingMethod = cart?.shippingMethod?.id ? cart.shippingMethod : shippingMethod;
   const shippingLabel =
-    shippingMethod?.price && shippingMethod.price > 0
-      ? `$${shippingMethod.price.toLocaleString()}`
+    shipping > 0
+      ? `$${shipping.toLocaleString()}`
       : 'FREE';
-  const shippingEta = shippingMethod?.time || '3-5 business days';
+  const shippingEta = effectiveShippingMethod?.time || '3-5 business days';
 
   useEffect(() => {
     let isMounted = true;

@@ -268,6 +268,35 @@ const SkateCheckoutBridge = {
         window.dispatchEvent(new CustomEvent('skate:shipping-method-changed', {
             detail: methodData
         }));
+        void this.syncShippingMethodToCart(methodData);
+    },
+
+    async syncShippingMethodToCart(methodData) {
+        try {
+            const response = await fetch('/api/cart/shipping', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    shippingMethodId: methodData.id,
+                    shippingMethodName: methodData.name,
+                    shippingMethodTime: methodData.time,
+                    shippingCost: Number.isFinite(methodData.price) ? methodData.price : 0,
+                }),
+            });
+
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || !result.ok) {
+                throw new Error(result.error || 'Failed to sync shipping method to cart');
+            }
+
+            if (window.SkateCartStore?.getState) {
+                await window.SkateCartStore.getState().fetchCart();
+            }
+        } catch (error) {
+            console.error('[CHECKOUT] Failed to sync shipping method to cart:', error);
+        }
     },
 
     // Logic xử lý khi chọn Payment Method
@@ -302,7 +331,7 @@ const SkateCheckoutBridge = {
             const subtotal = cartState.cart?.subtotal || 0;
             const promotionDiscount = cartState.cart?.promotionDiscount || 0;
             const discountedSubtotal = Math.max(subtotal - promotionDiscount, 0);
-            const shippingAmount = checkoutState.shippingMethod?.price || 0;
+            const shippingAmount = cartState.cart?.shippingCost ?? checkoutState.shippingMethod?.price ?? 0;
             const taxRate = typeof commerceSettings?.taxRate === 'number' ? commerceSettings.taxRate : 0.08;
             const taxRatePercentage = taxRate * 100;
             const taxAmount = discountedSubtotal * taxRate;
