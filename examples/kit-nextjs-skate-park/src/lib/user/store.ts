@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { MeUser } from 'ordercloud-javascript-sdk';
 import { authService } from '../ordercloud/auth';
-import { isUserToken, isAnonymousToken } from '../ordercloud/token-utils';
+import { tokenHelper } from '../ordercloud/token-helper';
 
 interface UserState {
   user: MeUser | null;
@@ -15,8 +15,8 @@ interface UserState {
 export const useUserStore = create<UserState>((set) => ({
   user: null,
   loading: false,
-  isAuthenticated: typeof window !== 'undefined' ? authService.isAuthenticated() : false,
-  isGuest: typeof window !== 'undefined' ? isAnonymousToken(authService.getToken() || "") : true,
+  isAuthenticated: false,
+  isGuest: true,
 
   fetchUser: async () => {
     console.log("fetchUser called")
@@ -37,6 +37,7 @@ export const useUserStore = create<UserState>((set) => ({
 
       const user = data.user;
       const isGuest = data.isGuest;
+      console.warn("TOKEN__data", data)
 
       set({
         user,
@@ -46,11 +47,12 @@ export const useUserStore = create<UserState>((set) => ({
       });
     } catch (error) {
       console.error('Error fetching user:', error);
-      const token: any = authService.getToken() || "";
+      const token = authService.getToken() || "";
+      console.warn("TOKEN__", token)
       set({
         user: null,
-        isAuthenticated: isUserToken(token),
-        isGuest: isAnonymousToken(token),
+        isAuthenticated: tokenHelper.isUserToken(token),
+        isGuest: true,
         loading: false
       });
     }

@@ -1,7 +1,5 @@
-import { Me, Users, BUYER_SCROPES, Auth, Tokens, buildUserName } from './index';
+import { Users, BUYER_SCROPES, Auth, Tokens, buildUserName } from './index';
 import { config } from 'src/lib/config';
-import { isUserToken } from './token-utils';
-import { userService } from './user';
 import { RegisterUserRequest } from './types';
 
 /**
@@ -14,7 +12,6 @@ export const authService = {
    */
   login: async (username: string, password: string) => {
     try {
-
       const clientID = config.ordercloud.adminClientId!;
       const clientSecret = config.ordercloud.adminClientSecret!;
       const storeUserName = buildUserName(username);
@@ -73,9 +70,11 @@ export const authService = {
     Tokens.RemoveRefreshToken();
   },
 
-  getToken: () => Tokens.GetAccessToken(),
+  getToken: () => {
+    return Tokens.GetAccessToken();
+  },
 
-  isAuthenticated: () => !!Tokens.GetAccessToken(),
+  isAuthenticated: () => !!authService.getToken(),
 
   /**
    * Get an anonymous token using Client Credentials with the anonymous client ID.
@@ -91,33 +90,33 @@ export const authService = {
         config.ordercloud.anonClientSecret,
         config.ordercloud.anonClientId,
         [
-        "BuyerAdmin",
-        "BuyerReader",
-        "BuyerUserAdmin",
-        "BuyerUserReader",
-        "BuyerImpersonation",
-        "Shopper",
-        "AddressAdmin",
-        "MeAddressAdmin",
-        "MeAdmin",
-        "MeCreditCardAdmin",
-        "MeXpAdmin",
-        "PasswordReset",
-        "ShipmentAdmin",
-        "ShipmentReader",
-        "OrderAdmin",
-        "OrderReader",
-        "UnsubmittedOrderReader",
-        "OverrideUnitPrice",
-        "OverrideShipping",
-        "OverrideTax",
-        "CreditCardAdmin",
-        "CreditCardReader",
-        "ProductAdmin",
-        "ProductReader",
-        "PromotionReader",
-        "PromotionAdmin"
-      ]
+          "BuyerAdmin",
+          "BuyerReader",
+          "BuyerUserAdmin",
+          "BuyerUserReader",
+          "BuyerImpersonation",
+          "Shopper",
+          "AddressAdmin",
+          "MeAddressAdmin",
+          "MeAdmin",
+          "MeCreditCardAdmin",
+          "MeXpAdmin",
+          "PasswordReset",
+          "ShipmentAdmin",
+          "ShipmentReader",
+          "OrderAdmin",
+          "OrderReader",
+          "UnsubmittedOrderReader",
+          "OverrideUnitPrice",
+          "OverrideShipping",
+          "OverrideTax",
+          "CreditCardAdmin",
+          "CreditCardReader",
+          "ProductAdmin",
+          "ProductReader",
+          "PromotionReader",
+          "PromotionAdmin"
+        ]
       );
 
       Tokens.SetAccessToken(authResponse.access_token);

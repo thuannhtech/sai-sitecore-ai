@@ -320,7 +320,7 @@ const SkateCheckoutBridge = {
                 }
 
                 setTimeout(() => {
-                    window.location.href = result.redirectUrl || `/thank-you?token=${result.orderId}`;
+                    window.location.href = result.redirectUrl;
                 }, 100);
             } catch (error) {
                 console.error('[BRIDGE] Order Submission Failed:', {
