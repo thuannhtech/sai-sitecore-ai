@@ -18,12 +18,29 @@ const SkateCheckoutBridge = {
     },
 
     // 2. Initialization
-    init() {
-        console.log('SkateCheckoutBridge initialized');
+    async init() {
+        console.log('SkateCheckoutBridge initializing...');
+        
+        // Nạp SweetAlert2 nếu chưa có
+        if (!window.Swal) {
+            await this.loadScript('https://cdn.jsdelivr.net/npm/sweetalert2@11');
+        }
+
         this.bindEvents();
 
         // Chờ một chút để Zustand Store kịp hydrate dữ liệu từ sessionStorage
         setTimeout(() => this.rehydrateUI(), 100);
+    },
+
+    // Helper: Nạp script từ URL
+    loadScript(url) {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = url;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
     },
 
     // Kiểm tra và khôi phục giao diện nếu đã có dữ liệu trong Store (từ session cũ)
@@ -208,7 +225,7 @@ const SkateCheckoutBridge = {
             console.log('[BRIDGE] Submitting order:', orderObject);
 
             try {
-                const response = await fetch('/api/checkout/submit', {
+                const response = await fetch('/api/orders', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -217,15 +234,29 @@ const SkateCheckoutBridge = {
                 });
                 const result = await response.json();
 
-                if (!response.ok || !result.success) {
-                    throw new Error(result.message || 'Unable to submit order.');
+                if (!response.ok || !result.ok) {
+                    throw new Error(result.message || result.error || 'Unable to submit order.');
                 }
 
                 const orders = JSON.parse(localStorage.getItem('skate_orders') || '[]');
-                orders.push(result.order);
+                orders.push(result.orderId);
                 localStorage.setItem('skate_orders', JSON.stringify(orders));
 
-                console.log('[SUCCESS] Order submitted:', result.orderId);
+                console.log('[SUCCESS] Order processed by API:', result);
+
+                // Nếu có cảnh báo (lỗi gửi mail nhưng đơn hàng vẫn ok)
+                if (result.message) {
+                    console.warn('[BRIDGE] Order success with warning:', result.message);
+                }
+
+                // Thông báo thành công bằng Swal
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Order Placed!',
+                    text: result.message ? 'Your order was placed, but we had trouble sending the confirmation email.' : 'Your order has been submitted successfully.',
+                    showConfirmButton: true, // Cho phép user nhấn OK để đóng
+                    confirmButtonText: 'Great!'
+                });
 
                 if (window.SkateCheckoutStore) window.SkateCheckoutStore.getState().resetCheckout();
                 if (window.SkateCartStore) {
@@ -237,22 +268,40 @@ const SkateCheckoutBridge = {
                     window.location.href = result.redirectUrl || `/thank-you?token=${result.orderId}`;
                 }, 100);
             } catch (error) {
-                console.error('[BRIDGE] Submit order error:', error);
+                console.error('[BRIDGE] Order Submission Failed:', {
+                    message: error.message,
+                    stack: error.stack,
+                    context: orderObject
+                });
                 setBtnLoading(false);
-                alert('Khong the dat hang: ' + (error.message || 'Unknown error'));
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Checkout Error',
+                    text: 'Something went wrong while placing your order. Please try again.',
+                    footer: `<span style="color: #ef4444; font-size: 10px;">Error: ${error.message}</span>`
+                });
             }
         };
 
         // 1. Kiểm tra validation cơ bản
         if (!checkoutState.shippingAddress || !checkoutState.billingAddress || !checkoutState.shippingMethod) {
-            alert("Please complete all shipping information and select a shipping method!");
+            Swal.fire({
+                icon: 'warning',
+                title: 'Incomplete Information',
+                text: 'Please complete all shipping and billing details before placing your order.'
+            });
             return;
         }
 
         // 2. Xử lý thanh toán
         if (selectedPaymentId === 'braintree') {
             if (!window.SkateBraintreeInstance) {
-                alert("Please enter your card information before placing the order.");
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Payment Required',
+                    text: 'Please provide your card information before proceeding.'
+                });
                 return;
             }
 
@@ -260,9 +309,13 @@ const SkateCheckoutBridge = {
 
             window.SkateBraintreeInstance.requestPaymentMethod((err, payload) => {
                 if (err) {
-                    console.error('Braintree Error:', err);
+                    console.error('[BRAINTREE] Payment Authorization Error:', err);
                     setBtnLoading(false);
-                    alert("Lỗi xác thực thẻ: " + err.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Payment Error',
+                        text: 'We could not authorize your payment method. Please check your card details.'
+                    });
                     return;
                 }
 

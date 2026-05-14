@@ -22,7 +22,7 @@ export const userService = {
    */
   getAddresses: async (accessToken?: string) => {
     try {
-      const response = await Me.ListAddresses({ accessToken });
+      const response = await Me.ListAddresses(undefined, { accessToken });
       return response.Items;
     } catch (error) {
       console.error('[OrderCloud] GetAddresses Error:', error);

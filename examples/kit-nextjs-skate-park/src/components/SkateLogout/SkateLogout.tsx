@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Field } from '@sitecore-content-sdk/nextjs';
 import { useRouter } from 'src/i18n/navigation';
+import { useSkateCartStore } from 'src/lib/cart/store';
 import { useUserStore } from 'src/lib/user/store';
 import { Loader2, LogOut } from 'lucide-react';
 
@@ -14,14 +15,23 @@ import { Loader2, LogOut } from 'lucide-react';
 export const Default = (props: any) => {
   const router = useRouter();
   const clearUser = useUserStore((state) => state.clearUser);
+  const clearCart = useSkateCartStore((state) => state.clearCart);
   const [countdown, setCountdown] = useState(3);
 
   useEffect(() => {
     const performLogout = async () => {
-      // 1. Clear Zustand store immediately
+      // 1. Clear Zustand stores immediately
       clearUser();
+      clearCart();
 
-      // 2. Clear cookies via server-side API
+      // 2. Clear local data
+      if (typeof window !== 'undefined') {
+        sessionStorage.clear();
+        localStorage.removeItem('ordercloud.token');
+        localStorage.removeItem('skate_mock_cart');
+      }
+
+      // 3. Clear cookies via server-side API
       try {
         await fetch('/api/auth/logout', { method: 'POST' });
       } catch (err) {
@@ -44,7 +54,7 @@ export const Default = (props: any) => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [clearUser, router]);
+  }, [clearCart, clearUser, router]);
 
   return (
     <div className="flex items-center justify-center py-20 px-4">

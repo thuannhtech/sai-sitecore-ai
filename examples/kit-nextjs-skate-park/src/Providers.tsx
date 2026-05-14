@@ -15,12 +15,12 @@ export default function Providers({
   children,
   page,
   componentProps = {},
-  user,
+  user = null,
 }: {
   children: React.ReactNode;
   page: Page;
   componentProps?: ComponentPropsCollection;
-  user: MeUser | null;
+  user?: MeUser | null;
 }) {
   return (
     <SitecoreProvider

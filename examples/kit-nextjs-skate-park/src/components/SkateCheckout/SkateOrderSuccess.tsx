@@ -16,13 +16,69 @@ export const SkateOrderSuccess = () => {
   const [order, setOrder] = useState<any>(null);
 
   useEffect(() => {
-    if (token) {
-      const orders = JSON.parse(localStorage.getItem('skate_orders') || '[]');
-      const foundOrder = orders.find((o: any) => o.orderId === token);
-      if (foundOrder) {
-        setOrder(foundOrder);
+    const fetchOrder = async () => {
+      if (!token) return;
+
+      try {
+        console.log('[Thank You] Fetching order details for token:', token);
+        const response = await fetch(`/api/orders?id=${token}`);
+        const result = await response.json();
+
+        if (result.ok && result.order) {
+          // Map OrderCloud object to UI structure
+          const ocOrder = result.order;
+          // Cơ chế dự phòng: Nếu API live không lấy được sản phẩm, dùng bản Snapshot đã lưu trong xp
+          const storefrontCheckout = ocOrder.xp?.storefrontCheckout || {};
+          const ocItems = (result.lineItems && result.lineItems.length > 0) 
+            ? result.lineItems 
+            : (storefrontCheckout.cart?.items || []);
+          
+          // Ưu tiên lấy từ backup trong xp mà mình vừa thêm vào service.ts
+          const shippingAddr = ocOrder.xp?.shippingAddress || ocOrder.ShippingAddress || ocOrder.BillingAddress || {};
+          const billingAddr = ocOrder.xp?.billingAddress || ocOrder.BillingAddress || {};
+
+          const mappedOrder = {
+            orderId: ocOrder.ID,
+            orderDate: ocOrder.DateSubmitted || ocOrder.DateCreated,
+            customer: {
+              firstName: billingAddr.FirstName || 'N/A',
+              lastName: billingAddr.LastName || '',
+              phoneNumber: billingAddr.Phone || 'N/A'
+            },
+            shippingAddress: {
+              FullName: `${shippingAddr.FirstName || ''} ${shippingAddr.LastName || ''}`.trim(),
+              Address: `${shippingAddr.Street1 || ''}, ${shippingAddr.City || ''}, ${shippingAddr.Country || ''}`,
+              PhoneNumber: shippingAddr.Phone
+            },
+            shippingMethod: {
+              name: storefrontCheckout.shippingMethod?.name || ocOrder.xp?.ShippingMethodName || 'Standard Delivery'
+            },
+            paymentMethod: {
+              id: storefrontCheckout.paymentMethod?.id || ocOrder.xp?.PaymentMethod || 'Credit Card'
+            },
+            cart: {
+              items: ocItems.map((item: any) => ({
+                id: item.id || item.ID,
+                name: item.name || item.Product?.Name || item.ProductID || 'Product',
+                quantity: Number(item.quantity || item.Quantity) || 0,
+                unitPrice: Number(item.unitPrice || item.price || item.UnitPrice) || 0,
+                lineTotal: Number(item.lineTotal || item.LineTotal) || 0,
+                imageUrl: item.imageUrl || item.xp?.ImageUrl || item.Product?.xp?.Images?.[0]?.Url
+              })),
+              subtotal: Number(ocOrder.Subtotal || storefrontCheckout.cart?.subtotal) || 0
+            }
+          };
+
+          setOrder(mappedOrder);
+        } else {
+          console.error('[Thank You] Order not found or API error:', result.error);
+        }
+      } catch (error) {
+        console.error('[Thank You] Error fetching order:', error);
       }
-    }
+    };
+
+    fetchOrder();
   }, [token]);
 
   if (!token) {
@@ -72,16 +128,18 @@ export const SkateOrderSuccess = () => {
               </h2>
               <div className="space-y-8">
                 <div>
-                  <label className="text-[15px] font-black text-gray-400 uppercase block mb-2 tracking-wider">Customer</label>
+                  <label className="text-[15px] font-black text-gray-400 uppercase block mb-2 tracking-wider">Recipient & Contact</label>
                   <p className="text-gray-900 font-bold text-[20px]">
-                    {order.shippingAddress?.FullName || order.customer?.firstName + ' ' + order.customer?.lastName}
+                    {order.shippingAddress?.FullName}
                   </p>
-                  <p className="text-gray-500 text-[16px] mt-1">{order.shippingAddress?.PhoneNumber || order.customer?.phoneNumber}</p>
+                  <p className="text-blue-600 font-black text-[18px] mt-1">
+                    {order.shippingAddress?.PhoneNumber}
+                  </p>
                 </div>
                 <div>
                   <label className="text-[15px] font-black text-gray-400 uppercase block mb-2 tracking-wider">Shipping Address</label>
                   <p className="text-gray-900 font-bold leading-relaxed text-[18px]">
-                    {order.shippingAddress?.Address || order.shippingAddress?.addressLine1}
+                    {order.shippingAddress?.Address}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-12">
