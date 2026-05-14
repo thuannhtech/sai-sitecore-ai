@@ -1,18 +1,5 @@
 import { z } from 'zod';
 
-export const CheckoutAddressSchema = z
-  .object({
-    FirstName: z.string().min(1),
-    LastName: z.string().min(1),
-    Email: z.string().email(),
-    PhoneNumber: z.string().min(1),
-    Address: z.string().min(1),
-    City: z.string().optional().default(''),
-    State: z.string().optional().default(''),
-    Zip: z.string().optional().default(''),
-    Country: z.string().optional().default('US'),
-  })
-  .passthrough();
 
 export const CheckoutShippingMethodSchema = z
   .object({
@@ -66,10 +53,6 @@ export const CheckoutCartSchema = z
 
 export const CheckoutSubmitRequestSchema = z
   .object({
-    orderDate: z.string().min(1),
-    orderId: z.string().optional(),
-    shippingAddress: CheckoutAddressSchema,
-    billingAddress: CheckoutAddressSchema,
     shippingMethod: CheckoutShippingMethodSchema,
     paymentMethod: CheckoutPaymentMethodSchema,
     transaction: CheckoutTransactionSchema,
@@ -84,7 +67,6 @@ export type CheckoutSubmitResponse =
       success: true;
       orderId: string;
       redirectUrl: string;
-      order: CheckoutSubmitOrderSnapshot;
       orderCloud: {
         orderId: string;
         status?: string;

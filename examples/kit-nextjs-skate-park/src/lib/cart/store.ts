@@ -3,7 +3,8 @@ import { SkateCart, SkateLineItem, SkateProduct } from './types';
 
 const CART_API_URL = '/api/cart';
 const CART_LINE_ITEMS_API_URL = '/api/cart/line-items';
-const CART_STORAGE_KEY = 'skate_cart';
+const CART_STORAGE_KEY = 'cart_data';
+const CART_STORAGE_TTL = 20 * 60 * 1000; // 20 minutes
 
 interface SkateCartState {
   cart: SkateCart | null;
@@ -98,6 +99,11 @@ const fetchCartFromApi = async (): Promise<SkateCart> => {
   return mapCartResponse(payload);
 };
 
+type StoredCart = {
+  cart: SkateCart;
+  updatedAt: number;
+};
+
 const getStoredCart = (): SkateCart | null => {
   if (typeof window === 'undefined') {
     return null;
@@ -110,7 +116,19 @@ const getStoredCart = (): SkateCart | null => {
   }
 
   try {
-    return JSON.parse(stored) as SkateCart;
+    const parsed = JSON.parse(stored) as StoredCart;
+
+    if (!parsed?.cart || typeof parsed.updatedAt !== 'number') {
+      localStorage.removeItem(CART_STORAGE_KEY);
+      return null;
+    }
+
+    if (Date.now() - parsed.updatedAt > CART_STORAGE_TTL) {
+      localStorage.removeItem(CART_STORAGE_KEY);
+      return null;
+    }
+
+    return parsed.cart;
   } catch {
     localStorage.removeItem(CART_STORAGE_KEY);
     return null;
@@ -127,7 +145,12 @@ const persistCart = (cart: SkateCart | null) => {
     return;
   }
 
-  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+  const payload: StoredCart = {
+    cart,
+    updatedAt: Date.now(),
+  };
+
+  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(payload));
 };
 
 export const useSkateCartStore = create<SkateCartState>((set, get) => ({
@@ -235,7 +258,7 @@ export const useSkateCartStore = create<SkateCartState>((set, get) => ({
   clearCart: () => {
     set({ cart: null });
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('skate_mock_cart');
+      localStorage.removeItem(CART_STORAGE_KEY);
     }
   },
 }));

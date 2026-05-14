@@ -18,7 +18,9 @@ export const SkateAccountIndicator: React.FC<SkateAccountIndicatorProps> = ({ us
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const user: any = storeUser || initialUser;
-  const displayName = isGuest ? 'Sign in / Sign up' : `${user.FirstName} ${user.LastName}`.trim();
+  const displayName = isGuest
+    ? 'Sign in / Sign up'
+    : `${user?.FirstName ?? ''} ${user?.LastName ?? ''}`.trim() || 'Account';
 
   const handleLogout = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -40,7 +42,6 @@ export const SkateAccountIndicator: React.FC<SkateAccountIndicatorProps> = ({ us
         sessionStorage.clear();
 
         // Also clear common localStorage keys just in case
-        localStorage.removeItem('skate_mock_cart');
         localStorage.removeItem('ordercloud.token'); // Standard SDK token location
       }
 
@@ -57,7 +58,7 @@ export const SkateAccountIndicator: React.FC<SkateAccountIndicatorProps> = ({ us
     }
   };
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !user) {
     return (
       <Link
         href="/account/login"

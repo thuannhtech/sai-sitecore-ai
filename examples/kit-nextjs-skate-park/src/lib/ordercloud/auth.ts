@@ -90,7 +90,33 @@ export const authService = {
       const authResponse = await Auth.ClientCredentials(
         config.ordercloud.anonClientSecret,
         config.ordercloud.anonClientId,
-        ['Shopper', 'PasswordReset'] // Limited scopes for anonymous users
+        [
+        "BuyerAdmin",
+        "BuyerReader",
+        "BuyerUserAdmin",
+        "BuyerUserReader",
+        "BuyerImpersonation",
+        "Shopper",
+        "AddressAdmin",
+        "MeAddressAdmin",
+        "MeAdmin",
+        "MeCreditCardAdmin",
+        "MeXpAdmin",
+        "PasswordReset",
+        "ShipmentAdmin",
+        "ShipmentReader",
+        "OrderAdmin",
+        "OrderReader",
+        "UnsubmittedOrderReader",
+        "OverrideUnitPrice",
+        "OverrideShipping",
+        "CreditCardAdmin",
+        "CreditCardReader",
+        "ProductAdmin",
+        "ProductReader",
+        "PromotionReader",
+        "PromotionAdmin"
+      ]
       );
 
       Tokens.SetAccessToken(authResponse.access_token);

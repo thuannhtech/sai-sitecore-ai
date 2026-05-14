@@ -53,12 +53,6 @@ export const tokenHelper = {
   getValidToken: async () => {
     let accessToken = await tokenHelper.getAccessTokenFromCookies();
 
-    if (!accessToken) {
-      console.log('[OrderCloud] No token found, getting anonymous token...');
-      accessToken = await authService.getAnonymousToken();
-      // Save token to cookie for future requests
-      await tokenHelper.setAccessTokenInCookies(accessToken);
-    }
     return accessToken;
   },
 };

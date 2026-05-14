@@ -56,44 +56,6 @@ const SkateCheckoutBridge = {
                 this.handlePaymentSelection(defaultPaymentBtn);
             }
         }
-
-
-        document.querySelector('input[name="AsSameShippingAddress"]')?.addEventListener("change", function (e) {
-            if (e.target.checked) {
-
-                const shippingAddress = {};
-                const inputs = document.querySelector("form[name='CheckoutShippingAddressForm']").querySelectorAll('input, select, textarea');
-                inputs.forEach(input => {
-                    if (input.name) {
-                        shippingAddress[input.name] = input.type === 'checkbox' ? input.checked : input.value;
-                    }
-                });
-
-
-                const billingAddressForm = document.querySelector("form[name='CheckoutBillingAddressForm']");
-                const setFormData = (data, targetForm) => {
-                    Object.entries(data).forEach(([name, value]) => {
-                        const elements = targetForm.querySelectorAll(`[name="${name}"]`);
-                        elements.forEach((el) => {
-                            if (el.type === "checkbox") {
-                                el.checked = Boolean(value);
-                            }
-                            else if (el.type === "radio") {
-                                el.checked = el.value == value;
-                            }
-                            else {
-                                el.value = value ?? "";
-                            }
-
-                            // Trigger change/input event if needed
-                            el.dispatchEvent(new Event("input", { bubbles: true }));
-                            el.dispatchEvent(new Event("change", { bubbles: true }));
-                        });
-                    });
-                };
-                setFormData(shippingAddress, billingAddressForm);
-            }
-        });
     },
 
     rehydrateStep(wrapperSelector, formName, data) {
@@ -104,6 +66,42 @@ const SkateCheckoutBridge = {
 
             const content = wrapper.querySelector(".relative");
             this.renderAddressSummary(content, data, wrapper, formName);
+        }
+    },
+
+    getShippingAddressData() {
+        const state = window.SkateCheckoutStore?.getState();
+        const shippingData = state?.shippingAddress || {};
+
+        if (Object.keys(shippingData).length > 0) {
+            return shippingData;
+        }
+
+        const shippingForm = document.querySelector(`form[name='${this.config.forms.SHIPPING}']`);
+        if (!shippingForm) {
+            return {};
+        }
+
+        const data = {};
+        shippingForm.querySelectorAll('input, select, textarea').forEach((input) => {
+            if (input.name) {
+                data[input.name] = input.type === 'checkbox' ? input.checked : input.value;
+            }
+        });
+
+        return data;
+    },
+
+    showBillingForm(wrapper) {
+        if (!wrapper) return;
+        const form = wrapper.querySelector(`form[name='${this.config.forms.BILLING}']`);
+        const summary = wrapper.querySelector(`[id='summary-${this.config.forms.BILLING}']`);
+
+        if (summary) {
+            summary.style.display = 'none';
+        }
+        if (form) {
+            form.style.display = 'block';
         }
     },
 
@@ -142,6 +140,7 @@ const SkateCheckoutBridge = {
             if (paymentBtn) {
                 this.handlePaymentSelection(paymentBtn);
             }
+
         }, true);
 
 
@@ -174,7 +173,6 @@ const SkateCheckoutBridge = {
         window.SkateCheckoutStore.getState().setSelectedMethodId(id, itemId);
     },
 
-    // Logic xử lý khi click Place Order
     handlePlaceOrder(e) {
         if (e) e.preventDefault();
         if (!window.SkateCheckoutStore || !window.SkateCartStore) return;
@@ -183,7 +181,6 @@ const SkateCheckoutBridge = {
         const cartState = window.SkateCartStore.getState();
         const selectedPaymentId = checkoutState.selectedMethodId;
 
-        // Hiệu ứng loading trên nút
         const btn = e.target.closest(this.config.selectors.placeOrderBtn);
         const originalText = btn.innerHTML;
 
@@ -194,9 +191,6 @@ const SkateCheckoutBridge = {
 
         const proceedWithOrder = async (transactionData = null) => {
             const orderObject = {
-                orderDate: new Date().toISOString(),
-                shippingAddress: checkoutState.shippingAddress,
-                billingAddress: checkoutState.billingAddress,
                 shippingMethod: checkoutState.shippingMethod,
                 paymentMethod: {
                     id: checkoutState.selectedMethodId,
@@ -251,14 +245,14 @@ const SkateCheckoutBridge = {
 
         // 1. Kiểm tra validation cơ bản
         if (!checkoutState.shippingAddress || !checkoutState.billingAddress || !checkoutState.shippingMethod) {
-            alert("Vui lòng hoàn thành đầy đủ thông tin giao hàng và phương thức vận chuyển!");
+            alert("Please complete all shipping information and select a shipping method!");
             return;
         }
 
         // 2. Xử lý thanh toán
         if (selectedPaymentId === 'braintree') {
             if (!window.SkateBraintreeInstance) {
-                alert("Vui lòng nhập thông tin thẻ trước khi đặt hàng.");
+                alert("Please enter your card information before placing the order.");
                 return;
             }
 
@@ -283,7 +277,7 @@ const SkateCheckoutBridge = {
     },
 
     // 4. Handle Form Submission
-    handleSubmit(e) {
+    async handleSubmit(e) {
         const form = e.target;
         const formName = form.getAttribute('name');
 
@@ -301,8 +295,8 @@ const SkateCheckoutBridge = {
                 return;
             }
 
-            console.log(`[${formName}] Validation passed. Updating store...`);
-            this.updateStore(formName, data, form);
+            console.log(`[${formName}] Validation passed. Saving address...`);
+            await this.saveAndContinue(formName, data, form);
         }
     },
 
@@ -461,6 +455,43 @@ const SkateCheckoutBridge = {
         }
     },
 
+    mapAddressPayload(data) {
+        return {
+            firstName: data.FirstName || '',
+            lastName: data.LastName || '',
+            phone: data.PhoneNumber || '',
+            addressLine1: data.Address || '',
+            addressLine2: data.AddressLine2 || '',
+            city: data.City || '',
+            state: data.State || '',
+            zipCode: data.ZipCode || '',
+            country: data.Country || '',
+            companyName: data.CompanyName || '',
+        };
+    },
+
+    async saveAddressToApi(formName, data) {
+        const endpoint = formName === this.config.forms.SHIPPING
+            ? '/api/orders/shipping'
+            : '/api/orders/billing';
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(this.mapAddressPayload(data)),
+        });
+
+        const result = await response.json().catch(() => ({}));
+
+        if (!response.ok || !result.ok) {
+            throw new Error(result.error || `Failed to save ${formName} address`);
+        }
+
+        return result;
+    },
+
     // 9. UI: Success Feedback
     showSuccessFeedback(form) {
         const btn = form.querySelector(this.config.selectors.submitBtn);
@@ -474,6 +505,46 @@ const SkateCheckoutBridge = {
                 btn.innerText = originalText;
                 btn.classList.remove('bg-green-600');
             }, 2000);
+        }
+    },
+
+    async saveAndContinue(formName, data, form) {
+        const btn = form.querySelector(this.config.selectors.submitBtn);
+        const originalText = btn ? btn.innerHTML : '';
+        let isSuccess = false;
+
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="animate-pulse">SAVING...</span>';
+        }
+
+        try {
+            await this.saveAddressToApi(formName, data);
+            this.updateStore(formName, data, form);
+
+            if (formName === this.config.forms.SHIPPING) {
+                const sameShippingCheckbox = document.querySelector('.billing-same-shipping-checkbox');
+                if (sameShippingCheckbox?.checked) {
+                    try {
+                        const billingForm = document.querySelector(`form[name='${this.config.forms.BILLING}']`);
+                        await this.saveAddressToApi(this.config.forms.BILLING, data);
+                        this.updateStore(this.config.forms.BILLING, data, billingForm);
+                    } catch (billingError) {
+                        console.error('[Billing] Save as shipping after shipping save failed:', billingError);
+                    }
+                }
+            }
+
+            isSuccess = true;
+            this.showSuccessFeedback(form);
+        } catch (error) {
+            console.error(`[${formName}] Save API failed:`, error);
+            alert(error.message || 'Failed to save address');
+        } finally {
+            if (btn && !isSuccess) {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
         }
     }
 };

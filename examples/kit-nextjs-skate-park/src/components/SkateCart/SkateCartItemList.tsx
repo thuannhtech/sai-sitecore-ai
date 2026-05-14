@@ -1,12 +1,31 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Trash2, Plus, Minus, ShoppingCart, ArrowLeft, Loader2 } from 'lucide-react';
 import { useSkateCartStore } from 'src/lib/cart/store';
 import { Link } from 'src/i18n/navigation';
 
 export const SkateCartItemList: React.FC = () => {
   const { cart, updateQuantity, removeItem, isLoading, isProcessing, processingLineItemId } = useSkateCartStore();
+  const [pendingButton, setPendingButton] = useState<{ itemId: string; action: 'update' | 'remove'; direction?: 'decrease' | 'increase' } | null>(null);
+
+  const handleRemove = async (itemId: string) => {
+    setPendingButton({ itemId, action: 'remove' });
+    try {
+      await removeItem(itemId);
+    } finally {
+      setPendingButton(null);
+    }
+  };
+
+  const handleQuantityChange = async (itemId: string, quantity: number, direction: 'decrease' | 'increase') => {
+    setPendingButton({ itemId, action: 'update', direction });
+    try {
+      await updateQuantity(itemId, quantity);
+    } finally {
+      setPendingButton(null);
+    }
+  };
 
   if (!cart && isLoading) {
     return (
@@ -69,14 +88,6 @@ export const SkateCartItemList: React.FC = () => {
 
   return (
     <div className="relative bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      {isLoading && cart && cart.items.length > 0 && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/80 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-3 rounded-3xl bg-white/95 px-6 py-5 shadow-lg border border-gray-200">
-            <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-            <span className="text-sm font-semibold text-gray-700">Updating cart...</span>
-          </div>
-        </div>
-      )}
       {/* Table Header (Desktop) */}
       <div className="hidden md:grid grid-cols-12 gap-4 px-8 py-6 bg-gray-50 border-b border-gray-100 text-[15px] font-bold text-gray-500 uppercase tracking-wider">
         <div className="col-span-6">Product</div>
@@ -92,15 +103,6 @@ export const SkateCartItemList: React.FC = () => {
 
           return (
             <div key={item.id} className="relative grid grid-cols-1 md:grid-cols-12 gap-6 items-center px-8 py-8 hover:bg-gray-50 transition-colors group">
-              {itemIsProcessing && (
-                <div className="absolute inset-0 z-10 rounded-3xl bg-white/80 backdrop-blur-sm flex items-center justify-center">
-                  <div className="flex items-center gap-3 rounded-3xl bg-white/95 px-5 py-4 shadow-lg border border-gray-200">
-                    <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-                    <span className="text-sm font-semibold text-gray-700">Updating item...</span>
-                  </div>
-                </div>
-              )}
-
               {/* Product Info */}
               <div className="col-span-1 md:col-span-6 flex items-center gap-6">
                 <div className="relative w-24 h-24 shrink-0 overflow-hidden rounded-2xl bg-gray-50 border border-gray-100 group-hover:scale-105 transition-transform">
@@ -118,12 +120,16 @@ export const SkateCartItemList: React.FC = () => {
                   <h3 className="text-lg font-bold text-gray-900 leading-tight mb-1">{item.name}</h3>
                   <p className="text-sm text-gray-400 font-medium">SKU: {item.productId.slice(0, 8).toUpperCase()}</p>
                   <button
-                    onClick={() => removeItem(item.id)}
-                    disabled={itemIsProcessing}
+                    onClick={() => void handleRemove(item.id)}
+                    disabled={itemIsProcessing || (pendingButton?.itemId === item.id && pendingButton.action === 'remove')}
                     className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold text-red-500 hover:text-red-600 transition-colors md:hidden disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <Trash2 size={16} />
-                    Remove
+                    {pendingButton?.itemId === item.id && pendingButton.action === 'remove' ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Trash2 size={16} />
+                    )}
+                    {pendingButton?.itemId === item.id && pendingButton.action === 'remove' ? 'Removing...' : 'Remove'}
                   </button>
                 </div>
               </div>
@@ -138,19 +144,27 @@ export const SkateCartItemList: React.FC = () => {
               <div className="col-span-1 md:col-span-2 flex justify-center">
                 <div className="flex items-center rounded-xl border-2 border-gray-100 p-1 bg-white">
                   <button
-                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    disabled={itemIsProcessing || item.quantity <= 1}
+                    onClick={() => void handleQuantityChange(item.id, item.quantity - 1, 'decrease')}
+                    disabled={itemIsProcessing || item.quantity <= 1 || (pendingButton?.itemId === item.id && pendingButton.action === 'update')}
                     className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-30"
                   >
-                    <Minus size={18} />
+                    {pendingButton?.itemId === item.id && pendingButton.action === 'update' && pendingButton.direction === 'decrease' ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : (
+                      <Minus size={18} />
+                    )}
                   </button>
                   <span className="w-10 text-center text-lg font-black text-gray-900">{item.quantity}</span>
                   <button
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    disabled={itemIsProcessing}
+                    onClick={() => void handleQuantityChange(item.id, item.quantity + 1, 'increase')}
+                    disabled={itemIsProcessing || (pendingButton?.itemId === item.id && pendingButton.action === 'update')}
                     className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-30"
                   >
-                    <Plus size={18} />
+                    {pendingButton?.itemId === item.id && pendingButton.action === 'update' && pendingButton.direction === 'increase' ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : (
+                      <Plus size={18} />
+                    )}
                   </button>
                 </div>
               </div>
@@ -161,12 +175,16 @@ export const SkateCartItemList: React.FC = () => {
                 <div className="flex items-center gap-4">
                   <span className="text-xl font-black text-blue-600">${item.lineTotal.toLocaleString()}</span>
                   <button
-                    onClick={() => removeItem(item.id)}
-                    disabled={itemIsProcessing}
+                    onClick={() => void handleRemove(item.id)}
+                    disabled={itemIsProcessing || (pendingButton?.itemId === item.id && pendingButton.action === 'remove')}
                     className="hidden md:flex p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all rounded-xl disabled:cursor-not-allowed disabled:opacity-50"
                     title="Remove item"
                   >
-                    <Trash2 size={20} />
+                    {pendingButton?.itemId === item.id && pendingButton.action === 'remove' ? (
+                      <Loader2 size={20} className="animate-spin" />
+                    ) : (
+                      <Trash2 size={20} />
+                    )}
                   </button>
                 </div>
               </div>

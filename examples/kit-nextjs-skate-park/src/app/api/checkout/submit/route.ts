@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import braintree from 'braintree';
 import client from 'src/lib/sitecore-client';
-import { Cart } from 'src/lib/ordercloud';
+import { Cart, Payment, PaymentTransaction } from 'src/lib/ordercloud';
 import {
   CheckoutSubmitRequest,
   CheckoutSubmitRequestSchema,
@@ -35,21 +35,6 @@ type SitecorePaymentConfigResponse = {
     sandbox_privateKey?: { value?: string };
   } | null;
 };
-
-const buildOrderCloudAddress = (address: CheckoutSubmitRequest['shippingAddress']) => ({
-  FirstName: address.FirstName,
-  LastName: address.LastName,
-  Street1: address.Address,
-  City: address.City || 'N/A',
-  State: address.State || undefined,
-  Zip: address.Zip || undefined,
-  Country: address.Country || 'US',
-  Phone: address.PhoneNumber,
-  AddressName: `${address.FirstName} ${address.LastName}`.trim(),
-  xp: {
-    Email: address.Email,
-  },
-});
 
 const normalizeOrderCloudError = (error: any) => {
   return (
@@ -105,12 +90,19 @@ const processBraintreePayment = async (
   });
 
   if (!result.success) {
-    throw new Error(result.message || 'Braintree transaction failed.');
+    return {
+      success: false,
+      error: result.message || 'Braintree transaction failed.',
+      transactionId: null,
+      status: null,
+    };
   }
 
   return {
+    success: true,
     transactionId: result.transaction.id,
     status: result.transaction.status,
+    error: null,
   };
 };
 
@@ -129,7 +121,23 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = parsed.data;
+
+    console.log('Received checkout submit request:', payload);
     const accessToken = await tokenHelper.getValidToken();
+
+    var order = await Cart.Get({ accessToken });
+
+    console.log('Active order fetched for checkout submission:', order);
+
+    if(order == null){
+      const response: CheckoutSubmitResponse = {
+        success: false,
+        message: 'No active cart found for checkout.',
+      };
+      return NextResponse.json(response, { status: 400 });
+    }
+    
+    const orderTotal = order?.Total || 0;
 
     if (!accessToken) {
       const response: CheckoutSubmitResponse = {
@@ -141,167 +149,49 @@ export async function POST(request: NextRequest) {
 
     const requestOptions = { accessToken };
 
-    try {
-      await Cart.Delete(requestOptions);
-    } catch {
-      // Ignore missing/empty cart errors and rebuild from the payload.
-    }
-
-    await Cart.PatchFromUser(
-      {
-        FirstName: payload.shippingAddress.FirstName,
-        LastName: payload.shippingAddress.LastName,
-        Email: payload.shippingAddress.Email,
+    const braintreeResult = await processBraintreePayment(payload, orderTotal);
+    
+    const payment: Payment = {
+      Type: 'CreditCard' as Payment['Type'],
+      Amount: orderTotal,
+      Currency: 'USD',
+      Accepted: braintreeResult.success,
+      xp: {
+        PaymentProvider: payload.paymentMethod.id,
+        PaymentMethod: payload.paymentMethod.id,
       },
-      requestOptions
-    );
-
-    for (const item of payload.cart.items) {
-      await Cart.CreateLineItem(
-        {
-          ProductID: item.productId,
-          Quantity: item.quantity,
-          xp: {
-            sourceLineItemId: item.id,
-            imageUrl: item.imageUrl,
-            requestedUnitPrice: item.unitPrice,
-            requestedLineTotal: item.lineTotal,
-          },
-        },
-        requestOptions
-      );
-    }
-
-    await Cart.SetShippingAddress(buildOrderCloudAddress(payload.shippingAddress), requestOptions);
-    await Cart.SetBillingAddress(buildOrderCloudAddress(payload.billingAddress), requestOptions);
-
-    await Cart.Patch(
-      {
-        Comments: `Submitted from storefront on ${payload.orderDate}`,
-        ShippingCost: payload.shippingMethod.price,
-        xp: {
-          storefrontCheckout: {
-            sourceOrderId: payload.orderId,
-            orderDate: payload.orderDate,
-            shippingMethod: payload.shippingMethod,
-            paymentMethod: payload.paymentMethod,
-            cart: {
-              sourceCartId: payload.cart.id,
-              requestedSubtotal: payload.cart.subtotal,
-              requestedItemCount: payload.cart.itemCount,
-            },
-          },
-        },
-      },
-      requestOptions
-    );
-
-    const worksheet = await Cart.Calculate(requestOptions);
-    const orderTotal = Number(worksheet?.Order?.Total || payload.cart.subtotal + payload.shippingMethod.price);
-
-    let paymentSummary: {
-      id?: string;
-      type?: string;
-      accepted?: boolean;
-      transactionId?: string;
-      status?: string;
-    } = {
-      type: payload.paymentMethod.id === 'braintree' ? 'CreditCard' : 'PurchaseOrder',
-      accepted: true,
     };
 
-    if (payload.paymentMethod.id === 'braintree') {
-      const braintreeResult = await processBraintreePayment(payload, orderTotal);
-      const payment = await Cart.CreatePayment(
-        {
-          Type: 'CreditCard',
-          Amount: orderTotal,
-          Accepted: true,
-          Description: 'Braintree payment',
-          xp: {
-            provider: 'braintree',
-            methodId: payload.paymentMethod.id,
-            datasourceId: payload.paymentMethod.itemId,
-            storefrontPayload: {
-              type: payload.transaction?.type,
-              description: payload.transaction?.description,
-            },
-          },
-        },
-        requestOptions
-      );
 
-      if (payment.ID) {
-        await Cart.CreatePaymentTransaction(
-          payment.ID,
-          {
-            Type: 'Sale',
-            Amount: orderTotal,
-            Succeeded: true,
-            ResultCode: braintreeResult.status,
-            ResultMessage: braintreeResult.transactionId,
-            xp: {
-              provider: 'braintree',
-              transaction: payload.transaction,
-            },
-          },
-          requestOptions
-        );
-      }
+    const createdPayment = await Cart.CreatePayment(payment, requestOptions);
 
-      paymentSummary = {
-        id: payment.ID,
-        type: payment.Type,
-        accepted: payment.Accepted,
-        transactionId: braintreeResult.transactionId,
-        status: braintreeResult.status,
-      };
-    } else {
-      const payment = await Cart.CreatePayment(
-        {
-          Type: 'PurchaseOrder',
-          Amount: orderTotal,
-          Accepted: true,
-          Description: payload.paymentMethod.id,
-          xp: {
-            provider: 'storefront',
-            methodId: payload.paymentMethod.id,
-          },
-        },
-        requestOptions
-      );
+    const transactionPayload: PaymentTransaction = {
+      Type: 'Sale',
+      DateExecuted: new Date().toISOString(),
+      Currency: 'USD',
+      Amount: orderTotal,
+      Succeeded: braintreeResult.success,
+      ResultCode: braintreeResult.success ? braintreeResult.status! : 'failed',
+      ResultMessage: braintreeResult.success ? braintreeResult.transactionId! : braintreeResult.error!,
+      xp: braintreeResult.success ? {
+        TransactionRefID: braintreeResult.transactionId!
+      } : {},
+    };
 
-      paymentSummary = {
-        id: payment.ID,
-        type: payment.Type,
-        accepted: payment.Accepted,
-      };
-    }
+    const createdTransaction = await Cart.CreatePaymentTransaction(
+      createdPayment.ID,
+      transactionPayload,
+      requestOptions
+    );
 
     const submittedOrder = await Cart.Submit(requestOptions);
     const orderId = submittedOrder.ID || '';
-    const submittedAt = new Date().toISOString();
-    const orderSnapshot = {
-      ...payload,
-      orderId,
-      sourceOrderId: payload.orderId,
-      orderCloudOrderId: orderId,
-      submittedAt,
-      status: submittedOrder.Status,
-      totals: {
-        subtotal: submittedOrder.Subtotal,
-        shipping: submittedOrder.ShippingCost,
-        tax: submittedOrder.TaxCost,
-        total: submittedOrder.Total,
-      },
-      payment: paymentSummary,
-    };
+   
 
     const response: CheckoutSubmitResponse = {
       success: true,
       orderId,
       redirectUrl: `/thank-you?token=${orderId}`,
-      order: orderSnapshot,
       orderCloud: {
         orderId,
         status: submittedOrder.Status,

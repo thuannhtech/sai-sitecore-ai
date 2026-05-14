@@ -19,14 +19,6 @@ const SHIPMENT_OPTIONS = [
     time: '1-2 business days',
     icon: <Zap size={24} />,
     description: 'Faster delivery for urgent skate gear.'
-  },
-  {
-    id: 'nextday',
-    name: 'Next Day Air',
-    price: 35,
-    time: 'Next business day',
-    icon: <CalendarDays size={24} />,
-    description: 'The ultimate speed for elite skaters.'
   }
 ];
 

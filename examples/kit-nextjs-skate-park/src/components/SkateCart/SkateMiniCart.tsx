@@ -1,22 +1,31 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Trash2, Plus, Minus, ShoppingCart, Loader2 } from 'lucide-react';
 import { useSkateCartStore } from 'src/lib/cart/store';
 import Link from 'next/link';
 
 export const SkateMiniCart: React.FC = () => {
-  const { cart, isOpen, setIsOpen, initializeCart, updateQuantity, removeItem, isLoading, isProcessing, processingAction } = useSkateCartStore();
+  const { cart, isOpen, setIsOpen, initializeCart, updateQuantity, removeItem, isLoading } = useSkateCartStore();
+  const [pendingButton, setPendingButton] = useState<{ itemId: string; action: 'update' | 'remove'; direction?: 'decrease' | 'increase' } | null>(null);
 
-  const statusMessage = isLoading
-    ? cart
-      ? 'Refreshing cart...'
-      : 'Loading cart...'
-    : isProcessing
-      ? processingAction === 'remove'
-        ? 'Removing item...'
-        : 'Updating item...'
-      : '';
+  const handleRemove = async (itemId: string) => {
+    setPendingButton({ itemId, action: 'remove' });
+    try {
+      await removeItem(itemId);
+    } finally {
+      setPendingButton(null);
+    }
+  };
+
+  const handleQuantityChange = async (itemId: string, quantity: number, direction: 'decrease' | 'increase') => {
+    setPendingButton({ itemId, action: 'update', direction });
+    try {
+      await updateQuantity(itemId, quantity);
+    } finally {
+      setPendingButton(null);
+    }
+  };
 
   // Load cart on mount
   useEffect(() => {
@@ -33,13 +42,11 @@ export const SkateMiniCart: React.FC = () => {
 
       {/* Drawer */}
       <div className={`relative h-full w-full max-w-2xl bg-white shadow-2xl transition-transform duration-300 ease-out flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        {(isLoading || isProcessing) && (
+        {isLoading && !cart && (
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-3 rounded-3xl bg-white/95 px-6 py-5 shadow-lg border border-gray-200">
               <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-              <span className="text-sm font-semibold text-gray-700">
-                {statusMessage}
-              </span>
+              <span className="text-sm font-semibold text-gray-700">Loading cart...</span>
             </div>
           </div>
         )}
@@ -100,11 +107,15 @@ export const SkateMiniCart: React.FC = () => {
                       <div className="flex justify-between gap-2">
                         <p className="font-bold text-gray-900 line-clamp-1 text-[15px]">{item.name}</p>
                         <button
-                          onClick={() => removeItem(item.id)}
-                          disabled={isLoading}
+                          onClick={() => void handleRemove(item.id)}
+                          disabled={isLoading || (pendingButton?.itemId === item.id && pendingButton.action === 'remove')}
                           className="text-gray-400 hover:text-red-500 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          <Trash2 className="h-8 w-8" />
+                          {pendingButton?.itemId === item.id && pendingButton.action === 'remove' ? (
+                            <Loader2 className="h-8 w-8 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-8 w-8" />
+                          )}
                         </button>
                       </div>
                       <p className="mt-1 text-md font-bold text-blue-600">
@@ -115,19 +126,27 @@ export const SkateMiniCart: React.FC = () => {
                     <div className="flex items-center justify-between mt-2">
                       <div className="flex items-center rounded-lg border border-gray-200 p-1">
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          disabled={isLoading || item.quantity <= 1}
+                          onClick={() => void handleQuantityChange(item.id, item.quantity - 1, 'decrease')}
+                          disabled={isLoading || item.quantity <= 1 || (pendingButton?.itemId === item.id && pendingButton.action === 'update')}
                           className="p-1 text-gray-400 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          <Minus className="h-6 w-6" />
+                          {pendingButton?.itemId === item.id && pendingButton.action === 'update' && pendingButton.direction === 'decrease' ? (
+                            <Loader2 className="h-6 w-6 animate-spin" />
+                          ) : (
+                            <Minus className="h-6 w-6" />
+                          )}
                         </button>
                         <span className="w-8 text-center text-[14px] font-bold">{item.quantity}</span>
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          disabled={isLoading}
+                          onClick={() => void handleQuantityChange(item.id, item.quantity + 1, 'increase')}
+                          disabled={isLoading || (pendingButton?.itemId === item.id && pendingButton.action === 'update')}
                           className="p-1 text-gray-400 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          <Plus className="h-6 w-6" />
+                          {pendingButton?.itemId === item.id && pendingButton.action === 'update' && pendingButton.direction === 'increase' ? (
+                            <Loader2 className="h-6 w-6 animate-spin" />
+                          ) : (
+                            <Plus className="h-6 w-6" />
+                          )}
                         </button>
                       </div>
                       <span className="font-bold text-gray-900">

@@ -28,7 +28,7 @@ const mapAddressInput = (address: OrderAddressInput): Address => ({
   State: withFallback(address.state),
   Zip: withFallback(address.zipCode),
   Country: 'SC',
-  CompanyName: withFallback(address.companyName),
+  CompanyName: address.companyName,
 });
 
 /**
@@ -77,6 +77,10 @@ export const orderService = {
       }
 
       const cart = await cartService.getCart();
+
+      if(cart == null){
+        throw new Error('No active cart found');
+      }
 
       const isGuest = cart.FromUser?.Username === 'SitecoreAIBuyerAnonymousUser';
 
