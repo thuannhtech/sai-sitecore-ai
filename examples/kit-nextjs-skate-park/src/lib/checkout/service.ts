@@ -31,6 +31,7 @@ export const checkoutService = {
     }
 
     const requestOptions = { accessToken };
+    const paymentAmount = payload.cart.total || order?.Total || payload.cart.subtotal;
 
     let transactionId = '';
     if (payload.paymentMethod.id === 'braintree' && payload.transaction?.nonce) {
@@ -41,14 +42,14 @@ export const checkoutService = {
       }
 
       const saleResult = await braintreeService.createTransaction(
-        payload.cart.subtotal,
+        paymentAmount,
         payload.transaction.nonce,
         paymentConfig
       );
 
       const payment: Payment = {
         Type: 'CreditCard' as Payment['Type'],
-        Amount: order?.Total,
+        Amount: paymentAmount,
         Currency: 'USD',
         Accepted: saleResult.success,
         xp: {
@@ -64,7 +65,7 @@ export const checkoutService = {
         Type: 'Sale',
         DateExecuted: new Date().toISOString(),
         Currency: 'USD',
-        Amount: order?.Total,
+        Amount: paymentAmount,
         Succeeded: saleResult.success,
         ResultMessage: saleResult.success ? 'Transaction successful' : (saleResult.message || 'Transaction failed'),
         xp: saleResult.success ? {
@@ -90,11 +91,13 @@ export const checkoutService = {
     await Cart.Patch(
       {
         ShippingCost: payload.shippingMethod.price,
+        TaxCost: payload.cart.taxAmount,
         xp: {
           PurchasedFrom: "en",
           PurchasedDate: now,
           UpdatedDate: now,
           ShippingMethodName: payload.shippingMethod.name,
+          GST: payload.cart.taxRatePercentage,
         }
       },
       requestOptions

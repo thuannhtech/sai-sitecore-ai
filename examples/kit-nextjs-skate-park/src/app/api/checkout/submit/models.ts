@@ -47,6 +47,13 @@ export const CheckoutCartSchema = z
     id: z.string().optional().default(''),
     items: z.array(CheckoutCartItemSchema).min(1),
     subtotal: z.number().nonnegative(),
+    promotionDiscount: z.number().nonnegative().optional().default(0),
+    discountedSubtotal: z.number().nonnegative().optional().default(0),
+    shippingAmount: z.number().nonnegative().optional().default(0),
+    taxRate: z.number().nonnegative().optional().default(0),
+    taxRatePercentage: z.number().nonnegative().optional().default(0),
+    taxAmount: z.number().nonnegative().optional().default(0),
+    total: z.number().nonnegative().optional().default(0),
     itemCount: z.number().int().nonnegative(),
   })
   .passthrough();

@@ -38,6 +38,7 @@ interface BuildOrderConfirmationEmailArgs {
   subtotal?: number;
   shippingFee?: number;
   discount?: number;
+  taxAmount?: number;
   totalAmount?: number;
   pointsUsed?: number;
   items?: WorkatoOrderConfirmationItem[];
@@ -182,6 +183,10 @@ export const buildOrderConfirmationEmailInformation = (
                           <tr>
                             <td style="padding:10px 0;font-size:16px;line-height:24px;color:#65748b;">Discount</td>
                             <td style="padding:10px 0;text-align:right;font-size:16px;line-height:24px;color:#212121;">${escapeHtml(formatMoney(input.discount, input.currency))}</td>
+                          </tr>
+                          <tr>
+                            <td style="padding:10px 0;font-size:16px;line-height:24px;color:#65748b;">Tax</td>
+                            <td style="padding:10px 0;text-align:right;font-size:16px;line-height:24px;color:#212121;">${escapeHtml(formatMoney(input.taxAmount, input.currency))}</td>
                           </tr>
                           <tr>
                             <td colspan="2" style="padding:0 0 0;margin:0;border-bottom:1px solid #e2e8f0;"></td>

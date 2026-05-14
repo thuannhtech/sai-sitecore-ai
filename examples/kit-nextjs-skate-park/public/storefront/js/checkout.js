@@ -20,6 +20,8 @@ const SkateCheckoutBridge = {
     // Flag to prevent auto-submit during edit mode
     isEditMode: false,
 
+    commerceSettings: null,
+
     // 2. Initialization
     async init() {
         console.log('SkateCheckoutBridge initializing...');
@@ -44,6 +46,31 @@ const SkateCheckoutBridge = {
             script.onerror = reject;
             document.head.appendChild(script);
         });
+    },
+
+    async getCommerceSettings() {
+        if (this.commerceSettings) {
+            return this.commerceSettings;
+        }
+
+        try {
+            const response = await fetch('/api/commerce/settings');
+            const result = await response.json().catch(() => ({}));
+
+            if (!response.ok || !result.ok) {
+                throw new Error(result.error || 'Failed to load commerce settings');
+            }
+
+            this.commerceSettings = result;
+            return result;
+        } catch (error) {
+            console.error('[CHECKOUT] Failed to load commerce settings:', error);
+            this.commerceSettings = {
+                taxRate: 0.08,
+                taxLabel: '8%',
+            };
+            return this.commerceSettings;
+        }
     },
 
     // Kiểm tra và khôi phục giao diện nếu đã có dữ liệu trong Store (từ session cũ)
@@ -218,6 +245,16 @@ const SkateCheckoutBridge = {
         };
 
         const proceedWithOrder = async (transactionData = null) => {
+            const commerceSettings = await this.getCommerceSettings();
+            const subtotal = cartState.cart?.subtotal || 0;
+            const promotionDiscount = cartState.cart?.promotionDiscount || 0;
+            const discountedSubtotal = Math.max(subtotal - promotionDiscount, 0);
+            const shippingAmount = checkoutState.shippingMethod?.price || 0;
+            const taxRate = typeof commerceSettings?.taxRate === 'number' ? commerceSettings.taxRate : 0.08;
+            const taxRatePercentage = taxRate * 100;
+            const taxAmount = discountedSubtotal * taxRate;
+            const orderTotal = discountedSubtotal + shippingAmount + taxAmount;
+
             const orderObject = {
                 shippingMethod: checkoutState.shippingMethod,
                 paymentMethod: {
@@ -228,7 +265,14 @@ const SkateCheckoutBridge = {
                 cart: {
                     id: cartState.cart?.id || '',
                     items: cartState.cart?.items || [],
-                    subtotal: cartState.cart?.subtotal || 0,
+                    subtotal,
+                    promotionDiscount,
+                    discountedSubtotal,
+                    shippingAmount,
+                    taxRate,
+                    taxRatePercentage,
+                    taxAmount,
+                    total: orderTotal,
                     itemCount: cartState.cart?.itemCount || 0
                 }
             };
@@ -609,6 +653,8 @@ const SkateCheckoutBridge = {
             }
 
             isSuccess = true;
+            btn.innerHTML = '<span class="animate-pulse">SAVE</span>';
+
             this.showSuccessFeedback(form);
         } catch (error) {
             console.error(`[${formName}] Save API failed:`, error);

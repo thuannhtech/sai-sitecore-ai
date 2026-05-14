@@ -110,6 +110,7 @@ export const authService = {
         "UnsubmittedOrderReader",
         "OverrideUnitPrice",
         "OverrideShipping",
+        "OverrideTax",
         "CreditCardAdmin",
         "CreditCardReader",
         "ProductAdmin",

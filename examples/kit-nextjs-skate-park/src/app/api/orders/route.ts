@@ -167,6 +167,7 @@ export async function POST(request: NextRequest) {
             subtotal: asNumber(orderRecord.Subtotal),
             shippingFee: asNumber(orderRecord.ShippingCost),
             discount: asNumber(orderRecord.PromotionDiscount),
+            taxAmount: asNumber(orderRecord.TaxCost),
             totalAmount: asNumber(orderRecord.Total),
             items: orderItems,
             paymentProvider: paymentSummary.type,

@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ShoppingBag, ShieldCheck, Truck, CreditCard, CheckCircle2, Loader2 } from 'lucide-react';
 import { useSkateCartStore } from 'src/lib/cart/store';
+
+const DEFAULT_TAX_RATE = 0.08;
 
 interface SkateCartSummaryProps {
   isCheckout?: boolean;
@@ -15,15 +17,48 @@ export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout =
   const [promoCode, setPromoCode] = useState('');
   const [isPromoOpen, setIsPromoOpen] = useState(false);
   const [promoMessage, setPromoMessage] = useState<string | null>(null);
+  const [taxRate, setTaxRate] = useState(DEFAULT_TAX_RATE);
+  const [taxLabel, setTaxLabel] = useState('8%');
 
   const subtotal = cart?.subtotal || 0;
   const promotionDiscount = cart?.promotionDiscount || 0;
   const shipping = 0; // Mock free shipping
   const discountedSubtotal = Math.max(subtotal - promotionDiscount, 0);
-  const tax = discountedSubtotal * 0.08; // Mock 8% tax
+  const tax = discountedSubtotal * taxRate;
   const total = discountedSubtotal + shipping + tax;
   const hasItems = cart && cart.items.length > 0;
   const isBusy = isLoading || isProcessing;
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCommerceSettings = async () => {
+      try {
+        const response = await fetch('/api/commerce/settings');
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          return;
+        }
+
+        if (isMounted && typeof payload?.taxRate === 'number') {
+          setTaxRate(payload.taxRate);
+        }
+
+        if (isMounted && typeof payload?.taxLabel === 'string' && payload.taxLabel.trim()) {
+          setTaxLabel(payload.taxLabel);
+        }
+      } catch (fetchError) {
+        console.error('Failed to load commerce settings:', fetchError);
+      }
+    };
+
+    void loadCommerceSettings();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleApplyPromotion = async () => {
     const code = promoCode.trim();
@@ -58,7 +93,7 @@ export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout =
           <span className="text-green-600 font-bold">FREE</span>
         </div>
         <div className="flex justify-between text-gray-500 font-medium">
-          <span>Tax (8%)</span>
+          <span>Tax ({taxLabel})</span>
           <span className="text-gray-900">${tax.toLocaleString()}</span>
         </div>
         {promotionDiscount > 0 && (

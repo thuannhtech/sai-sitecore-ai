@@ -23,6 +23,13 @@ export const OrderPlacementRequestSchema = z.object({
     id: z.string(),
     items: z.array(z.any()),
     subtotal: z.number(),
+    promotionDiscount: z.number().optional().default(0),
+    discountedSubtotal: z.number().optional().default(0),
+    shippingAmount: z.number().optional().default(0),
+    taxRate: z.number().optional().default(0),
+    taxRatePercentage: z.number().optional().default(0),
+    taxAmount: z.number().optional().default(0),
+    total: z.number().optional().default(0),
     itemCount: z.number(),
   }),
 });

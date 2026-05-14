@@ -21,6 +21,7 @@ export const BUYER_SCROPES: ApiRole[] = [
   "UnsubmittedOrderReader",
   "OverrideUnitPrice",
   "OverrideShipping",
+  "OverrideTax",
   "CreditCardAdmin",
   "CreditCardReader",
   "ProductAdmin",
