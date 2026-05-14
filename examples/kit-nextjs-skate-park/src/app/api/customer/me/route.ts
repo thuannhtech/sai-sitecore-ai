@@ -17,7 +17,7 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const isGuest = tokenHelper.isAnonymousToken(accessToken) || tokenHelper.isGuestProfile(user);
+    const isGuest = tokenHelper.isGuestProfile(user);
 
     // 3. Set the user data cookie from the server side
     const cookieStore = await cookies();

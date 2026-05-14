@@ -45,9 +45,8 @@ export const tokenHelper = {
    */
   isGuestProfile: (user: any) => {
     if (!user) return true;
-    const username = user.Username || '';
-    const firstName = user.FirstName || '';
-    return username.includes('Anony') || firstName.includes('Anony');
+    const isGuest = user?.Username === 'SitecoreAIBuyerAnonymousUser';
+    return isGuest;
   },
 
   getValidToken: async () => {
