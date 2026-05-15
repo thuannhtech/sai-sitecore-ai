@@ -13,6 +13,7 @@ import * as SkateProductGallery from 'src/components/SkateProductDetail/SkatePro
 import * as SkateProductDetail from 'src/components/SkateProductDetail/SkateProductDetail';
 import * as SkatePaymentMethod from 'src/components/SkatePaymentMethod/SkatePaymentMethod';
 import * as SkateBraintreePayment from 'src/components/SkatePaymentMethod/SkateBraintreePayment';
+import * as SkateOrderDetail from 'src/components/SkateOrderDetail/SkateOrderDetail';
 import * as SkateMyAccountInformation from 'src/components/SkateMyAccountInformation/SkateMyAccountInformation';
 import * as SkateLogout from 'src/components/SkateLogout/SkateLogout';
 import * as SkateLoginLayout from 'src/components/SkateLoginLayout/SkateLoginLayout';
@@ -78,6 +79,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['SkateProductDetail', { ...SkateProductDetail }],
   ['SkatePaymentMethod', { ...SkatePaymentMethod, componentType: 'client' }],
   ['SkateBraintreePayment', { ...SkateBraintreePayment, componentType: 'client' }],
+  ['SkateOrderDetail', { ...SkateOrderDetail, componentType: 'client' }],
   ['SkateMyAccountInformation', { ...SkateMyAccountInformation, componentType: 'client' }],
   ['SkateLogout', { ...SkateLogout, componentType: 'client' }],
   ['SkateLoginLayout', { ...SkateLoginLayout, componentType: 'client' }],

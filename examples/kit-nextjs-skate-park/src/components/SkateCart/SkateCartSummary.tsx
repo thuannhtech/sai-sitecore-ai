@@ -5,7 +5,7 @@ import { ShoppingBag, ShieldCheck, Truck, CreditCard, CheckCircle2, Loader2 } fr
 import { useSkateCartStore } from 'src/lib/cart/store';
 import { useSkateCheckoutStore } from 'src/lib/payment/store';
 
-const DEFAULT_TAX_RATE = 0.08;
+const DEFAULT_TAX_RATE = 0.00;
 
 interface SkateCartSummaryProps {
   isCheckout?: boolean;
@@ -20,7 +20,7 @@ export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout =
   const [isPromoOpen, setIsPromoOpen] = useState(false);
   const [promoMessage, setPromoMessage] = useState<string | null>(null);
   const [taxRate, setTaxRate] = useState(DEFAULT_TAX_RATE);
-  const [taxLabel, setTaxLabel] = useState('8%');
+  const [taxLabel, setTaxLabel] = useState('0%');
 
   const subtotal = cart?.subtotal || 0;
   const promotionDiscount = cart?.promotionDiscount || 0;
@@ -102,16 +102,19 @@ export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout =
             {shippingLabel}
           </span>
         </div>
-        <div className="flex justify-between text-gray-500 font-medium">
-          <span>GST ({taxLabel})</span>
-          <span className="text-gray-900">${tax.toLocaleString()}</span>
-        </div>
+
         {promotionDiscount > 0 && (
           <div className="flex justify-between text-gray-500 font-medium">
             <span>Promotion</span>
             <span className="text-green-600">-${promotionDiscount.toLocaleString()}</span>
           </div>
         )}
+
+        <div className="flex justify-between text-gray-500 font-medium">
+          <span>GST ({taxLabel})</span>
+          <span className="text-gray-900">${tax.toLocaleString()}</span>
+        </div>
+
         <div className="pt-4 border-t border-gray-200 flex justify-between items-end">
           <span className="tex-[15px] font-bold text-gray-900">Total</span>
           <div className="text-right">
