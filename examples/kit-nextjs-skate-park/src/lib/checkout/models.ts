@@ -91,6 +91,17 @@ export interface OrderViewModel {
   cart?: OrderViewModelCart;
 }
 
+export interface OrderHistoryItemViewModel {
+  orderId: string;
+  orderDate?: string;
+  status?: string;
+  total?: number;
+  currency?: string;
+  shippingMethodName?: string;
+  paymentMethodLabel?: string;
+  itemCount?: number;
+}
+
 export interface OrderPlacementResponse {
   success: boolean;
   orderId?: string;

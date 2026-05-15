@@ -15,6 +15,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { OrderViewModel, OrderViewModelItem } from 'src/lib/checkout/models';
 
+interface SkateOrderSuccessProps {
+  orderId?: string;
+  embedded?: boolean;
+  onBack?: () => void;
+  backLabel?: string;
+}
+
 interface SourceLineItem {
   id?: string;
   ID?: string;
@@ -46,9 +53,14 @@ interface SourceLineItem {
  * Rendering for the Thank You page.
  * Retrieves order details from the order API based on the ?token query param.
  */
-export const SkateOrderSuccess = () => {
+export const SkateOrderSuccess = ({
+  orderId,
+  embedded = false,
+  onBack,
+  backLabel = 'Back to Order History',
+}: SkateOrderSuccessProps) => {
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
+  const token = orderId || searchParams.get('token');
   const [order, setOrder] = useState<OrderViewModel | null>(null);
 
   useEffect(() => {
@@ -166,7 +178,7 @@ export const SkateOrderSuccess = () => {
 
   if (!order) {
     return (
-      <div className="bg-white py-14 md:py-20">
+      <div className={embedded ? 'bg-transparent py-4' : 'bg-white py-14 md:py-20'}>
         <div className="container relative mx-auto max-w-5xl px-4">
           <div className="pointer-events-none absolute inset-4 z-10 flex items-center justify-center rounded-[2rem] bg-white/40 backdrop-blur-[1px] md:inset-0">
             <div className="flex flex-col items-center gap-4 rounded-[1.5rem] border border-white/70 bg-white/75 px-8 py-6 shadow-lg shadow-blue-100/40">
@@ -308,16 +320,27 @@ export const SkateOrderSuccess = () => {
   const shippingMethodPrice = Number(order.shippingMethod?.price) || 0;
 
   return (
-    <div className="bg-white py-14 md:py-20">
+    <div className={embedded ? 'bg-transparent py-4' : 'bg-white py-14 md:py-20'}>
       <div className="container mx-auto max-w-5xl px-4">
         <div className="mb-12">
-          <Link
-            href="/products"
-            className="group mb-4 inline-flex items-center gap-2 text-sm font-black uppercase tracking-[0.2em] text-gray-400 transition-colors hover:text-blue-600"
-          >
-            <ArrowRight size={14} className="rotate-180 transition-transform group-hover:-translate-x-1" />
-            Continue Shopping
-          </Link>
+          {onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              className="group mb-4 inline-flex items-center gap-2 text-sm font-black uppercase tracking-[0.2em] text-gray-400 transition-colors hover:text-blue-600"
+            >
+              <ArrowRight size={14} className="rotate-180 transition-transform group-hover:-translate-x-1" />
+              {backLabel}
+            </button>
+          ) : (
+            <Link
+              href="/products"
+              className="group mb-4 inline-flex items-center gap-2 text-sm font-black uppercase tracking-[0.2em] text-gray-400 transition-colors hover:text-blue-600"
+            >
+              <ArrowRight size={14} className="rotate-180 transition-transform group-hover:-translate-x-1" />
+              Continue Shopping
+            </Link>
+          )}
           <div className="h-1.5 w-20 rounded-full bg-blue-600"></div>
         </div>
 

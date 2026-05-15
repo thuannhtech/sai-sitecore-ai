@@ -58,6 +58,20 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const orderId = searchParams.get('id') || undefined;
+    const view = searchParams.get('view') || undefined;
+
+    if (view === 'history') {
+      const ordersResponse = await orderService.listOrders();
+      return NextResponse.json({
+        ok: true,
+        orders: ordersResponse?.Items || [],
+        meta: {
+          page: ordersResponse?.Meta?.Page,
+          pageSize: ordersResponse?.Meta?.PageSize,
+          totalCount: ordersResponse?.Meta?.TotalCount,
+        },
+      });
+    }
     
     const order = await orderService.getOrder(orderId);
     

@@ -93,6 +93,28 @@ export const orderService = {
     }
   },
 
+  listOrders: async () => {
+    try {
+      const accessToken = await cartService.getAccessTokenFromCookies();
+      if (!accessToken) {
+        throw new Error('Missing OrderCloud access token');
+      }
+
+      return await Orders.List(
+        'Outgoing',
+        {
+          page: 1,
+          pageSize: 50,
+          sortBy: ['DateSubmitted'],
+        },
+        { accessToken }
+      );
+    } catch (error) {
+      console.error('[OrderCloud] ListOrders Error:', error);
+      throw error;
+    }
+  },
+
   assignSavedAddress: async (type: 'shipping' | 'billing', address: OrderAddressInput, isGuest: boolean) => {
     const accessToken = await cartService.getAccessTokenFromCookies();
 
