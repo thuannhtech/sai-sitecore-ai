@@ -8,6 +8,14 @@ export const config = {
     editingSecret: process.env.SITECORE_EDITING_SECRET,
     defaultSiteName: process.env.NEXT_PUBLIC_DEFAULT_SITE_NAME || 'sai-sitecore',
   },
+  sitecoreSearch: {
+    env: process.env.NEXT_PUBLIC_SITECORE_SEARCH_ENV,
+    customerKey: process.env.NEXT_PUBLIC_SITECORE_SEARCH_CUSTOMER_KEY,
+    serviceHost: process.env.NEXT_PUBLIC_SITECORE_SEARCH_SERVICE_HOST,
+    apiKey: process.env.NEXT_PUBLIC_SITECORE_SEARCH_API_KEY,
+    publicSuffix: process.env.NEXT_PUBLIC_SITECORE_SEARCH_PUBLIC_SUFFIX === 'true',
+    trackConsent: process.env.NEXT_PUBLIC_SITECORE_SEARCH_TRACK_CONSENT !== 'false',
+  },
   ordercloud: {
     storeFrontClientId: process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID_HK,
     adminClientId: process.env.NEXT_PUBLIC_ORDERCLOUD_CLIENT_ID,

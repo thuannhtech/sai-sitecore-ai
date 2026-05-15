@@ -115,7 +115,7 @@ export default async function Page({ params, searchParams }: PageProps) {
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
-      <Providers page={page} componentProps={enrichedPage} user={user}>
+      <Providers page={page} componentProps={enrichedPage} user={user} locale={locale}>
         <Layout page={page} />
       </Providers>
     </NextIntlClientProvider>
