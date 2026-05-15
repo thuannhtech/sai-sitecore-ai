@@ -8,10 +8,12 @@ import { Link } from 'src/i18n/navigation';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { SkateCartToggle } from '../SkateCart/SkateCartToggle';
 import { SkateAccountIndicator } from '../AccountIndicator/SkateAccountIndicator';
+import { MeUser } from 'ordercloud-javascript-sdk';
 
 interface Fields {
     Image: ImageField;
     Languages?: Field<string>;
+    user?: MeUser | null;
 }
 
 type MenuHeaderBarProps = {
@@ -43,7 +45,7 @@ export const Default: React.FC<MenuHeaderBarProps> = async (props) => {
             <div className="utility-section">
 
                 {/* Account Indicator */}
-                <SkateAccountIndicator />
+                <SkateAccountIndicator user={fields?.user} />
 
                 {/* Cart Toggle */}
                 <SkateCartToggle />

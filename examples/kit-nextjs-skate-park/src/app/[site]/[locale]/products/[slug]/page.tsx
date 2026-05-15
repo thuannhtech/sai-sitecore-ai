@@ -12,7 +12,9 @@ import components from ".sitecore/component-map";
 import Layout from "src/Layout";
 import Providers from "src/Providers";
 import { getProductBySlug, ProductDetail } from "src/lib/products";
+import { getServerUser } from "src/lib/ordercloud/server-auth";
 import client from "src/lib/sitecore-client";
+import { MeUser } from "ordercloud-javascript-sdk";
 
 export const dynamic = "force-dynamic";
 
@@ -74,6 +76,44 @@ const injectProductIntoComponentProps = (
   );
 };
 
+const injectUserIntoComponentProps = (
+  page: SitecorePage,
+  componentProps: ComponentPropsCollection,
+  user: MeUser | null
+) => {
+  const injectIntoPlaceholders = (placeholders?: Record<string, any[]>) => {
+    if (!placeholders) {
+      return;
+    }
+
+    for (const renderings of Object.values(placeholders)) {
+      for (const rendering of renderings) {
+        if (rendering.componentName === "MenuHeader" && rendering.uid) {
+          rendering.fields = {
+            ...(rendering.fields as Record<string, unknown> | undefined),
+            user,
+          };
+
+          componentProps[rendering.uid] = {
+            ...(componentProps[rendering.uid] as Record<string, unknown>),
+            user,
+          };
+        }
+
+        if (rendering.placeholders) {
+          injectIntoPlaceholders(
+            rendering.placeholders as Record<string, any[]>
+          );
+        }
+      }
+    }
+  };
+
+  injectIntoPlaceholders(
+    page.layout.sitecore.route?.placeholders as Record<string, any[]> | undefined
+  );
+};
+
 export async function generateMetadata({
   params,
 }: ProductPageProps): Promise<Metadata> {
@@ -113,7 +153,7 @@ export default async function ProductPage({
 
   setRequestLocale(`${site}_${locale}`);
 
-  const [page, messages, product] = await Promise.all([
+  const [page, messages, product, user] = await Promise.all([
     draft.isEnabled
       ? isDesignLibraryPreviewData(editingParams)
         ? client.getDesignLibraryData(editingParams)
@@ -121,6 +161,7 @@ export default async function ProductPage({
       : client.getPage(resolveWildCardPath(), { site, locale }),
     getMessages(),
     getProductBySlug(slug, locale),
+    getServerUser(),
   ]);
 
   if (!page) {
@@ -133,9 +174,11 @@ export default async function ProductPage({
     injectProductIntoComponentProps(page, componentProps, product);
   }
 
+  injectUserIntoComponentProps(page, componentProps, user);
+
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
-      <Providers page={page} componentProps={componentProps}>
+      <Providers page={page} componentProps={componentProps} user={user}>
         <Layout page={page} />
       </Providers>
     </NextIntlClientProvider>
