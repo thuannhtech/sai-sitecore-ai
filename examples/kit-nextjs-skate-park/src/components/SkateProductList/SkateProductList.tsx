@@ -1,7 +1,7 @@
 'use client'
 
 import React, { JSX, useState, useEffect, useCallback, useMemo } from 'react'
-import Link from 'next/link'
+import { Link } from 'src/i18n/navigation'
 import { useLocale } from 'next-intl'
 import { SkateAddToCartButton } from '../SkateCart/SkateAddToCartButton'
 
@@ -352,6 +352,7 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
                 <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10' : 'flex flex-col gap-8'}>
                   {filteredProducts.map((product) => {
                     const tags = product.description?.split(' ').slice(0, 3).filter(t => t.length > 3) || [];
+                    const productHref = `/products/${product.slug.toLowerCase().replace(/\s+/g, '-')}`;
 
                     return (
                       <div
@@ -361,7 +362,8 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
                       >
                         {/* Image Section */}
                         <Link
-                          href={`/products/${product.slug.toLowerCase().replace(/\s+/g, '-')}`}
+                          href={productHref}
+                          locale={locale}
                           className={`${viewMode === 'grid' ? 'w-full aspect-square' : 'w-56 h-56 shrink-0'} bg-white p-10 relative flex items-center justify-center overflow-hidden`}
                         >
                           {product.image ? (
@@ -374,7 +376,7 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
 
                         {/* Content Section */}
                         <div className="p-8 pt-0 flex-1 flex flex-col">
-                          <Link href={`/products/${product.slug.toLowerCase().replace(/\s+/g, '-')}`}>
+                          <Link href={productHref} locale={locale}>
                             <h3 className="text-xl font-black text-slate-900 group-hover:text-[#1965e1] transition-colors line-clamp-2 uppercase tracking-tighter leading-none mb-3">
                               {product.name}
                             </h3>
