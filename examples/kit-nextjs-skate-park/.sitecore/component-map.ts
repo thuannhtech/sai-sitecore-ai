@@ -9,6 +9,7 @@ import * as TitleAndText from 'src/components/TitleAndText/TitleAndText';
 import * as Title from 'src/components/title/Title';
 import * as SkateShipmentMethod from 'src/components/SkateShipmentMethod/SkateShipmentMethod';
 import * as SkateProductList from 'src/components/SkateProductList/SkateProductList';
+import * as SkateProductGallery from 'src/components/SkateProductDetail/SkateProductGallery';
 import * as SkateProductDetail from 'src/components/SkateProductDetail/SkateProductDetail';
 import * as SkatePaymentMethod from 'src/components/SkatePaymentMethod/SkatePaymentMethod';
 import * as SkateBraintreePayment from 'src/components/SkatePaymentMethod/SkateBraintreePayment';
@@ -72,6 +73,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['Title', { ...Title }],
   ['SkateShipmentMethod', { ...SkateShipmentMethod, componentType: 'client' }],
   ['SkateProductList', { ...SkateProductList, componentType: 'client' }],
+  ['SkateProductGallery', { ...SkateProductGallery, componentType: 'client' }],
   ['SkateProductDetail', { ...SkateProductDetail }],
   ['SkatePaymentMethod', { ...SkatePaymentMethod, componentType: 'client' }],
   ['SkateBraintreePayment', { ...SkateBraintreePayment, componentType: 'client' }],

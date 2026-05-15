@@ -5,6 +5,7 @@ import { Form } from '@sitecore-content-sdk/nextjs';
 
 import * as SkateShipmentMethod from 'src/components/SkateShipmentMethod/SkateShipmentMethod';
 import * as SkateProductList from 'src/components/SkateProductList/SkateProductList';
+import * as SkateProductGallery from 'src/components/SkateProductDetail/SkateProductGallery';
 import * as SkatePaymentMethod from 'src/components/SkatePaymentMethod/SkatePaymentMethod';
 import * as SkateBraintreePayment from 'src/components/SkatePaymentMethod/SkateBraintreePayment';
 import * as SkateMyAccountInformation from 'src/components/SkateMyAccountInformation/SkateMyAccountInformation';
@@ -39,6 +40,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['Form', Form],
   ['SkateShipmentMethod', { ...SkateShipmentMethod }],
   ['SkateProductList', { ...SkateProductList }],
+  ['SkateProductGallery', { ...SkateProductGallery }],
   ['SkatePaymentMethod', { ...SkatePaymentMethod }],
   ['SkateBraintreePayment', { ...SkateBraintreePayment }],
   ['SkateMyAccountInformation', { ...SkateMyAccountInformation }],
