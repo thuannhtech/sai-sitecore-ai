@@ -1193,7 +1193,7 @@ body.global-search-page .search-results-count {
     padding-bottom: 32px
 }
 
-@media screen and (max-width:breakpoint-max(csm)) {
+@media screen and (max-width: 768px) {
     body.global-search-page .search-results-count {
         padding-left: 16px;
         padding-right: 16px;
@@ -1231,7 +1231,7 @@ body.global-search-page .search-results .search-result-list>li {
     list-style: none
 }
 
-@media screen and (max-width:breakpoint-max(csm)) {
+@media screen and (max-width: 768px) {
     body.global-search-page .search-results .search-result-list>li {
         padding: 24px 0 24px 0
     }
@@ -1246,7 +1246,7 @@ body.global-search-page .search-results .search-result-list>li .page-entry {
     overflow: hidden
 }
 
-@media screen and (max-width:breakpoint-max(csm)) {
+@media screen and (max-width: 768px) {
     body.global-search-page .search-results .search-result-list>li .page-entry {
         grid-template-columns: 35% 55%
     }
@@ -1280,14 +1280,14 @@ body.global-search-page .search-results .search-result-list>li .page-entry .cont
 }
 
 body.global-search-page .search-results .search-result-list>li .page-entry .contents-wrapper .title-link .title {
-    font-size: rem(28px);
+    font-size: 1.75rem;
     line-height: 36px;
     color: #0d2ea0
 }
 
-@media screen and (max-width:breakpoint-max(csm)) {
+@media screen and (max-width: 768px) {
     body.global-search-page .search-results .search-result-list>li .page-entry .contents-wrapper .title-link .title {
-        font-size: rem(20px)
+        font-size: 1.25rem
     }
 }
 

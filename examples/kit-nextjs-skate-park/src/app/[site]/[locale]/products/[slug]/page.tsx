@@ -178,7 +178,7 @@ export default async function ProductPage({
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
-      <Providers page={page} componentProps={componentProps} user={user}>
+      <Providers page={page} componentProps={componentProps} user={user} locale={locale}>
         <Layout page={page} />
       </Providers>
     </NextIntlClientProvider>

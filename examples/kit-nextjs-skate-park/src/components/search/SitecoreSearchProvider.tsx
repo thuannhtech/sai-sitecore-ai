@@ -2,6 +2,7 @@
 
 import React from "react";
 import { PageController, WidgetsProvider } from "@sitecore-search/react";
+import type { Environment } from "@sitecore-search/data";
 import config from "src/lib/config";
 
 type SitecoreSearchProviderProps = {
@@ -17,6 +18,11 @@ const normalizeLocale = (locale: string) => {
     country: country.toLowerCase(),
   };
 };
+
+const SEARCH_ENVIRONMENTS: Environment[] = ["prod", "prodEu", "apse2"];
+
+const isSearchEnvironment = (value: string | undefined): value is Environment =>
+  !!value && SEARCH_ENVIRONMENTS.includes(value as Environment);
 
 export default function SitecoreSearchProvider({
   children,
@@ -36,7 +42,7 @@ export default function SitecoreSearchProvider({
     trackConsent,
   } = config.sitecoreSearch;
 
-  if (!env || !customerKey || (!serviceHost && !apiKey)) {
+  if (!isSearchEnvironment(env) || !customerKey || (!serviceHost && !apiKey)) {
     return <>{children}</>;
   }
 

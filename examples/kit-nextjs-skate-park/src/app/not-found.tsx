@@ -14,7 +14,7 @@ export default async function NotFound() {
 
     if (page) {
       return (
-        <Providers page={page}>
+        <Providers page={page} locale={scConfig.defaultLanguage}>
           <Layout page={page} />
         </Providers>
       );
