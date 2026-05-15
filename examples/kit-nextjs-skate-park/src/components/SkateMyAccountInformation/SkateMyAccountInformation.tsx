@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useUserStore } from 'src/lib/user/store';
 import {
   Calendar,
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 import SkateOrderDetail from 'src/components/SkateOrderDetail/SkateOrderDetail';
 import { OrderHistoryItemViewModel } from 'src/lib/checkout/models';
+import sitecoreConfig from 'sitecore.config';
 
 type AccountView = 'profile' | 'orders' | 'order-detail';
 
@@ -98,6 +100,7 @@ const mapOrderHistoryItem = (order: Record<string, any>): OrderHistoryItemViewMo
 export const Default = (props: any) => {
   const { user, isAuthenticated } = useUserStore();
   const currentUserId = user?.ID || '';
+  const t = useTranslations(sitecoreConfig.defaultSite || undefined);
   const [activeView, setActiveView] = useState<AccountView>('profile');
   const [orders, setOrders] = useState<OrderHistoryItemViewModel[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
@@ -424,7 +427,9 @@ export const Default = (props: any) => {
       <div className="flex min-h-screen flex-col md:flex-row">
         <aside className="flex w-full flex-col gap-8 border-r border-gray-100 bg-gray-50/50 p-8 md:w-[300px]">
           <div>
-            <h1 className="mb-2 text-3xl font-black uppercase tracking-tight text-gray-900">Account</h1>
+            <h1 className="mb-2 text-3xl font-black uppercase tracking-tight text-gray-900">
+              {t.has('Account__SidebarTitle') ? t('Account__SidebarTitle') : 'Account'}
+            </h1>
             <p className="text-[13px] font-medium leading-relaxed text-gray-500">
               Manage your profile, addresses and order preferences.
             </p>
