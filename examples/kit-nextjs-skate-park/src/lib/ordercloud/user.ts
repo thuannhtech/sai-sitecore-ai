@@ -1,4 +1,5 @@
-import { BuyerAddress, Me } from './index';
+import { config } from 'next/dist/build/templates/pages';
+import { Addresses, BuyerAddress, Me } from './index';
 
 /**
  * Service for managing User Profile and Addresses.
@@ -40,5 +41,20 @@ export const userService = {
       console.error('[OrderCloud] SaveAddress Error:', error);
       throw error;
     }
+  },
+  assignAddress: async (addressId: string, userID: string, type: 'shipping' | 'billing', accessToken?: string) => {
+    try {
+      return await Addresses.SaveAssignment(config.ordercloud.buyerId, 
+        {
+          AddressID: addressId,
+          UserID: userID,
+          IsBilling: type === 'billing',
+          IsShipping: type === 'shipping',
+        },
+        { accessToken });
+    } catch (error) {
+      console.error('[OrderCloud] AssignAddress Error:', error);
+      throw error;
+    } 
   }
 };

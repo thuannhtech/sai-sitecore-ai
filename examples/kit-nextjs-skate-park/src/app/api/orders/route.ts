@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
         workatoResponse = await workatoService.submitOrder({
           OrderId: resolvedOrderId,
           EmailInformation: emailInformation,
-          Succeeded: true,
+          Succeeded: paymentSummary.success ?? false,
         });
       } catch (workatoError: unknown) {
         console.error('[API /orders] Workato/Email Error (Ignored):', workatoError);

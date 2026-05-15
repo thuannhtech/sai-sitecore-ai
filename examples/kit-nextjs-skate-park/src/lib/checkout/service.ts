@@ -32,6 +32,8 @@ export const checkoutService = {
 
     const requestOptions = { accessToken };
 
+    let saleSucess = false;
+
     console.log('[Checkout Service] Patching cart metadata...');
     const now = new Date().toISOString().replace('Z', '+00:00');
 
@@ -65,6 +67,8 @@ export const checkoutService = {
         payload.transaction.nonce,
         paymentConfig
       );
+
+      saleSucess = saleResult.success;
 
       const payment: Payment = {
         Type: 'CreditCard' as Payment['Type'],
@@ -102,10 +106,6 @@ export const checkoutService = {
       console.log('[Checkout Service] Payment successful:', transactionId);
     }
 
-
-    // 3. Patch Cart Metadata (Gán XP theo chuẩn hệ thống để đồng bộ Workato)
-
-    // 4. Chốt đơn (Submit Order)
     console.log('[Checkout Service] Submitting cart to OrderCloud...');
 
     console.log('[Checkout Service] Order placed successfully:', orderId);
@@ -115,7 +115,8 @@ export const checkoutService = {
       orderId: orderId,
       paymentSummary: {
         type: payload.paymentMethod.id,
-        transactionId
+        transactionId,
+        success: saleSucess
       }
     };
   }

@@ -45,5 +45,6 @@ export interface OrderPlacementResponse {
   paymentSummary: {
     type: string;
     transactionId?: string;
+    success?: boolean;
   };
 }

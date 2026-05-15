@@ -115,6 +115,8 @@ export const orderService = {
       throw new Error('Address ID was not returned');
     }
 
+    await userService.assignAddress(addressID, cart.FromUser?.ID || '', type, accessToken);
+
     return await cartService.patchCart({
       ID: cart.ID,
       ...(type === 'shipping'
