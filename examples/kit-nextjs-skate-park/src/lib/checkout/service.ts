@@ -2,6 +2,36 @@ import { cartService } from 'lib/ordercloud/cart';
 import { braintreeService } from 'lib/payment/braintree';
 import { OrderPlacementRequest, OrderPlacementResponse } from './models';
 import { Cart, Payment, PaymentTransaction } from 'src/lib/ordercloud';
+
+const getBraintreePaymentMethodSummary = (payload?: OrderPlacementRequest['transaction']) => {
+  const details =
+    payload?.details && typeof payload.details === 'object'
+      ? (payload.details as Record<string, unknown>)
+      : {};
+
+  const cardType = typeof details.cardType === 'string' ? details.cardType : '';
+  const last4 =
+    typeof details.lastFour === 'string'
+      ? details.lastFour
+      : typeof details.lastTwo === 'string'
+        ? details.lastTwo
+        : '';
+  const description =
+    typeof details.description === 'string'
+      ? details.description
+      : [cardType, last4 ? `ending in ${last4}` : ''].filter(Boolean).join(' ');
+
+  return {
+    provider: 'braintree',
+    type: typeof payload?.type === 'string' ? payload.type : '',
+    description: description || 'Credit Card',
+    cardType,
+    last4,
+    details,
+    nonce: payload?.nonce || '',
+    deviceData: payload?.deviceData || '',
+  };
+};
 /**
  * Helper to build OrderCloud address object from frontend payload
  */
@@ -33,6 +63,17 @@ export const checkoutService = {
     const requestOptions = { accessToken };
 
     let saleSucess = false;
+    let transactionId = '';
+    let storefrontPaymentMethod: Record<string, unknown> = {
+      id: payload.paymentMethod.id,
+      itemId: payload.paymentMethod.itemId || '',
+      provider: payload.paymentMethod.id,
+      label: payload.paymentMethod.id === 'braintree' ? 'Credit Card' : payload.paymentMethod.id,
+      status: 'Pending',
+    };
+    let storefrontTransaction: Record<string, unknown> | null = payload.transaction
+      ? getBraintreePaymentMethodSummary(payload.transaction)
+      : null;
 
     console.log('[Checkout Service] Patching cart metadata...');
     const now = new Date().toISOString().replace('Z', '+00:00');
@@ -47,6 +88,13 @@ export const checkoutService = {
           UpdatedDate: now,
           ShippingMethodName: payload.shippingMethod.name,
           GST: payload.cart.taxRatePercentage,
+          PaymentMethod: payload.paymentMethod.id,
+          PaymentStatus: 'Pending',
+          StorefrontCheckout: {
+            shippingMethod: payload.shippingMethod,
+            paymentMethod: storefrontPaymentMethod,
+            transaction: storefrontTransaction,
+          },
         }
       },
       requestOptions
@@ -54,7 +102,6 @@ export const checkoutService = {
 
     const paymentAmount = Number(patchedCart?.Total.toFixed(2));
 
-    let transactionId = '';
     if (payload.paymentMethod.id === 'braintree' && payload.transaction?.nonce) {
       console.log('[Checkout Service] Processing Braintree payment with Sitecore config...');
 
@@ -69,6 +116,23 @@ export const checkoutService = {
       );
 
       saleSucess = saleResult.success;
+      transactionId = saleResult.transactionId || '';
+      storefrontPaymentMethod = {
+        ...storefrontPaymentMethod,
+        label:
+          (storefrontTransaction?.description as string | undefined) ||
+          (storefrontPaymentMethod.label as string),
+        cardType: storefrontTransaction?.cardType || '',
+        last4: storefrontTransaction?.last4 || '',
+        status: saleResult.success ? 'Paid' : 'Failed',
+      };
+      storefrontTransaction = {
+        ...(storefrontTransaction || {}),
+        status: saleResult.success ? 'authorized' : 'failed',
+        success: saleResult.success,
+        transactionId,
+        message: saleResult.success ? 'Transaction successful' : (saleResult.message || 'Transaction failed'),
+      };
 
       const payment: Payment = {
         Type: 'CreditCard' as Payment['Type'],
@@ -102,9 +166,30 @@ export const checkoutService = {
         requestOptions
       );
       
-      transactionId = saleResult.transactionId || '';
       console.log('[Checkout Service] Payment successful:', transactionId);
+    } else {
+      saleSucess = true;
+      storefrontPaymentMethod = {
+        ...storefrontPaymentMethod,
+        status: 'Paid',
+      };
     }
+
+    await Cart.Patch(
+      {
+        xp: {
+          ...patchedCart?.xp,
+          PaymentMethod: payload.paymentMethod.id,
+          PaymentStatus: storefrontPaymentMethod.status,
+          StorefrontCheckout: {
+            shippingMethod: payload.shippingMethod,
+            paymentMethod: storefrontPaymentMethod,
+            transaction: storefrontTransaction,
+          },
+        },
+      },
+      requestOptions
+    );
 
     console.log('[Checkout Service] Submitting cart to OrderCloud...');
 

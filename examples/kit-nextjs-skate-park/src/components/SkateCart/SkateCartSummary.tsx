@@ -103,7 +103,7 @@ export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout =
           </span>
         </div>
         <div className="flex justify-between text-gray-500 font-medium">
-          <span>Tax ({taxLabel})</span>
+          <span>GST ({taxLabel})</span>
           <span className="text-gray-900">${tax.toLocaleString()}</span>
         </div>
         {promotionDiscount > 0 && (
@@ -118,7 +118,7 @@ export const SkateCartSummary: React.FC<SkateCartSummaryProps> = ({ isCheckout =
             <span className="block text-3xl font-black text-blue-600 leading-none">
               ${total.toLocaleString()}
             </span>
-            <span className="text-[13px] text-gray-400 font-medium uppercase mt-1 block">incl. all taxes</span>
+            <span className="text-[13px] text-gray-400 font-medium uppercase mt-1 block">incl. all GST</span>
           </div>
         </div>
       </div>
