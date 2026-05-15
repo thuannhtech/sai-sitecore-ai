@@ -23,6 +23,7 @@ export const ShippingMethodSchema = z.object({
   id: z.string().min(1, 'Please select a shipping method'),
   name: z.string(),
   price: z.number(),
+  time: z.string().optional(),
 });
 
 /**

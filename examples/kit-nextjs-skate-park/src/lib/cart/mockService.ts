@@ -3,11 +3,28 @@ import { SkateCart, SkateLineItem, SkateProduct } from './types';
 const MOCK_DELAY = 800;
 const STORAGE_KEY = 'skate_mock_cart';
 
+const createEmptyCart = (): SkateCart => ({
+  id: 'mock-order-123',
+  items: [],
+  subtotal: 0,
+  promotionDiscount: 0,
+  shippingCost: 0,
+  total: 0,
+  itemCount: 0,
+});
+
+const syncCartTotals = (cart: SkateCart) => {
+  cart.subtotal = cart.items.reduce((sum, item) => sum + item.lineTotal, 0);
+  cart.itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+  cart.total = Math.max(cart.subtotal - cart.promotionDiscount, 0) + cart.shippingCost;
+  return cart;
+};
+
 // Hàm helper để đọc/ghi localStorage an toàn
 const getStorageCart = (): SkateCart => {
-  if (typeof window === 'undefined') return { id: 'mock-order-123', items: [], subtotal: 0, itemCount: 0 };
+  if (typeof window === 'undefined') return createEmptyCart();
   const stored = localStorage.getItem(STORAGE_KEY);
-  return stored ? JSON.parse(stored) : { id: 'mock-order-123', items: [], subtotal: 0, itemCount: 0 };
+  return stored ? syncCartTotals(JSON.parse(stored)) : createEmptyCart();
 };
 
 const setStorageCart = (cart: SkateCart) => {
@@ -44,9 +61,7 @@ export const mockCartService = {
       mockCart.items.push(newItem);
     }
 
-    mockCart.subtotal = mockCart.items.reduce((sum, item) => sum + item.lineTotal, 0);
-    mockCart.itemCount = mockCart.items.reduce((sum, item) => sum + item.quantity, 0);
-    
+    syncCartTotals(mockCart);
     setStorageCart(mockCart);
     return mockCart;
   },
@@ -64,9 +79,7 @@ export const mockCartService = {
       }
     }
 
-    mockCart.subtotal = mockCart.items.reduce((sum, item) => sum + item.lineTotal, 0);
-    mockCart.itemCount = mockCart.items.reduce((sum, item) => sum + item.quantity, 0);
-    
+    syncCartTotals(mockCart);
     setStorageCart(mockCart);
     return mockCart;
   },
@@ -77,9 +90,7 @@ export const mockCartService = {
     const mockCart = getStorageCart();
     mockCart.items = mockCart.items.filter((i) => i.id !== lineItemId);
     
-    mockCart.subtotal = mockCart.items.reduce((sum, item) => sum + item.lineTotal, 0);
-    mockCart.itemCount = mockCart.items.reduce((sum, item) => sum + item.quantity, 0);
-    
+    syncCartTotals(mockCart);
     setStorageCart(mockCart);
     return mockCart;
   },

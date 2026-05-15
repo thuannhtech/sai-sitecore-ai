@@ -33,6 +33,7 @@ const SkateCheckoutBridge = {
         }
 
         this.bindEvents();
+        await this.prefillShippingAddressFromProfile();
 
         // Chờ một chút để Zustand Store kịp hydrate dữ liệu từ sessionStorage
         setTimeout(() => this.rehydrateUI(), 100);
@@ -145,6 +146,49 @@ const SkateCheckoutBridge = {
         return data;
     },
 
+    async prefillShippingAddressFromProfile() {
+        try {
+            const existingShippingData = this.getShippingAddressData();
+            if (existingShippingData.FirstName || existingShippingData.LastName || existingShippingData.Email) {
+                return;
+            }
+
+            const response = await fetch('/api/customer/me', {
+                method: 'GET',
+                credentials: 'same-origin',
+            });
+            const result = await response.json().catch(() => ({}));
+
+            if (!response.ok || !result.ok || !result.user || result.isGuest) {
+                return;
+            }
+
+            const shippingForm = document.querySelector(`form[name='${this.config.forms.SHIPPING}']`);
+            if (!shippingForm) {
+                return;
+            }
+
+            const profileData = {
+                FirstName: result.user.FirstName || '',
+                LastName: result.user.LastName || '',
+                Email: result.user.Email || '',
+            };
+
+            Object.entries(profileData).forEach(([fieldName, fieldValue]) => {
+                const input = shippingForm.querySelector(`[name="${fieldName}"]`);
+                if (!input || (typeof input.value === 'string' && input.value.trim())) {
+                    return;
+                }
+
+                input.value = fieldValue;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        } catch (error) {
+            console.warn('[CHECKOUT] Unable to prefill shipping address from profile:', error);
+        }
+    },
+
     showBillingForm(wrapper) {
         if (!wrapper) return;
         const form = wrapper.querySelector(`form[name='${this.config.forms.BILLING}']`);
@@ -221,6 +265,38 @@ const SkateCheckoutBridge = {
 
         console.log('Shipment Method Selected:', methodData);
         window.SkateCheckoutStore.getState().setShippingMethod(methodData);
+        window.dispatchEvent(new CustomEvent('skate:shipping-method-changed', {
+            detail: methodData
+        }));
+        void this.syncShippingMethodToCart(methodData);
+    },
+
+    async syncShippingMethodToCart(methodData) {
+        try {
+            const response = await fetch('/api/cart/shipping', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    shippingMethodId: methodData.id,
+                    shippingMethodName: methodData.name,
+                    shippingMethodTime: methodData.time,
+                    shippingCost: Number.isFinite(methodData.price) ? methodData.price : 0,
+                }),
+            });
+
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || !result.ok) {
+                throw new Error(result.error || 'Failed to sync shipping method to cart');
+            }
+
+            if (window.SkateCartStore?.getState) {
+                await window.SkateCartStore.getState().fetchCart();
+            }
+        } catch (error) {
+            console.error('[CHECKOUT] Failed to sync shipping method to cart:', error);
+        }
     },
 
     // Logic xử lý khi chọn Payment Method
@@ -255,7 +331,7 @@ const SkateCheckoutBridge = {
             const subtotal = cartState.cart?.subtotal || 0;
             const promotionDiscount = cartState.cart?.promotionDiscount || 0;
             const discountedSubtotal = Math.max(subtotal - promotionDiscount, 0);
-            const shippingAmount = checkoutState.shippingMethod?.price || 0;
+            const shippingAmount = cartState.cart?.shippingCost ?? checkoutState.shippingMethod?.price ?? 0;
             const taxRate = typeof commerceSettings?.taxRate === 'number' ? commerceSettings.taxRate : 0.08;
             const taxRatePercentage = taxRate * 100;
             const taxAmount = discountedSubtotal * taxRate;

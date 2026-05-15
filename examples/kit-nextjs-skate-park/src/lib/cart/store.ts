@@ -45,10 +45,13 @@ const asRecord = (value: unknown): CartApiRecord =>
 const asNumber = (value: unknown) => (typeof value === 'number' ? value : 0);
 
 const asString = (value: unknown) => (typeof value === 'string' ? value : '');
+const asNumberOrFallback = (value: unknown, fallback = 0) =>
+  typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 
 const mapCartResponse = (data: unknown): SkateCart => {
   const dataRecord = asRecord(data);
   const cartRecord = asRecord(dataRecord.cart);
+  const cartXpRecord = asRecord(cartRecord.xp);
   const lineItems = Array.isArray(dataRecord.items) ? dataRecord.items : [];
 
   const items: SkateLineItem[] = lineItems.map((lineItem) => {
@@ -84,6 +87,8 @@ const mapCartResponse = (data: unknown): SkateCart => {
   const subtotal = asNumber(cartRecord.Subtotal) || asNumber(cartRecord.subtotal) || derivedSubtotal;
   const promotionDiscount =
     asNumber(cartRecord.PromotionDiscount) || asNumber(cartRecord.promotionDiscount);
+  const shippingCost =
+    asNumberOrFallback(cartXpRecord.ShippingCost, asNumberOrFallback(cartRecord.ShippingCost, 0));
   const total =
     asNumber(cartRecord.Total) ||
     asNumber(cartRecord.total) ||
@@ -94,6 +99,14 @@ const mapCartResponse = (data: unknown): SkateCart => {
     items,
     subtotal,
     promotionDiscount,
+    shippingCost,
+    shippingMethod: cartXpRecord.ShippingMethodID
+      ? {
+          id: asString(cartXpRecord.ShippingMethodID),
+          name: asString(cartXpRecord.ShippingMethodName),
+          time: asString(cartXpRecord.ShippingMethodTime),
+        }
+      : undefined,
     total,
     itemCount,
   };
