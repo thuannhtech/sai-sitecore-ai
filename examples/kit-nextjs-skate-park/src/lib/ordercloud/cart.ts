@@ -1,7 +1,17 @@
 import { cookies } from 'next/headers';
 import type { Payment, PaymentTransaction } from './index';
-import { Cart, LineItem, LineItems, Order } from './index';
+import { Auth, Cart, Incrementors, LineItem, LineItems, Order } from './index';
 import { authService } from './auth';
+import { config } from 'src/lib/config';
+
+const ORDER_INCREMENTOR_ID = 'OrderFormatID_GQibLlMbvECpHHkYsvcyfw';
+
+const buildOrderCartId = (lastNumber: number, leftPaddingCount: number, date = new Date()) => {
+  const yearMonth = `${String(date.getFullYear()).slice(-2)}${String(date.getMonth() + 1).padStart(2, '0')}`;
+  const sequence = String(lastNumber + 1).padStart(leftPaddingCount, '0');
+
+  return `ORD-${yearMonth}-${sequence}`;
+};
 
 export interface AddCartLineItemInput {
   ProductID: string;
@@ -38,10 +48,32 @@ export const cartService = {
     const cart = await Cart.Get({ accessToken });
 
     if (cart.ID) {
+      
       return cart;
     }
 
-    return await Cart.Save({} as Order, { accessToken });
+    const adminAuth = await Auth.ClientCredentials(
+      config.ordercloud.adminClientSecret!,
+      config.ordercloud.adminClientId!,
+      ['FullAccess']
+    );
+
+    const incrementor = await Incrementors.Get(ORDER_INCREMENTOR_ID, {
+      accessToken: adminAuth.access_token,
+    });
+    const cartID = buildOrderCartId(incrementor.LastNumber, incrementor.LeftPaddingCount);
+
+    console.log(`[CartService] Creating new cart with ID: ${cartID}`);
+    var cartPatch = await Cart.Save({ ID: cartID } as Order, { accessToken });
+
+    await Incrementors.Patch(
+      ORDER_INCREMENTOR_ID,
+      { LastNumber: incrementor.LastNumber + 1 },
+      { accessToken: adminAuth.access_token }
+    );
+
+    return cartPatch;
+
   },
 
   /**

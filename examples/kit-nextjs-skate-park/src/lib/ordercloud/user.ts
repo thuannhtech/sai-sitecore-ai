@@ -1,4 +1,4 @@
-import { config } from 'next/dist/build/templates/pages';
+import { config } from 'src/lib/config';
 import { Addresses, BuyerAddress, Me } from './index';
 
 /**
@@ -42,19 +42,4 @@ export const userService = {
       throw error;
     }
   },
-  assignAddress: async (addressId: string, userID: string, type: 'shipping' | 'billing', accessToken?: string) => {
-    try {
-      return await Addresses.SaveAssignment(config.ordercloud.buyerId, 
-        {
-          AddressID: addressId,
-          UserID: userID,
-          IsBilling: type === 'billing',
-          IsShipping: type === 'shipping',
-        },
-        { accessToken });
-    } catch (error) {
-      console.error('[OrderCloud] AssignAddress Error:', error);
-      throw error;
-    } 
-  }
 };

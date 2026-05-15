@@ -1,4 +1,4 @@
-import { Users, BUYER_SCROPES, Auth, Tokens, buildUserName } from './index';
+import { Users, BUYER_SCROPES, Auth, Tokens, buildUserName, Incrementors } from './index';
 import { config } from 'src/lib/config';
 import { RegisterUserRequest } from './types';
 
@@ -45,16 +45,26 @@ export const authService = {
         ['FullAccess']
       );
 
+      const incrementor = await Incrementors.Get('CustomerID_GQibLlMbvECpHHkYsvcyfw', { accessToken: authResponse.access_token }  );
+      const customerId = `SAI-${String(incrementor.LastNumber + 1).padStart(incrementor.LeftPaddingCount, '0')}`;
+          
       const storeUserName = buildUserName(userData.Username);
 
       // 2. Create the user directly in the specified Buyer Organization
       const response = await Users.Create(
         config.ordercloud.buyerId!,
         {
+          ID: customerId,
           ...userData,
           Username: storeUserName,
           Active: true,
         },
+        { accessToken: authResponse.access_token }
+      );
+
+      await Incrementors.Patch(
+        'CustomerID_GQibLlMbvECpHHkYsvcyfw',
+        { LastNumber: incrementor.LastNumber + 1 },
         { accessToken: authResponse.access_token }
       );
 

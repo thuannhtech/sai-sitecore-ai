@@ -93,7 +93,7 @@ export const orderService = {
     }
   },
 
-  assignSavedAddress: async (type: 'shipping' | 'billing', address: OrderAddressInput) => {
+  assignSavedAddress: async (type: 'shipping' | 'billing', address: OrderAddressInput, isGuest: boolean) => {
     const accessToken = await cartService.getAccessTokenFromCookies();
 
     if (!accessToken) {
@@ -109,13 +109,12 @@ export const orderService = {
       mapBuyerAddressInput(address, type),
       accessToken
     );
-
+    
     const addressID = savedAddress.ID;
+
     if (!addressID) {
       throw new Error('Address ID was not returned');
     }
-
-    await userService.assignAddress(addressID, cart.FromUser?.ID || '', type, accessToken);
 
     return await cartService.patchCart({
       ID: cart.ID,
@@ -160,7 +159,7 @@ export const orderService = {
         });
       }
 
-      return await orderService.assignSavedAddress('shipping', address);
+      return await orderService.assignSavedAddress('shipping', address, isGuest);
 
     } catch (error) {
       console.error('[OrderCloud] SetShippingAddress Error:', error);
@@ -188,7 +187,7 @@ export const orderService = {
         return await Cart.SetBillingAddress(mapAddressInput(address), { accessToken });
       }
 
-      return await orderService.assignSavedAddress('billing', address);
+      return await orderService.assignSavedAddress('billing', address, isGuest);
     } catch (error) {
       console.error('[OrderCloud] SetBillingAddress Error:', error);
       throw error;
