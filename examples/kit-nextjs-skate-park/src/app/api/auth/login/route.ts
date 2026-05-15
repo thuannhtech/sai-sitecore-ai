@@ -3,7 +3,8 @@ import { authService } from 'src/lib/ordercloud/auth';
 import { userService } from 'src/lib/ordercloud/user';
 import { cookies } from 'next/headers';
 import { tokenHelper } from 'lib/ordercloud/token-helper';
-
+import { Auth, Cart, Incrementors } from 'src/lib/ordercloud';
+import { config } from 'src/lib/config';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -22,6 +23,27 @@ export async function POST(req: NextRequest) {
 
     // Init user cookie
     const accessToken = authResponse.access_token;
+
+    const adminAuth = await Auth.ClientCredentials(
+      config.ordercloud.adminClientSecret!,
+      config.ordercloud.adminClientId!,
+      ['FullAccess']
+    );
+
+    const incrementor = await Incrementors.Get(ORDER_INCREMENTOR_ID, {
+      accessToken: adminAuth.access_token,
+    });
+    const cartID = buildOrderCartId(incrementor.LastNumber, incrementor.LeftPaddingCount);
+
+    console.log(`[CartService] Creating new cart with ID: ${cartID}`);
+    var cartPatch = await Cart.Save({ ID: cartID } as Order, { accessToken });
+
+    await Incrementors.Patch(
+      ORDER_INCREMENTOR_ID,
+      { LastNumber: incrementor.LastNumber + 1 },
+      { accessToken: adminAuth.access_token }
+    );
+
 
     await tokenHelper.setAccessTokenInCookies(accessToken);
 
