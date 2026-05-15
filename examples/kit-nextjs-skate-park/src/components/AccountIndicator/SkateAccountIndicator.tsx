@@ -6,6 +6,7 @@ import { useUserStore } from 'src/lib/user/store';
 import { useSkateCartStore } from 'src/lib/cart/store';
 import { Link, useRouter } from 'src/i18n/navigation';
 import { MeUser } from 'ordercloud-javascript-sdk';
+import { tokenHelper } from 'src/lib/ordercloud/token-helper';
 
 interface SkateAccountIndicatorProps {
   user?: MeUser | null;
@@ -16,14 +17,13 @@ export const SkateAccountIndicator: React.FC<SkateAccountIndicatorProps> = ({ us
   const { clearCart } = useSkateCartStore();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-
+  const hasStoreUser = !!storeUser;
   const user: any = storeUser || initialUser;
-
-  console.log("storeUser ", storeUser)
-  console.log("initialUser ", initialUser)
-  console.log("isGuest ", isGuest)
-  
-  const displayName = isGuest
+  const effectiveIsGuest = hasStoreUser ? isGuest : tokenHelper.isGuestProfile(initialUser);
+  const effectiveIsAuthenticated = hasStoreUser
+    ? isAuthenticated
+    : !!initialUser && !effectiveIsGuest;
+  const displayName = effectiveIsGuest
     ? 'Sign in / Sign up'
     : `${user?.FirstName ?? ''} ${user?.LastName ?? ''}`.trim() || 'Account';
 
@@ -63,7 +63,7 @@ export const SkateAccountIndicator: React.FC<SkateAccountIndicatorProps> = ({ us
     }
   };
 
-  if (!isAuthenticated || !user) {
+  if (!effectiveIsAuthenticated || !user) {
     return (
       <Link
         href="/account/login"

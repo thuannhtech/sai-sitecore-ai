@@ -14,6 +14,7 @@ import { setRequestLocale, getMessages } from "next-intl/server";
 import { ComponentPropsCollection } from "@sitecore-content-sdk/nextjs";
 import { Page as PageData } from "@sitecore-content-sdk/nextjs";
 import { getServerUser } from 'src/lib/ordercloud/server-auth';
+import { MeUser } from "ordercloud-javascript-sdk";
 
 type PageProps = {
   params: Promise<{
@@ -26,6 +27,44 @@ type PageProps = {
 };
 type PageWithComponentProps = PageData & {
   componentProps: ComponentPropsCollection;
+};
+
+const injectUserIntoComponentProps = (
+  page: PageData,
+  componentProps: ComponentPropsCollection,
+  user: MeUser | null
+) => {
+  const injectIntoPlaceholders = (placeholders?: Record<string, any[]>) => {
+    if (!placeholders) {
+      return;
+    }
+
+    for (const renderings of Object.values(placeholders)) {
+      for (const rendering of renderings) {
+        if (rendering.componentName === "MenuHeader" && rendering.uid) {
+          rendering.fields = {
+            ...(rendering.fields as Record<string, unknown> | undefined),
+            user,
+          };
+
+          componentProps[rendering.uid] = {
+            ...(componentProps[rendering.uid] as Record<string, unknown>),
+            user,
+          };
+        }
+
+        if (rendering.placeholders) {
+          injectIntoPlaceholders(
+            rendering.placeholders as Record<string, any[]>
+          );
+        }
+      }
+    }
+  };
+
+  injectIntoPlaceholders(
+    page.layout.sitecore.route?.placeholders as Record<string, any[]> | undefined
+  );
 };
 
 export default async function Page({ params, searchParams }: PageProps) {
@@ -72,10 +111,11 @@ export default async function Page({ params, searchParams }: PageProps) {
 
 
   const user = await getServerUser();
+  injectUserIntoComponentProps(page, componentProps, user);
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
-      <Providers page={page} componentProps={enrichedPage} user={user}>
+      <Providers page={page} componentProps={enrichedPage} user={user} locale={locale}>
         <Layout page={page} />
       </Providers>
     </NextIntlClientProvider>

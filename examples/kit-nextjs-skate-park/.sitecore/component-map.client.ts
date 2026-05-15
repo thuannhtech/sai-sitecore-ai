@@ -20,6 +20,7 @@ import * as SkateCartSummary from 'src/components/SkateCart/SkateCartSummary';
 import * as SkateCartItemList from 'src/components/SkateCart/SkateCartItemList';
 import * as SkateCart from 'src/components/SkateCart/SkateCart';
 import * as SkateAddToCartButton from 'src/components/SkateCart/SkateAddToCartButton';
+import * as SitecoreSearchProvider from 'src/components/search/SitecoreSearchProvider';
 import * as ProductList from 'src/components/ProductList/ProductList';
 import * as NewBannerSlider from 'src/components/NewBannerSlider/NewBannerSlider';
 import * as Navigation from 'src/components/navigation/Navigation';
@@ -55,6 +56,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['SkateCartItemList', { ...SkateCartItemList }],
   ['SkateCart', { ...SkateCart }],
   ['SkateAddToCartButton', { ...SkateAddToCartButton }],
+  ['SitecoreSearchProvider', { ...SitecoreSearchProvider }],
   ['ProductList', { ...ProductList }],
   ['NewBannerSlider', { ...NewBannerSlider }],
   ['Navigation', { ...Navigation }],

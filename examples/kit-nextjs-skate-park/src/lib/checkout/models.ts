@@ -36,12 +36,78 @@ export const OrderPlacementRequestSchema = z.object({
 
 export type OrderPlacementRequest = z.infer<typeof OrderPlacementRequestSchema>;
 
+export interface OrderViewModelItem {
+  id: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+  imageUrl?: string;
+}
+
+export interface OrderViewModelAddress {
+  FullName?: string;
+  Address?: string;
+  PhoneNumber?: string;
+}
+
+export interface OrderViewModelShippingMethod {
+  id?: string;
+  name?: string;
+  time?: string;
+  price?: number;
+}
+
+export interface OrderViewModelPaymentMethod {
+  id?: string;
+  label?: string;
+  provider?: string;
+  cardType?: string;
+  last4?: string;
+  status?: string;
+}
+
+export interface OrderViewModelCart {
+  items?: OrderViewModelItem[];
+  subtotal?: number;
+  shippingCost?: number;
+  taxCost?: number;
+  promotionDiscount?: number;
+  total?: number;
+  gstRate?: number;
+}
+
+export interface OrderViewModel {
+  orderId: string;
+  orderDate?: string;
+  customer?: {
+    firstName?: string;
+    lastName?: string;
+    phoneNumber?: string;
+  };
+  shippingAddress?: OrderViewModelAddress;
+  shippingMethod?: OrderViewModelShippingMethod;
+  paymentMethod?: OrderViewModelPaymentMethod;
+  cart?: OrderViewModelCart;
+}
+
+export interface OrderHistoryItemViewModel {
+  orderId: string;
+  orderDate?: string;
+  status?: string;
+  total?: number;
+  currency?: string;
+  shippingMethodName?: string;
+  paymentMethodLabel?: string;
+  itemCount?: number;
+}
+
 export interface OrderPlacementResponse {
   success: boolean;
   orderId?: string;
   message?: string;
   redirectUrl?: string;
-  submittedOrder?: any;
+  submittedOrder?: unknown;
   paymentSummary: {
     type: string;
     transactionId?: string;
