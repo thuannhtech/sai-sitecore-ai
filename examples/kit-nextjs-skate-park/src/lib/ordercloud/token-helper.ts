@@ -1,7 +1,11 @@
+import { NextResponse } from 'next/server';
+
 type GuestProfile = {
   Username?: string;
   FirstName?: string;
 };
+
+type SessionUser = Record<string, unknown>;
 
 export const tokenHelper = {
   getAccessTokenFromCookies: async () => {
@@ -18,6 +22,36 @@ export const tokenHelper = {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 36000, // 10 hours
+    });
+  },
+
+  setUserDataInCookies: async (user: SessionUser) => {
+    const { cookies } = await import('next/headers');
+    const cookieStore = await cookies();
+    cookieStore.set('skate-park.user-data', JSON.stringify({ ...user, isGuest: false }), {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
+  },
+
+  setAccessTokenOnResponse: (response: NextResponse, token: string) => {
+    response.cookies.set('oc-token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 36000, // 10 hours
+    });
+  },
+
+  setUserDataOnResponse: (response: NextResponse, user: SessionUser) => {
+    response.cookies.set('skate-park.user-data', JSON.stringify({ ...user, isGuest: false }), {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
     });
   },
 

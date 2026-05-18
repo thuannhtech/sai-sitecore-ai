@@ -42,6 +42,25 @@ const asString = (value: unknown) => (typeof value === 'string' ? value : '');
 
 const asNumber = (value: unknown) => (typeof value === 'number' ? value : undefined);
 
+const normalizeOrderStatus = (status: unknown) => {
+  const resolvedStatus = typeof status === 'string' ? status : '';
+  return resolvedStatus === 'Open' ? 'Processing' : resolvedStatus;
+};
+
+const normalizeOrderRecord = (orderValue: unknown) => {
+  const order = asRecord(orderValue);
+  const xp = asRecord(order.xp);
+
+  return {
+    ...order,
+    Status: normalizeOrderStatus(order.Status),
+    xp: {
+      ...xp,
+      PaymentStatus: normalizeOrderStatus(xp.PaymentStatus),
+    },
+  };
+};
+
 const formatAddress = (addressValue: unknown) => {
   const address = asRecord(addressValue);
   const parts = [
@@ -61,10 +80,10 @@ export async function GET(request: NextRequest) {
     const view = searchParams.get('view') || undefined;
 
     if (view === 'history') {
-      const ordersResponse = await orderService.listOrders();
+      const ordersResponse = await orderService.listMyOrders();
       return NextResponse.json({
         ok: true,
-        orders: ordersResponse?.Items || [],
+        orders: (ordersResponse?.Items || []).map((item) => normalizeOrderRecord(item)),
         meta: {
           page: ordersResponse?.Meta?.Page,
           pageSize: ordersResponse?.Meta?.PageSize,
@@ -73,7 +92,8 @@ export async function GET(request: NextRequest) {
       });
     }
     
-    const order = await orderService.getOrder(orderId);
+    const orderResponse = orderId ? await orderService.getMyOrder(orderId) : await orderService.getOrder();
+    const order = normalizeOrderRecord(orderResponse);
     
     // Lấy LineItems: 
     // Nếu có orderId, lấy từ danh sách đơn hàng đã gửi (Outgoing)
@@ -98,7 +118,12 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: unknown) {
     const message = getErrorMessage(error, 'Failed to fetch order');
-    const status = message === 'Missing OrderCloud access token' ? 401 : 500;
+    const status =
+      message === 'Missing OrderCloud access token'
+        ? 401
+        : message === 'Order does not belong to the current user' || message === 'Order not found'
+          ? 404
+          : 500;
     return NextResponse.json({ ok: false, error: message }, { status });
   }
 }

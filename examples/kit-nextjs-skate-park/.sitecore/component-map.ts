@@ -13,6 +13,7 @@ import * as SkateProductGallery from 'src/components/SkateProductDetail/SkatePro
 import * as SkateProductDetail from 'src/components/SkateProductDetail/SkateProductDetail';
 import * as SkatePaymentMethod from 'src/components/SkatePaymentMethod/SkatePaymentMethod';
 import * as SkateBraintreePayment from 'src/components/SkatePaymentMethod/SkateBraintreePayment';
+import * as SkateOrderDetail from 'src/components/SkateOrderDetail/SkateOrderDetail';
 import * as SkateMyAccountInformation from 'src/components/SkateMyAccountInformation/SkateMyAccountInformation';
 import * as SkateLogout from 'src/components/SkateLogout/SkateLogout';
 import * as SkateLoginLayout from 'src/components/SkateLoginLayout/SkateLoginLayout';
@@ -64,6 +65,7 @@ import * as BannerSlideItem from 'src/components/BannerSlideItem/BannerSlideItem
 import * as BannerImage from 'src/components/BannerImage/BannerImage';
 import * as UserHydrator from 'src/components/AccountIndicator/UserHydrator';
 import * as SkateAccountIndicator from 'src/components/AccountIndicator/SkateAccountIndicator';
+import * as AccountActivationStatus from 'src/components/AccountActivationStatus/AccountActivationStatus';
 
 export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['BYOCWrapper', BYOCServerWrapper],
@@ -78,6 +80,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['SkateProductDetail', { ...SkateProductDetail }],
   ['SkatePaymentMethod', { ...SkatePaymentMethod, componentType: 'client' }],
   ['SkateBraintreePayment', { ...SkateBraintreePayment, componentType: 'client' }],
+  ['SkateOrderDetail', { ...SkateOrderDetail, componentType: 'client' }],
   ['SkateMyAccountInformation', { ...SkateMyAccountInformation, componentType: 'client' }],
   ['SkateLogout', { ...SkateLogout, componentType: 'client' }],
   ['SkateLoginLayout', { ...SkateLoginLayout, componentType: 'client' }],
@@ -125,6 +128,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['BannerImage', { ...BannerImage }],
   ['UserHydrator', { ...UserHydrator, componentType: 'client' }],
   ['SkateAccountIndicator', { ...SkateAccountIndicator, componentType: 'client' }],
+  ['AccountActivationStatus', { ...AccountActivationStatus }],
 ]);
 
 export default componentMap;

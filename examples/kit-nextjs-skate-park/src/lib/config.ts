@@ -29,6 +29,7 @@ export const config = {
   },
   workato: {
     processOrderUrl: process.env.WORKATO_PROCESS_ORDER_URL,
+    processActivationEmailUrl: process.env.WORKATO_PROCESS_ACTIVATION_EMAIL_URL,
     apiToken: process.env.WORKATO_API_TOKEN,
   },
 };

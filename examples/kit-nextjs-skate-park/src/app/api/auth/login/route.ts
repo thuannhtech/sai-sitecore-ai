@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authService } from 'src/lib/ordercloud/auth';
 import { userService } from 'src/lib/ordercloud/user';
-import { cookies } from 'next/headers';
 import { tokenHelper } from 'lib/ordercloud/token-helper';
 
 export async function POST(req: NextRequest) {
@@ -27,13 +26,7 @@ export async function POST(req: NextRequest) {
 
     const user = await userService.getUser(accessToken);
     if (user) {
-      const cookieStore = await cookies();
-      cookieStore.set('skate-park.user-data', JSON.stringify({ ...user, isGuest: false }), {
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7, // 1 week
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-      });
+      await tokenHelper.setUserDataInCookies(user as Record<string, unknown>);
     }
 
     // Return the auth response (tokens) and user info to the client

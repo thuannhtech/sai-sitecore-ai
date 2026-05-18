@@ -3,14 +3,30 @@ import type { Payment, PaymentTransaction } from './index';
 import { Auth, Cart, Incrementors, LineItem, LineItems, Order } from './index';
 import { authService } from './auth';
 import { config } from 'src/lib/config';
+import { Car } from 'lucide-react';
 
 const ORDER_INCREMENTOR_ID = 'OrderFormatID_GQibLlMbvECpHHkYsvcyfw';
+const ORDER_CART_ID_PATTERN = /^ORD-\d{4}-\d+$/;
 
 const buildOrderCartId = (lastNumber: number, leftPaddingCount: number, date = new Date()) => {
   const yearMonth = `${String(date.getFullYear()).slice(-2)}${String(date.getMonth() + 1).padStart(2, '0')}`;
   const sequence = String(lastNumber + 1).padStart(leftPaddingCount, '0');
 
   return `ORD-${yearMonth}-${sequence}`;
+};
+
+const isFormattedCartId = (cartId?: string | null) => {
+  return !!cartId && ORDER_CART_ID_PATTERN.test(cartId);
+};
+
+const getAdminAccessToken = async () => {
+  const adminAuth = await Auth.ClientCredentials(
+    config.ordercloud.adminClientSecret!,
+    config.ordercloud.adminClientId!,
+    ['FullAccess']
+  );
+
+  return adminAuth.access_token;
 };
 
 export interface AddCartLineItemInput {
@@ -48,32 +64,46 @@ export const cartService = {
     const cart = await Cart.Get({ accessToken });
 
     if (cart.ID) {
-      
+      if (!isFormattedCartId(cart.ID)) {
+        console.log(`[CartService] Migrating cart ${cart.ID} to formatted cart ID`);
+        return await cartService.migrateCartToFormattedId(cart, accessToken);
+      }
+
       return cart;
     }
 
-    const adminAuth = await Auth.ClientCredentials(
-      config.ordercloud.adminClientSecret!,
-      config.ordercloud.adminClientId!,
-      ['FullAccess']
-    );
+    return await cartService.createFormattedCart(accessToken);
+  },
+  migrateCartToFormattedId: async (cart: Order, accessToken: string) => {
+    if (!cart.ID) {
+      return await cartService.createFormattedCart(accessToken);
+    }
 
+    const formattedCart = await cartService.createFormattedCart(accessToken);
+
+    if (!formattedCart.ID) {
+      throw new Error('Formatted cart was created without an ID');
+    }
+
+    return await Cart.Get({ accessToken });
+  },
+ createFormattedCart: async (accessToken: string) => {
+    const adminAccessToken = await getAdminAccessToken();
     const incrementor = await Incrementors.Get(ORDER_INCREMENTOR_ID, {
-      accessToken: adminAuth.access_token,
+      accessToken: adminAccessToken,
     });
     const cartID = buildOrderCartId(incrementor.LastNumber, incrementor.LeftPaddingCount);
 
     console.log(`[CartService] Creating new cart with ID: ${cartID}`);
-    var cartPatch = await Cart.Save({ ID: cartID } as Order, { accessToken });
+    const cart = await Cart.Save({ ID: cartID } as Order, { accessToken });
 
     await Incrementors.Patch(
       ORDER_INCREMENTOR_ID,
       { LastNumber: incrementor.LastNumber + 1 },
-      { accessToken: adminAuth.access_token }
+      { accessToken: adminAccessToken }
     );
 
-    return cartPatch;
-
+    return cart;
   },
 
   /**

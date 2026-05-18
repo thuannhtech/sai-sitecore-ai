@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useUserStore } from 'src/lib/user/store';
 import {
   Calendar,
@@ -14,8 +15,9 @@ import {
   ShoppingBag,
   User,
 } from 'lucide-react';
-import SkateOrderSuccess from 'src/components/SkateCheckout/SkateOrderSuccess';
+import SkateOrderDetail from 'src/components/SkateOrderDetail/SkateOrderDetail';
 import { OrderHistoryItemViewModel } from 'src/lib/checkout/models';
+import sitecoreConfig from 'sitecore.config';
 
 type AccountView = 'profile' | 'orders' | 'order-detail';
 
@@ -97,10 +99,13 @@ const mapOrderHistoryItem = (order: Record<string, any>): OrderHistoryItemViewMo
  */
 export const Default = (props: any) => {
   const { user, isAuthenticated } = useUserStore();
+  const currentUserId = user?.ID || '';
+  const t = useTranslations(sitecoreConfig.defaultSite || undefined);
   const [activeView, setActiveView] = useState<AccountView>('profile');
   const [orders, setOrders] = useState<OrderHistoryItemViewModel[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState('');
+  const [ordersFetchedForUser, setOrdersFetchedForUser] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState('');
 
   const showComingSoon = async (featureName: string) => {
@@ -123,7 +128,23 @@ export const Default = (props: any) => {
   };
 
   useEffect(() => {
-    if (!isAuthenticated || !user || activeView !== 'orders' || ordersLoading || orders.length > 0) {
+    if (ordersFetchedForUser === currentUserId) {
+      return;
+    }
+
+    setOrders([]);
+    setOrdersError('');
+    setOrdersFetchedForUser('');
+  }, [currentUserId, ordersFetchedForUser]);
+
+  useEffect(() => {
+    if (
+      !isAuthenticated ||
+      !currentUserId ||
+      activeView !== 'orders' ||
+      ordersLoading ||
+      ordersFetchedForUser === currentUserId
+    ) {
       return;
     }
 
@@ -143,16 +164,18 @@ export const Default = (props: any) => {
         }
 
         setOrders((result.orders || []).map(mapOrderHistoryItem));
+        setOrdersFetchedForUser(currentUserId);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to fetch order history';
         setOrdersError(message);
+        setOrdersFetchedForUser(currentUserId);
       } finally {
         setOrdersLoading(false);
       }
     };
 
     void fetchOrders();
-  }, [activeView, isAuthenticated, orders.length, ordersLoading, user]);
+  }, [activeView, currentUserId, isAuthenticated, ordersFetchedForUser, ordersLoading]);
 
   if (!isAuthenticated || !user) {
     return (
@@ -395,12 +418,7 @@ export const Default = (props: any) => {
     }
 
     return (
-      <SkateOrderSuccess
-        orderId={selectedOrderId}
-        embedded
-        onBack={() => setActiveView('orders')}
-        backLabel="Back to Order History"
-      />
+      <SkateOrderDetail orderId={selectedOrderId} />
     );
   };
 
@@ -409,7 +427,9 @@ export const Default = (props: any) => {
       <div className="flex min-h-screen flex-col md:flex-row">
         <aside className="flex w-full flex-col gap-8 border-r border-gray-100 bg-gray-50/50 p-8 md:w-[300px]">
           <div>
-            <h1 className="mb-2 text-3xl font-black uppercase tracking-tight text-gray-900">Account</h1>
+            <h1 className="mb-2 text-3xl font-black uppercase tracking-tight text-gray-900">
+              {t.has('Account__SidebarTitle') ? t('Account__SidebarTitle') : 'Account'}
+            </h1>
             <p className="text-[13px] font-medium leading-relaxed text-gray-500">
               Manage your profile, addresses and order preferences.
             </p>

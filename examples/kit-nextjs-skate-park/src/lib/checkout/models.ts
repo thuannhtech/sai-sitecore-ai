@@ -80,6 +80,7 @@ export interface OrderViewModelCart {
 export interface OrderViewModel {
   orderId: string;
   orderDate?: string;
+  status?: string;
   customer?: {
     firstName?: string;
     lastName?: string;

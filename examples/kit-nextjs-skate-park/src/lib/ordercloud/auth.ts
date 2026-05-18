@@ -6,6 +6,14 @@ import { RegisterUserRequest } from './types';
  * Service for handling User Authentication with OrderCloud.
  */
 export const authService = {
+  getElevatedAccessToken: async () => {
+    return await Auth.ClientCredentials(
+      config.ordercloud.adminClientSecret!,
+      config.ordercloud.adminClientId!,
+      ['FullAccess']
+    );
+  },
+
   /**
    * Log in a user using Username/Password (OAuth2 Password Grant).
    * The SDK automatically manages the access token in cookies/local storage.
@@ -39,11 +47,7 @@ export const authService = {
   register: async (userData: RegisterUserRequest) => {
     try {
       // 1. Get an elevated token using Client Secret
-      const authResponse = await Auth.ClientCredentials(
-        config.ordercloud.adminClientSecret!,
-        config.ordercloud.adminClientId!,
-        ['FullAccess']
-      );
+      const authResponse = await authService.getElevatedAccessToken();
 
       const incrementor = await Incrementors.Get('CustomerID_GQibLlMbvECpHHkYsvcyfw', { accessToken: authResponse.access_token }  );
       const customerId = `SAI-${String(incrementor.LastNumber + 1).padStart(incrementor.LeftPaddingCount, '0')}`;
@@ -57,7 +61,7 @@ export const authService = {
           ID: customerId,
           ...userData,
           Username: storeUserName,
-          Active: true,
+          Active: false,
         },
         { accessToken: authResponse.access_token }
       );
@@ -71,6 +75,78 @@ export const authService = {
       return response;
     } catch (error: any) {
       console.error('[OrderCloud] Registration Error:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  activateUser: async (userId: string, email?: string) => {
+    try {
+      const authResponse = await authService.getElevatedAccessToken();
+      const accessToken = authResponse.access_token;
+      const buyerId = config.ordercloud.buyerId!;
+
+      const existingUser = await Users.Get(buyerId, userId, { accessToken });
+
+      if (!existingUser) {
+        throw new Error('User not found');
+      }
+
+      if (
+        email &&
+        existingUser.Email &&
+        existingUser.Email.toLowerCase() !== email.toLowerCase()
+      ) {
+        throw new Error('Activation token does not match the account');
+      }
+
+      if (existingUser.Active) {
+        return {
+          user: existingUser,
+          activated: false,
+          alreadyActive: true,
+        };
+      }
+
+      const updatedUser = await Users.Patch(
+        buyerId,
+        userId,
+        { Active: true },
+        { accessToken }
+      );
+
+      return {
+        user: updatedUser,
+        activated: true,
+        alreadyActive: false,
+      };
+    } catch (error: any) {
+      console.error('[OrderCloud] Activation Error:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  getUserAccessToken: async (userId: string) => {
+    try {
+      const authResponse = await authService.getElevatedAccessToken();
+      const accessToken = authResponse.access_token;
+      const buyerId = config.ordercloud.buyerId!;
+      const clientId = config.ordercloud.storeFrontClientId || config.ordercloud.adminClientId;
+
+      if (!clientId) {
+        throw new Error('Missing storefront client ID');
+      }
+
+      return await Users.GetAccessToken(
+        buyerId,
+        userId,
+        {
+          ClientID: clientId,
+          Roles: BUYER_SCROPES,
+        },
+        { accessToken }
+      );
+    } catch (error: any) {
+      console.error('[OrderCloud] Get User Access Token Error:', error.response?.data || error.message);
       throw error;
     }
   },

@@ -1,4 +1,4 @@
-import { Address, BuyerAddress, Cart, Orders } from './index';
+import { Address, BuyerAddress, Cart, Me, Orders } from './index';
 import { cartService } from './cart';
 import { userService } from './user';
 
@@ -93,6 +93,36 @@ export const orderService = {
     }
   },
 
+  getMyOrder: async (orderId: string) => {
+    try {
+      const accessToken = await cartService.getAccessTokenFromCookies();
+      if (!accessToken) {
+        throw new Error('Missing OrderCloud access token');
+      }
+
+      const [order, currentUser] = await Promise.all([
+        Orders.Get('Outgoing', orderId, { accessToken }),
+        userService.getUser(accessToken),
+      ]);
+
+      if (!order) {
+        throw new Error('Order not found');
+      }
+
+      const currentUserId = currentUser?.ID;
+      const orderUserId = order.FromUserID || order.FromUser?.ID;
+
+      if (!currentUserId || !orderUserId || currentUserId !== orderUserId) {
+        throw new Error('Order does not belong to the current user');
+      }
+
+      return order;
+    } catch (error) {
+      console.error('[OrderCloud] GetMyOrder Error:', error);
+      throw error;
+    }
+  },
+
   listOrders: async () => {
     try {
       const accessToken = await cartService.getAccessTokenFromCookies();
@@ -111,6 +141,30 @@ export const orderService = {
       );
     } catch (error) {
       console.error('[OrderCloud] ListOrders Error:', error);
+      throw error;
+    }
+  },
+
+  listMyOrders: async () => {
+    try {
+      const accessToken = await cartService.getAccessTokenFromCookies();
+      if (!accessToken) {
+        throw new Error('Missing OrderCloud access token');
+      }
+
+      return await Me.ListOrders(
+        {
+          page: 1,
+          pageSize: 50,
+          sortBy: ['!DateSubmitted'],
+          filters: {
+            IsSubmitted: true,
+          },
+        },
+        { accessToken }
+      );
+    } catch (error) {
+      console.error('[OrderCloud] ListMyOrders Error:', error);
       throw error;
     }
   },

@@ -67,6 +67,53 @@ const injectUserIntoComponentProps = (
   );
 };
 
+const injectActivationStatusIntoComponentProps = (
+  page: PageData,
+  componentProps: ComponentPropsCollection,
+  status?: string
+) => {
+  const injectIntoPlaceholders = (placeholders?: Record<string, any[]>) => {
+    if (!placeholders) {
+      return;
+    }
+
+    for (const renderings of Object.values(placeholders)) {
+      for (const rendering of renderings) {
+        if (rendering.componentName === 'AccountActivationStatus' && rendering.uid) {
+          rendering.fields = {
+            ...(rendering.fields as Record<string, unknown> | undefined),
+            status: {
+              value: status,
+            },
+          };
+
+          componentProps[rendering.uid] = {
+            ...(componentProps[rendering.uid] as Record<string, unknown>),
+            fields: {
+              ...((componentProps[rendering.uid] as Record<string, unknown> | undefined)?.fields as
+                | Record<string, unknown>
+                | undefined),
+              status: {
+                value: status,
+              },
+            },
+          };
+        }
+
+        if (rendering.placeholders) {
+          injectIntoPlaceholders(
+            rendering.placeholders as Record<string, any[]>
+          );
+        }
+      }
+    }
+  };
+
+  injectIntoPlaceholders(
+    page.layout.sitecore.route?.placeholders as Record<string, any[]> | undefined
+  );
+};
+
 export default async function Page({ params, searchParams }: PageProps) {
   const { site, locale: pathLocale, path } = await params;
   const editingParams = await searchParams;
@@ -112,6 +159,8 @@ export default async function Page({ params, searchParams }: PageProps) {
 
   const user = await getServerUser();
   injectUserIntoComponentProps(page, componentProps, user);
+  const status = typeof editingParams.status === 'string' ? editingParams.status : undefined;
+  injectActivationStatusIntoComponentProps(page, componentProps, status);
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
