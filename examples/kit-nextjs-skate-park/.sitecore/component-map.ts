@@ -26,7 +26,7 @@ import * as SkateCartSummary from 'src/components/SkateCart/SkateCartSummary';
 import * as SkateCartItemList from 'src/components/SkateCart/SkateCartItemList';
 import * as SkateCart from 'src/components/SkateCart/SkateCart';
 import * as SkateAddToCartButton from 'src/components/SkateCart/SkateAddToCartButton';
-import * as SitecoreSearchProvider from 'src/components/search/SitecoreSearchProvider';
+import * as SitecoreSearchResults from 'src/components/search/SitecoreSearchResults';
 import * as RowSplitter from 'src/components/row-splitter/RowSplitter';
 import * as RichText from 'src/components/rich-text/RichText';
 import * as Promo from 'src/components/promo/Promo';
@@ -91,7 +91,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['SkateCartItemList', { ...SkateCartItemList, componentType: 'client' }],
   ['SkateCart', { ...SkateCart, componentType: 'client' }],
   ['SkateAddToCartButton', { ...SkateAddToCartButton, componentType: 'client' }],
-  ['SitecoreSearchProvider', { ...SitecoreSearchProvider, componentType: 'client' }],
+  ['SitecoreSearchResults', { ...SitecoreSearchResults, componentType: 'client' }],
   ['RowSplitter', { ...RowSplitter }],
   ['RichText', { ...RichText }],
   ['Promo', { ...Promo }],

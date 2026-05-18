@@ -10,7 +10,7 @@ import scConfig from "sitecore.config";
 import components from ".sitecore/component-map.client";
 import { MeUser } from "ordercloud-javascript-sdk";
 import { UserHydrator } from "./components/AccountIndicator/UserHydrator";
-import SitecoreSearchProvider from "./components/search/SitecoreSearchProvider";
+import SitecoreSearchProvider from "./providers/SitecoreSearchProvider";
 
 export default function Providers({
   children,
