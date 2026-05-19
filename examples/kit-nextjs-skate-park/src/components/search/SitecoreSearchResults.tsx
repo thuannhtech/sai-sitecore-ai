@@ -895,10 +895,14 @@ export default function Default(props: SitecoreSearchResultsProps) {
   }
 
   const { env, customerKey, serviceHost, apiKey } = config.sitecoreSearch;
-  const isSearchConfigured =
-    !!env &&
-    !!customerKey &&
-    (!!serviceHost || !!apiKey);
+  
+  // Strict matching to SitecoreSearchProvider's validation to prevent No QueryClient context crash
+  const isValidEnv = !!env && env !== "undefined" && env !== "null" && ["prod", "prodEu", "apse2"].includes(env);
+  const isValidCustomerKey = !!customerKey && customerKey !== "undefined" && customerKey !== "null" && customerKey.trim() !== "";
+  const isValidApiOrHost = (!!serviceHost && serviceHost !== "undefined" && serviceHost.trim() !== "") || 
+                           (!!apiKey && apiKey !== "undefined" && apiKey.trim() !== "");
+
+  const isSearchConfigured = isValidEnv && isValidCustomerKey && isValidApiOrHost;
 
   if (!isSearchConfigured) {
     return (
@@ -908,7 +912,7 @@ export default function Default(props: SitecoreSearchResultsProps) {
         </div>
         <h2 className="mt-6 text-3xl font-bold text-slate-900">Search is currently unavailable</h2>
         <p className="mt-3 text-xl text-slate-500 max-w-xl mx-auto leading-relaxed">
-          The Sitecore Search integration requires environment configuration. Please set up the search environment variables on your hosting platform.
+          The Sitecore Search integration requires environment configuration. Please set up the search environment variables on your hosting platform and trigger a new redeployment.
         </p>
       </div>
     );
