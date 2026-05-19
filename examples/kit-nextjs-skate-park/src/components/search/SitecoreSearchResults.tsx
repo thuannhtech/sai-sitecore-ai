@@ -905,6 +905,124 @@ export default function Default(props: SitecoreSearchResultsProps) {
   const isSearchConfigured = isValidEnv && isValidCustomerKey && isValidApiOrHost;
 
   if (!isSearchConfigured) {
+    if (props.page?.mode?.isEditing) {
+      // In Sitecore Pages Editor, if search is not configured, show a stunning Mockup/Preview Mode of the component!
+      return (
+        <div className="relative isolate overflow-hidden bg-white">
+          <div className="mx-auto max-w-[1380px] px-4 py-8 sm:px-6 lg:px-8 lg:py-[72px]">
+            <div className="rounded-[36px] bg-amber-50/60 border border-amber-200 p-4 mb-6 text-center text-amber-800 text-lg font-semibold shadow-sm">
+              ⚠️ Sitecore Search API is not configured on this Editing Host. Showing a premium interactive mockup for Page Editor preview.
+            </div>
+            
+            <div className="rounded-[36px] border border-slate-200 bg-white p-5 shadow-[0_30px_120px_rgba(15,23,42,0.06)] md:p-8 lg:p-10">
+              <div className="grid gap-8 xl:grid-cols-[300px_minmax(0,1fr)] xl:gap-10">
+                {/* Mock Facet Sidebar */}
+                <aside className="rounded-[28px] border border-white/65 bg-white/85 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur xl:sticky xl:top-8">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="m-0 text-base font-semibold uppercase tracking-[0.22em] text-cyan-700">Filters</p>
+                      <h2 className="mt-2 text-3xl font-bold text-slate-900">Browse topics</h2>
+                    </div>
+                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 text-white">
+                      <SlidersHorizontal size={20} aria-hidden="true" />
+                    </span>
+                  </div>
+                  
+                  <div className="mt-6 space-y-6">
+                    <section className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-5">
+                      <div className="flex items-center justify-between gap-3">
+                        <h3 className="text-xl font-bold text-slate-900">categories_names</h3>
+                        <span className="rounded-full bg-white px-3.5 py-1.5 text-base font-semibold text-slate-500">2 items</span>
+                      </div>
+                      <div className="mt-4 space-y-3">
+                        <label className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-transparent bg-white px-4 py-3.5 transition hover:border-slate-200">
+                          <span className="flex min-w-0 items-center gap-3 text-xl text-slate-700 font-medium">
+                            <input type="checkbox" className="h-5 w-5 rounded border-slate-300 text-cyan-600 accent-cyan-600 cursor-pointer" defaultChecked readOnly />
+                            <span className="truncate">marketing-automation</span>
+                          </span>
+                          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-base font-semibold text-slate-500">4</span>
+                        </label>
+                        <label className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-transparent bg-white px-4 py-3.5 transition hover:border-slate-200">
+                          <span className="flex min-w-0 items-center gap-3 text-xl text-slate-700 font-medium">
+                            <input type="checkbox" className="h-5 w-5 rounded border-slate-300 text-cyan-600 accent-cyan-600 cursor-pointer" readOnly />
+                            <span className="truncate">personalization</span>
+                          </span>
+                          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-base font-semibold text-slate-500">2</span>
+                        </label>
+                      </div>
+                    </section>
+                  </div>
+                </aside>
+
+                {/* Mock Search Results */}
+                <div className="min-w-0">
+                  <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.05)] md:p-8">
+                    <h1 className="text-[2.75rem] font-semibold leading-none text-slate-950 md:text-[4.5rem]">Find blog posts fast.</h1>
+                    <div className="mt-8 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
+                      <div className="relative flex items-center">
+                        <Search size={20} className="absolute left-5 text-slate-400" />
+                        <input type="text" placeholder="Search posts..." defaultValue="Skateboarding" className="w-full rounded-[22px] border border-slate-200 bg-slate-50/50 py-4 pl-12 pr-6 text-lg text-slate-950 transition-all font-medium" readOnly />
+                      </div>
+                      <button className="inline-flex h-full items-center justify-center gap-2 rounded-[22px] bg-slate-950 px-6 py-4 text-lg font-semibold text-white cursor-not-allowed">
+                        Search <ArrowRight size={18} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex flex-col gap-4 rounded-[28px] border border-white/70 bg-white/85 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur md:flex-row md:items-center md:justify-between md:p-5">
+                    <div>
+                      <p className="m-0 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Search summary</p>
+                      <div className="mt-2 text-2xl font-semibold text-slate-950 md:text-[2.35rem]">2 results for "Skateboarding"</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 space-y-4">
+                    {/* Mock Result Card 1 */}
+                    <article className="group overflow-hidden rounded-[30px] border border-white/70 bg-white/90 p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)] md:p-6 animate-pulse-slow">
+                      <div className="flex flex-col gap-6 md:flex-row">
+                        <div className="relative h-56 w-full overflow-hidden rounded-[24px] bg-slate-100 md:h-[180px] md:w-[280px] flex-shrink-0">
+                          <div className="absolute inset-0 bg-gradient-to-tr from-cyan-100 to-blue-50 opacity-80 animate-gradient" />
+                        </div>
+                        <div className="flex min-w-0 flex-1 flex-col">
+                          <h2 className="text-[2.2rem] font-semibold leading-[1.15] text-slate-950 md:text-[2.4rem]">Mastering the Kickflip at Skatepark</h2>
+                          <p className="mt-4 max-w-3xl text-xl leading-8 text-slate-600">Learn the essential steps to master the kickflip, from foot placement to landing safely on your board.</p>
+                          <div className="mt-5 space-y-3">
+                            <div className="flex flex-wrap items-center gap-3">
+                              <span className="text-xl font-semibold text-slate-500">Categories:</span>
+                              <span className="inline-flex items-center rounded-full border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-xl font-semibold text-cyan-800">marketing-automation</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+
+                    {/* Mock Result Card 2 */}
+                    <article className="group overflow-hidden rounded-[30px] border border-white/70 bg-white/90 p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)] md:p-6">
+                      <div className="flex flex-col gap-6 md:flex-row">
+                        <div className="relative h-56 w-full overflow-hidden rounded-[24px] bg-slate-100 md:h-[180px] md:w-[280px] flex-shrink-0">
+                          <div className="absolute inset-0 bg-gradient-to-tr from-cyan-100 to-blue-50 opacity-80" />
+                        </div>
+                        <div className="flex min-w-0 flex-1 flex-col">
+                          <h2 className="text-[2.2rem] font-semibold leading-[1.15] text-slate-950 md:text-[2.4rem]">Best Skateboards for Beginners in 2026</h2>
+                          <p className="mt-4 max-w-3xl text-xl leading-8 text-slate-600">A comprehensive guide to choosing your first skateboard, with reviews of top brands and setups.</p>
+                          <div className="mt-5 space-y-3">
+                            <div className="flex flex-wrap items-center gap-3">
+                              <span className="text-xl font-semibold text-slate-500">Categories:</span>
+                              <span className="inline-flex items-center rounded-full border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-xl font-semibold text-cyan-800">personalization</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="mx-auto max-w-[1380px] px-4 py-20 text-center">
         <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600">
