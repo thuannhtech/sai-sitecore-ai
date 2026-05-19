@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { ComponentProps } from "src/lib/component-props";
 import { useLocale } from "next-intl";
+import config from "src/lib/config";
 
 type SearchResultItem = {
   id?: string;
@@ -878,5 +879,40 @@ const SearchResultsWidget = widget(
 );
 
 export default function Default(props: SitecoreSearchResultsProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="mx-auto max-w-[1380px] p-5 space-y-4">
+        <SearchSkeletonCard />
+        <SearchSkeletonCard />
+      </div>
+    );
+  }
+
+  const { env, customerKey, serviceHost, apiKey } = config.sitecoreSearch;
+  const isSearchConfigured =
+    !!env &&
+    !!customerKey &&
+    (!!serviceHost || !!apiKey);
+
+  if (!isSearchConfigured) {
+    return (
+      <div className="mx-auto max-w-[1380px] px-4 py-20 text-center">
+        <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+          <SlidersHorizontal size={28} />
+        </div>
+        <h2 className="mt-6 text-3xl font-bold text-slate-900">Search is currently unavailable</h2>
+        <p className="mt-3 text-xl text-slate-500 max-w-xl mx-auto leading-relaxed">
+          The Sitecore Search integration requires environment configuration. Please set up the search environment variables on your hosting platform.
+        </p>
+      </div>
+    );
+  }
+
   return <SearchResultsWidget {...props} rfkId={DEFAULT_RFK_ID} />;
 }
