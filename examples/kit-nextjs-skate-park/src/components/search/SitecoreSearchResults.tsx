@@ -2,7 +2,7 @@
 
 import React, { FormEvent, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { widget, useSearchResults } from "@sitecore-search/react";
+import { widget, useSearchResults, FilterEqual } from "@sitecore-search/react";
 import { WidgetDataType } from "@sitecore-search/data";
 import {
   ArrowRight,
@@ -13,6 +13,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { ComponentProps } from "src/lib/component-props";
+import { useLocale } from "next-intl";
 
 type SearchResultItem = {
   id?: string;
@@ -43,59 +44,47 @@ type SitecoreSearchResultsInnerProps = SitecoreSearchResultsProps & {
   rfkId: string;
 };
 
-type PreviewFacetGroup = {
-  title: string;
-  items: Array<{
-    label: string;
-    count: number;
-  }>;
+const DEFAULT_RFK_ID = "TEST";
+
+type FacetValue = {
+  id: string;
+  text: string;
+  count: number;
+};
+
+type FacetGroup = {
+  name: string;
+  label: string;
+  value: FacetValue[];
+};
+
+type PreviewFacetSidebarProps = {
+  facets: FacetGroup[];
+  selectedFacets: Array<any>;
+  onFacetClick: (params: any) => void;
+  onClearFilters: () => void;
 };
 
 type PaginationProps = {
   totalItems: number;
   pageSize: number;
+  currentPage: number;
+  onPageChange: (page: number) => void;
 };
 
-const DEFAULT_RFK_ID = "TEST";
-
-const PREVIEW_FACETS: PreviewFacetGroup[] = [
-  {
-    title: "Categories",
-    items: [
-      { label: "Skate Culture", count: 24 },
-      { label: "Street Spots", count: 18 },
-      { label: "Setup Guides", count: 12 },
-    ],
-  },
-  {
-    title: "Blog Tags",
-    items: [
-      { label: "Bearings", count: 16 },
-      { label: "Deck Flex", count: 11 },
-      { label: "Urban Sessions", count: 8 },
-    ],
-  },
-  {
-    title: "Publish Date",
-    items: [
-      { label: "This month", count: 14 },
-      { label: "Last 6 months", count: 43 },
-      { label: "Archive", count: 89 },
-    ],
-  },
-  {
-    title: "Author",
-    items: [
-      { label: "Mason Lee", count: 17 },
-      { label: "Rina Tran", count: 13 },
-      { label: "Skate Park Team", count: 21 },
-    ],
-  },
-];
-
-function PaginationPreview({ totalItems, pageSize }: PaginationProps) {
+function PaginationPreview({ totalItems, pageSize, currentPage, onPageChange }: PaginationProps) {
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  const pages = Array.from({ length: Math.min(totalPages, 5) }, (_, index) => index + 1);
+
+  const pages: number[] = [];
+  const maxButtons = 5;
+  let startPage = Math.max(1, currentPage - 2);
+  let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+  if (endPage - startPage + 1 < maxButtons) {
+    startPage = Math.max(1, endPage - maxButtons + 1);
+  }
+  for (let i = startPage; i <= endPage; i++) {
+    pages.push(i);
+  }
 
   if (totalPages <= 1) {
     return null;
@@ -108,7 +97,9 @@ function PaginationPreview({ totalItems, pageSize }: PaginationProps) {
     >
       <button
         type="button"
-        className="inline-flex items-center rounded-full border border-slate-200 px-5 py-3 text-lg font-semibold text-slate-500"
+        disabled={currentPage === 1}
+        onClick={() => onPageChange(currentPage - 1)}
+        className="inline-flex items-center rounded-full border border-slate-200 px-5 py-3 text-lg font-semibold text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition"
       >
         Previous
       </button>
@@ -116,30 +107,33 @@ function PaginationPreview({ totalItems, pageSize }: PaginationProps) {
         <button
           key={page}
           type="button"
-          aria-current={page === 1 ? "page" : undefined}
-          className={`inline-flex h-12 min-w-12 items-center justify-center rounded-full px-4 text-lg font-semibold ${
-            page === 1
+          aria-current={page === currentPage ? "page" : undefined}
+          onClick={() => onPageChange(page)}
+          className={`inline-flex h-12 min-w-12 items-center justify-center rounded-full px-4 text-lg font-semibold transition ${page === currentPage
               ? "bg-slate-950 text-white"
-              : "border border-slate-200 bg-white text-slate-700"
-          }`}
+              : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+            }`}
         >
           {page}
         </button>
       ))}
-      {totalPages > pages.length ? (
-        <span className="px-2 text-lg font-semibold text-slate-400">...</span>
-      ) : null}
-      {totalPages > pages.length ? (
-        <button
-          type="button"
-          className="inline-flex h-12 min-w-12 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-lg font-semibold text-slate-700"
-        >
-          {totalPages}
-        </button>
+      {totalPages > endPage ? (
+        <>
+          <span className="px-2 text-lg font-semibold text-slate-400">...</span>
+          <button
+            type="button"
+            onClick={() => onPageChange(totalPages)}
+            className="inline-flex h-12 min-w-12 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-lg font-semibold text-slate-700 hover:bg-slate-50 transition"
+          >
+            {totalPages}
+          </button>
+        </>
       ) : null}
       <button
         type="button"
-        className="inline-flex items-center rounded-full border border-slate-200 px-5 py-3 text-lg font-semibold text-slate-700"
+        disabled={currentPage === totalPages}
+        onClick={() => onPageChange(currentPage + 1)}
+        className="inline-flex items-center rounded-full border border-slate-200 px-5 py-3 text-lg font-semibold text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition"
       >
         Next
       </button>
@@ -238,7 +232,13 @@ function collectValuesByKeyMatch(
 
   for (const [key, entryValue] of Object.entries(record)) {
     const normalizedKey = key.toLowerCase();
-    const isMatch = keyMatchers.some((matcher) => normalizedKey.includes(matcher.toLowerCase()));
+    const isMatch = keyMatchers.some((matcher) => {
+      const matchLower = matcher.toLowerCase();
+      if (!matchLower.includes("id") && (normalizedKey.includes("_id") || normalizedKey.endsWith("ids") || normalizedKey.endsWith("id"))) {
+        return false;
+      }
+      return normalizedKey.includes(matchLower);
+    });
 
     if (isMatch) {
       matches.push(...flattenTextValues(entryValue));
@@ -317,6 +317,7 @@ function getItemFieldValue(item: SearchResultItem, fieldNames: string[]): unknow
 
 function getImageSource(item: SearchResultItem): string | undefined {
   const candidate = getItemFieldValue(item, [
+    "image_link",
     "image_url",
     "image",
     "Image",
@@ -366,7 +367,14 @@ function formatDate(value: unknown): string | null {
     return null;
   }
 
-  const parsedDate = new Date(value);
+  let dateStr = value;
+  const match = value.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})Z)?$/);
+  if (match) {
+    const [_, year, month, day, hour = "00", minute = "00", second = "00"] = match;
+    dateStr = `${year}-${month}-${day}T${hour}:${minute}:${second}Z`;
+  }
+
+  const parsedDate = new Date(dateStr);
 
   if (Number.isNaN(parsedDate.getTime())) {
     return value;
@@ -379,54 +387,127 @@ function formatDate(value: unknown): string | null {
   }).format(parsedDate);
 }
 
-function PreviewFacetSidebar() {
+function PreviewFacetSidebar({
+  facets = [],
+  selectedFacets = [],
+  onFacetClick,
+  onClearFilters,
+}: PreviewFacetSidebarProps) {
+  const isFacetChecked = (facetId: string, facetValueId: string) => {
+    return selectedFacets.some(
+      (sf) => sf.facetId === facetId && sf.facetValueId === facetValueId
+    );
+  };
+
+  const handleCheckboxChange = (
+    facetId: string,
+    facetIndex: number,
+    facetValueId: string,
+    facetValueIndex: number,
+    checked: boolean
+  ) => {
+    onFacetClick({
+      facetId,
+      facetIndex,
+      facetValueId,
+      facetValueIndex,
+      checked,
+      type: "valueId",
+    });
+  };
+
+  const visibleFacets = facets.filter(
+    (group) => group.name !== "blog_tags_ids" && group.name !== "categories"
+  );
+
+  const getFacetLabel = (name: string, label: string) => {
+    if (name === "blog_tags" || name === "blogTags") return "blogTags";
+    if (name === "categories_names") return "categories_names";
+    return label || name;
+  };
+
+  const totalActiveFilters = selectedFacets.length;
+
   return (
-    <aside className="rounded-[28px] border border-white/65 bg-white/85 p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur xl:sticky xl:top-8">
+    <aside className="rounded-[28px] border border-white/65 bg-white/85 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur xl:sticky xl:top-8">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="m-0 text-sm font-semibold uppercase tracking-[0.22em] text-cyan-700">
+          <p className="m-0 text-base font-semibold uppercase tracking-[0.22em] text-cyan-700">
             Filters
           </p>
-          <h2 className="mt-2 text-2xl font-semibold text-slate-900">Browse topics</h2>
+          <h2 className="mt-2 text-3xl font-bold text-slate-900">Browse topics</h2>
         </div>
-        <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-white">
-          <SlidersHorizontal size={18} aria-hidden="true" />
+        <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 text-white">
+          <SlidersHorizontal size={20} aria-hidden="true" />
         </span>
       </div>
 
-      <div className="mt-6 space-y-5">
-        {PREVIEW_FACETS.map((group) => (
-          <section key={group.title} className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-lg font-semibold text-slate-900">{group.title}</h3>
-              <span className="rounded-full bg-white px-3 py-1.5 text-base font-semibold text-slate-500">
-                {group.items.length} groups
-              </span>
-            </div>
+      {totalActiveFilters > 0 && (
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-cyan-50/50 border border-cyan-100 p-4">
+          <span className="text-xl font-bold text-cyan-800">
+            {totalActiveFilters} active filter{totalActiveFilters > 1 ? "s" : ""}
+          </span>
+          <button
+            type="button"
+            onClick={onClearFilters}
+            className="text-xl font-bold text-cyan-855 underline hover:text-cyan-950 transition cursor-pointer"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
 
-            <div className="mt-3 space-y-2.5">
-              {group.items.map((item) => (
-                <label
-                  key={item.label}
-                  className="flex cursor-default items-center justify-between gap-3 rounded-2xl border border-transparent bg-white px-3 py-3 transition hover:border-slate-200"
-                >
-                  <span className="flex min-w-0 items-center gap-3 text-lg text-slate-700">
-                    <input
-                      type="checkbox"
-                      defaultChecked={item.label === group.items[0]?.label}
-                      className="h-4 w-4 rounded border-slate-300 text-cyan-600 accent-cyan-600"
-                      aria-label={item.label}
-                    />
-                    <span className="truncate">{item.label}</span>
-                  </span>
-                  <span className="rounded-full bg-slate-100 px-3 py-1.5 text-base font-semibold text-slate-500">
-                    {item.count}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </section>
-        ))}
+      <div className="mt-6 space-y-6">
+        {visibleFacets.length === 0 ? (
+          <p className="text-xl text-slate-500 italic">No filters available for this query.</p>
+        ) : (
+          visibleFacets.map((group, groupIdx) => (
+            <section key={group.name} className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-5">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-xl font-bold text-slate-900">
+                  {getFacetLabel(group.name, group.label)}
+                </h3>
+                <span className="rounded-full bg-white px-3.5 py-1.5 text-base font-semibold text-slate-500">
+                  {group.value.length} items
+                </span>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {group.value.map((item, itemIdx) => {
+                  const checked = isFacetChecked(group.name, item.id);
+                  return (
+                    <label
+                      key={item.id}
+                      className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-transparent bg-white px-4 py-3.5 transition hover:border-slate-200"
+                    >
+                      <span className="flex min-w-0 items-center gap-3 text-xl text-slate-700 font-medium">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) =>
+                            handleCheckboxChange(
+                              group.name,
+                              groupIdx,
+                              item.id,
+                              itemIdx,
+                              e.target.checked
+                            )
+                          }
+                          className="h-5 w-5 rounded border-slate-300 text-cyan-600 accent-cyan-600 cursor-pointer"
+                          aria-label={item.text}
+                        />
+                        <span className="truncate">{item.text}</span>
+                      </span>
+                      <span className="rounded-full bg-slate-100 px-3 py-1.5 text-base font-semibold text-slate-500">
+                        {item.count}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
+          ))
+        )}
       </div>
     </aside>
   );
@@ -434,9 +515,9 @@ function PreviewFacetSidebar() {
 
 function SearchSkeletonCard() {
   return (
-    <article className="grid gap-5 rounded-[28px] border border-slate-200/80 bg-white/80 p-5 shadow-[0_18px_60px_rgba(15,23,42,0.06)] backdrop-blur md:grid-cols-[220px_minmax(0,1fr)]">
-      <div className="h-[180px] animate-pulse rounded-[22px] bg-slate-200" />
-      <div className="space-y-4">
+    <article className="flex flex-col gap-6 rounded-[28px] border border-slate-200/80 bg-white/80 p-5 shadow-[0_18px_60px_rgba(15,23,42,0.06)] backdrop-blur md:flex-row">
+      <div className="h-56 w-full animate-pulse rounded-[24px] bg-slate-200 md:h-[180px] md:w-[280px] flex-shrink-0" />
+      <div className="flex-1 space-y-4">
         <div className="flex gap-2">
           <div className="h-7 w-24 animate-pulse rounded-full bg-slate-200" />
           <div className="h-7 w-20 animate-pulse rounded-full bg-slate-200" />
@@ -463,51 +544,65 @@ function ResultCard({
     ? String(item.description)
     : item.excerpt
       ? String(item.excerpt)
-    : item.summary
-      ? String(item.summary)
-      : undefined;
+      : item.summary
+        ? String(item.summary)
+        : undefined;
   const image = getImageSource(item);
   const authors = normalizeTextList(item.author ?? item.authors);
   const categories = getTaxonomyValues(item, [
-    "categories",
+    "categories_names",
     "category",
-    "Categories",
-    "Category",
+    "Categories_Names",
+    "Category_Name",
     "BlogCategory",
     "BlogCategories",
-  ]).slice(0, 2);
+  ]);
   const tags = getTaxonomyValues(item, [
+    "blog_tags_names",
     "blogtags",
     "blogTags",
-    "tags",
-    "Tags",
     "BlogTags",
     "TopicTags",
-  ]).slice(0, 3);
+  ]);
   const publishDate = formatDate(item.publish_date ?? item.published_at ?? item.date);
 
   return (
     <article className="group overflow-hidden rounded-[30px] border border-white/70 bg-white/90 p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur transition duration-300 hover:-translate-y-1 hover:shadow-[0_30px_90px_rgba(15,23,42,0.13)] md:p-6">
-      <div className="grid gap-5 md:grid-cols-[220px_minmax(0,1fr)]">
-        <div className="relative min-h-[180px] overflow-hidden rounded-[24px] bg-slate-100">
+      <div className="flex flex-col gap-6 md:flex-row">
+        <div className="relative h-56 w-full overflow-hidden rounded-[24px] bg-slate-100 md:h-[180px] md:w-[280px] flex-shrink-0">
           {image ? (
-            <img src={image} alt={title} className="block h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
+            <img src={image} alt={title} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" style={{ height: "100%", width: "100%" }} />
           ) : (
             <div className="absolute inset-0 bg-[linear-gradient(135deg,#e2e8f0_0%,#f8fafc_45%,#cbd5e1_100%)]" />
           )}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/10 via-transparent to-transparent" />
         </div>
 
-        <div className="flex min-w-0 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col">
+          {url ? (
+            <a
+              href={url}
+              className="text-[2.2rem] font-semibold leading-[1.15] text-slate-950 no-underline transition-colors hover:text-cyan-800 md:text-[2.4rem]"
+            >
+              {title}
+            </a>
+          ) : (
+            <h2 className="text-[2.2rem] font-semibold leading-[1.15] text-slate-950 md:text-[2.4rem]">{title}</h2>
+          )}
+
+          {description ? (
+            <p className="mt-4 max-w-3xl text-xl leading-8 text-slate-600">{description}</p>
+          ) : null}
+
           {(categories.length > 0 || tags.length > 0) ? (
-            <div className="space-y-3">
+            <div className="mt-5 space-y-3">
               {categories.length > 0 ? (
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="text-lg font-semibold text-slate-500">Categories:</span>
+                  <span className="text-xl font-semibold text-slate-500">Categories:</span>
                   {categories.map((category) => (
                     <span
                       key={category}
-                      className="inline-flex items-center rounded-full border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-lg font-semibold text-cyan-800"
+                      className="inline-flex items-center rounded-full border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-xl font-semibold text-cyan-800"
                     >
                       {category}
                     </span>
@@ -517,13 +612,13 @@ function ResultCard({
 
               {tags.length > 0 ? (
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="text-lg font-semibold text-slate-500">Tags:</span>
+                  <span className="text-xl font-semibold text-slate-500">Tags:</span>
                   {tags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-4 py-2.5 text-lg font-semibold text-slate-700"
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-4 py-2.5 text-xl font-semibold text-slate-700"
                     >
-                      <Tag size={16} aria-hidden="true" />
+                      <Tag size={18} aria-hidden="true" />
                       {tag}
                     </span>
                   ))}
@@ -532,22 +627,7 @@ function ResultCard({
             </div>
           ) : null}
 
-          {url ? (
-            <a
-              href={url}
-              className="mt-4 text-[2rem] font-semibold leading-[1.15] text-slate-950 no-underline transition-colors hover:text-cyan-800 md:text-[2.15rem]"
-            >
-              {title}
-            </a>
-          ) : (
-            <h2 className="mt-4 text-[2rem] font-semibold leading-[1.15] text-slate-950 md:text-[2.15rem]">{title}</h2>
-          )}
-
-          {description ? (
-            <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">{description}</p>
-          ) : null}
-
-          <div className="mt-6 flex flex-wrap items-center gap-3 text-xl text-slate-500">
+          <div className="mt-6 flex flex-wrap items-center gap-3 text-xl text-slate-500 font-medium">
             {publishDate ? (
               <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-3">
                 <CalendarDays size={18} aria-hidden="true" />
@@ -565,7 +645,7 @@ function ResultCard({
           {url ? (
             <a
               href={url}
-              className="mt-5 inline-flex items-center gap-2 self-start rounded-full bg-slate-950 px-4.5 py-3 text-lg font-semibold text-white no-underline transition hover:bg-cyan-800"
+              className="mt-5 inline-flex items-center gap-2 self-start rounded-full bg-slate-950 px-5 py-3.5 text-xl font-semibold text-white no-underline transition hover:bg-cyan-800"
             >
               Read article
               <ArrowRight size={18} aria-hidden="true" />
@@ -581,16 +661,46 @@ function SitecoreSearchResultsInner({
   params,
   rfkId,
 }: SitecoreSearchResultsInnerProps) {
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
   const currentKeyphrase = searchParams.get("q") ?? "";
   const [inputValue, setInputValue] = useState(currentKeyphrase);
 
-  const { actions, queryResult, query, widgetRef } = useSearchResults<SearchResultItem>({
+  const {
+    actions: { onKeyphraseChange, onPageNumberChange, onFacetClick, onClearFilters },
+    state: { page, selectedFacets },
+    queryResult,
+    query,
+    widgetRef,
+  } = useSearchResults<SearchResultItem>({
     query: (requestQuery) => {
       const request = requestQuery.getRequest();
       request.setSearchLimit(12);
+      request.setSearchFacetAll(true);
+      request.setSearchFacetTypeFilterType("and");
+
+      // Dynamically override methods to intercept SDK hardcoded 'or' defaults and force 'and'
+      const req = request as any;
+      req.buildFacetTypeFilters = function (values: any[]) {
+        if (!values || values.length === 0) {
+          return undefined;
+        }
+        return {
+          type: "and",
+          values,
+        };
+      };
+
+      const originalAdd = req.addSearchFacetTypeFilter;
+      req.addSearchFacetTypeFilter = function (name: string, value: any) {
+        return originalAdd.call(this, name, value, "and");
+      };
+
+      if (locale) {
+        request.setSearchFilter(new FilterEqual("language", locale));
+      }
 
       if (currentKeyphrase) {
         request.setSearchQueryKeyphrase(currentKeyphrase);
@@ -602,8 +712,9 @@ function SitecoreSearchResultsInner({
 
   useEffect(() => {
     setInputValue(currentKeyphrase);
-    actions.onKeyphraseChange({ keyphrase: currentKeyphrase });
-  }, [actions, currentKeyphrase]);
+    onKeyphraseChange({ keyphrase: currentKeyphrase });
+    onPageNumberChange({ page: 1 });
+  }, [onKeyphraseChange, onPageNumberChange, currentKeyphrase]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -625,6 +736,7 @@ function SitecoreSearchResultsInner({
   const totalResults = queryResult.data?.total_item ?? 0;
   const containerStyles = params?.styles ?? "";
   const renderingId = params?.RenderingIdentifier;
+  const isSearchLoading = queryResult.isLoading || queryResult.isFetching;
 
   return (
     <section
@@ -636,7 +748,12 @@ function SitecoreSearchResultsInner({
       <div className="relative mx-auto max-w-[1380px] px-4 py-8 sm:px-6 lg:px-8 lg:py-[72px]">
         <div className="rounded-[36px] border border-slate-200 bg-white p-5 shadow-[0_30px_120px_rgba(15,23,42,0.06)] md:p-8 lg:p-10">
           <div className="grid gap-8 xl:grid-cols-[300px_minmax(0,1fr)] xl:gap-10">
-            <PreviewFacetSidebar />
+            <PreviewFacetSidebar
+              facets={queryResult.data?.facet ?? []}
+              selectedFacets={selectedFacets}
+              onFacetClick={onFacetClick}
+              onClearFilters={onClearFilters}
+            />
 
             <div className="min-w-0">
               <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.05)] md:p-8">
@@ -651,17 +768,20 @@ function SitecoreSearchResultsInner({
                   className="mt-8"
                 >
                   <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
-                    <label className="flex min-w-0 items-center gap-3 rounded-[22px] border border-slate-200 bg-white px-5 py-4 shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
-                      <Search size={18} className="shrink-0 text-slate-400" aria-hidden="true" />
-                      <input
-                        type="search"
-                        value={inputValue}
-                        onChange={(event) => setInputValue(event.target.value)}
-                        placeholder="Search by keyword, topic, author, or board setup"
-                        className="min-w-0 flex-1 bg-transparent text-lg text-slate-900 outline-none placeholder:text-slate-400 md:text-xl"
-                        aria-label="Search blog articles"
+                    <div className="relative flex items-center">
+                      <Search
+                        size={20}
+                        className="absolute left-5 text-slate-400"
+                        aria-hidden="true"
                       />
-                    </label>
+                      <input
+                        type="text"
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        placeholder="Search posts..."
+                        className="w-full rounded-[22px] border border-slate-200 bg-slate-50/50 py-4 pl-12 pr-6 text-lg text-slate-950 placeholder-slate-400 focus:border-slate-350 focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-350 transition-all font-medium"
+                      />
+                    </div>
 
                     <button
                       type="submit"
@@ -680,7 +800,7 @@ function SitecoreSearchResultsInner({
                     Search summary
                   </p>
                   <div className="mt-2 text-2xl font-semibold text-slate-950 md:text-[2.35rem]">
-                    {queryResult.isLoading
+                    {isSearchLoading
                       ? "Searching the archive..."
                       : `${totalResults} results${currentKeyphrase ? ` for "${currentKeyphrase}"` : " across the blog archive"}`}
                   </div>
@@ -709,7 +829,7 @@ function SitecoreSearchResultsInner({
                 </div>
               ) : null}
 
-              {!queryResult.isError && queryResult.isLoading ? (
+              {!queryResult.isError && isSearchLoading ? (
                 <div className="mt-6 space-y-4">
                   <SearchSkeletonCard />
                   <SearchSkeletonCard />
@@ -717,23 +837,28 @@ function SitecoreSearchResultsInner({
                 </div>
               ) : null}
 
-              {!queryResult.isLoading && !queryResult.isError && results.length === 0 ? (
-              <div className="mt-6 rounded-[32px] border border-dashed border-slate-300 bg-white/70 px-6 py-10 text-center shadow-[0_18px_60px_rgba(15,23,42,0.05)]">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-slate-950 text-white">
-                  <Search size={24} aria-hidden="true" />
+              {!isSearchLoading && !queryResult.isError && results.length === 0 ? (
+                <div className="mt-6 rounded-[32px] border border-dashed border-slate-300 bg-white/70 px-6 py-10 text-center shadow-[0_18px_60px_rgba(15,23,42,0.05)]">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-slate-950 text-white">
+                    <Search size={24} aria-hidden="true" />
+                  </div>
+                  <h2 className="mt-5 text-3xl font-semibold text-slate-950">No results found.</h2>
                 </div>
-                <h2 className="mt-5 text-3xl font-semibold text-slate-950">No results found.</h2>
-              </div>
-            ) : null}
+              ) : null}
 
-              {!queryResult.isLoading && !queryResult.isError && results.length > 0 ? (
+              {!isSearchLoading && !queryResult.isError && results.length > 0 ? (
                 <>
                   <div className="mt-6 space-y-4">
                     {results.map((item, index) => (
                       <ResultCard key={String(item.id ?? item.url ?? index)} item={item} index={index} />
                     ))}
                   </div>
-                  <PaginationPreview totalItems={totalResults} pageSize={12} />
+                  <PaginationPreview
+                    totalItems={totalResults}
+                    pageSize={12}
+                    currentPage={page}
+                    onPageChange={(pageNumber) => onPageNumberChange({ page: pageNumber })}
+                  />
                 </>
               ) : null}
 

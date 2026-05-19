@@ -13,6 +13,15 @@ type SitecoreSearchProviderProps = {
 const normalizeLocale = (locale: string) => {
   const [language = "en", country = "us"] = locale.split(/[-_]/);
 
+  // Fallback to 'en' and 'us' for the Sitecore Search API context if the language is not 'en',
+  // as the search domain may not have other locales enabled, preventing "requested locale not valid for domain" error.
+  if (language.toLowerCase() !== "en") {
+    return {
+      language: "en",
+      country: "us",
+    };
+  }
+
   return {
     language: language.toLowerCase(),
     country: country.toLowerCase(),
