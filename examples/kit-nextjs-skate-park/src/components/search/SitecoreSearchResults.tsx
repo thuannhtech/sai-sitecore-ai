@@ -2,7 +2,7 @@
 
 import React, { FormEvent, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { widget, useSearchResults, FilterEqual } from "@sitecore-search/react";
+import { widget, useSearchResults, FilterEqual, WidgetsProvider } from "@sitecore-search/react";
 import { WidgetDataType } from "@sitecore-search/data";
 import {
   ArrowRight,
@@ -894,7 +894,7 @@ export default function Default(props: SitecoreSearchResultsProps) {
     );
   }
 
-  const { env, customerKey, serviceHost, apiKey } = config.sitecoreSearch;
+  const { env, customerKey, serviceHost, apiKey, publicSuffix, trackConsent } = config.sitecoreSearch;
   
   // Strict matching to SitecoreSearchProvider's validation to prevent No QueryClient context crash
   const isValidEnv = !!env && env !== "undefined" && env !== "null" && ["prod", "prodEu", "apse2"].includes(env);
@@ -918,5 +918,16 @@ export default function Default(props: SitecoreSearchResultsProps) {
     );
   }
 
-  return <SearchResultsWidget {...props} rfkId={DEFAULT_RFK_ID} />;
+  return (
+    <WidgetsProvider
+      env={env as any}
+      customerKey={customerKey}
+      serviceHost={serviceHost}
+      apiKey={apiKey}
+      publicSuffix={publicSuffix}
+      trackConsent={trackConsent}
+    >
+      <SearchResultsWidget {...props} rfkId={DEFAULT_RFK_ID} />
+    </WidgetsProvider>
+  );
 }
