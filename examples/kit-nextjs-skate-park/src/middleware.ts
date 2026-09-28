@@ -3,6 +3,7 @@ import {
   defineMiddleware,
   AppRouterMultisiteMiddleware,
   PersonalizeMiddleware,
+  type PersonalizeMiddlewareConfig,
   RedirectsMiddleware,
   LocaleMiddleware,
 } from '@sitecore-content-sdk/nextjs/middleware';
@@ -66,7 +67,36 @@ const redirects = new RedirectsMiddleware({
   skip: () => false,
 });
 
-const personalize = new PersonalizeMiddleware({
+/**
+ * Custom PersonalizeMiddleware for Next.js App Router.
+ * In App Router, the locale is part of the URL pathname (e.g. /en, /en/products, /vi-VN).
+ * Standard PersonalizeMiddleware passes the full pathname (including /en) to getPersonalizeInfo,
+ * which causes Sitecore Edge to search for an item at routePath "/en" and return null.
+ * This class normalizes the pathname by removing the locale prefix before requesting personalize info.
+ */
+class AppRouterPersonalizeMiddleware extends PersonalizeMiddleware {
+  constructor(config: PersonalizeMiddlewareConfig) {
+    super(config);
+    if (this.personalizeService) {
+      const originalGetPersonalizeInfo = this.personalizeService.getPersonalizeInfo.bind(this.personalizeService);
+      this.personalizeService.getPersonalizeInfo = async (pathname: string, language: string, siteName: string) => {
+        let normalizedPath = pathname;
+        for (const loc of routing.locales) {
+          if (normalizedPath === `/${loc}`) {
+            normalizedPath = '/';
+            break;
+          } else if (normalizedPath.startsWith(`/${loc}/`)) {
+            normalizedPath = normalizedPath.slice(loc.length + 1);
+            break;
+          }
+        }
+        return originalGetPersonalizeInfo(normalizedPath, language, siteName);
+      };
+    }
+  }
+}
+
+const personalize = new AppRouterPersonalizeMiddleware({
   /**
    * List of sites for site resolver to work with
    */
