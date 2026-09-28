@@ -72,7 +72,7 @@ export const SkateAccountIndicator: React.FC<SkateAccountIndicatorProps> = ({ us
         <div className="flex items-center">
           <User size={20} className="text-white" strokeWidth={2} />
         </div>
-        <span className="text-[14px] font-normal text-white">
+        <span className="text-[14px] font-normal text-white header-text-label hidden sm:inline">
           {displayName}
         </span>
       </Link>
@@ -85,11 +85,14 @@ export const SkateAccountIndicator: React.FC<SkateAccountIndicatorProps> = ({ us
       onMouseEnter={() => setIsOpen(true)}
       onMouseLeave={() => setIsOpen(false)}
     >
-      <div className="flex items-center gap-[8px] cursor-pointer py-2">
+      <div
+        className="flex items-center gap-[8px] cursor-pointer py-2"
+        onClick={() => setIsOpen((prev) => !prev)}
+      >
         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white/20 backdrop-blur-md border border-white/30 transition-all group-hover:bg-white/30">
           <User size={16} className="text-white" strokeWidth={2.5} />
         </div>
-        <div className="flex flex-col">
+        <div className="hidden sm:flex flex-col account-user-info">
           <span className="text-[13px] font-bold text-white leading-none mb-0.5">
             {user?.FirstName} {user?.LastName}
           </span>
@@ -102,7 +105,7 @@ export const SkateAccountIndicator: React.FC<SkateAccountIndicatorProps> = ({ us
 
       {/* Dropdown Menu */}
       <div
-        className={`z-999 absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 transition-all duration-300 origin-top-right z-50 text-gray-900 before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-[''] ${isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
+        className={`z-999 absolute right-0 top-full mt-2 w-56 max-w-[calc(100vw-32px)] bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 transition-all duration-300 origin-top-right z-50 text-gray-900 before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-[''] ${isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
           }`}
       >
         <Link

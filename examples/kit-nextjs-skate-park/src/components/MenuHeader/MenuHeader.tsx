@@ -4,7 +4,6 @@ import {
     Image
 } from "@sitecore-content-sdk/nextjs";
 import React from 'react';
-import { Link } from 'src/i18n/navigation';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { SkateCartToggle } from '../SkateCart/SkateCartToggle';
 import { SkateAccountIndicator } from '../AccountIndicator/SkateAccountIndicator';
@@ -33,12 +32,13 @@ export const Default: React.FC<MenuHeaderBarProps> = async (props) => {
         >
             {/* Logo Section */}
             <div className="header-logo-section">
-                <Link className="header-bar_logo" id="home-page-link-logo" href="/">
+                <a className="header-bar_logo" id="home-page-link-logo" href="/">
                     <Image
                         field={fields.Image}
                         className="header-logo-img"
+                        editable={false}
                     />
-                </Link>
+                </a>
             </div>
 
             {/* Utility Section (Language & Search) */}

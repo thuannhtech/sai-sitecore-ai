@@ -20,7 +20,7 @@ export const SkateCartToggle: React.FC = () => {
           </span>
         )}
       </div>
-      <span className="text-[14px] font-normal text-white">Cart</span>
+      <span className="text-[14px] font-normal text-white header-text-label hidden sm:inline">Cart</span>
     </button>
   );
 };
