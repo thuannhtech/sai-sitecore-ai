@@ -1,4 +1,4 @@
-import { type NextRequest, type NextFetchEvent } from 'next/server';
+import { type NextRequest, type NextFetchEvent, type NextResponse } from 'next/server';
 import {
   defineMiddleware,
   AppRouterMultisiteMiddleware,
@@ -7,6 +7,8 @@ import {
   RedirectsMiddleware,
   LocaleMiddleware,
 } from '@sitecore-content-sdk/nextjs/middleware';
+import { CloudSDK } from '@sitecore-cloudsdk/core/server';
+import '@sitecore-cloudsdk/personalize/server';
 import sitesData from '.sitecore/sites.json';
 import scConfig from 'sitecore.config';
 import { routing } from './i18n/routing';
@@ -80,19 +82,71 @@ class AppRouterPersonalizeMiddleware extends PersonalizeMiddleware {
     if (this.personalizeService) {
       const originalGetPersonalizeInfo = this.personalizeService.getPersonalizeInfo.bind(this.personalizeService);
       this.personalizeService.getPersonalizeInfo = async (pathname: string, language: string, siteName: string) => {
-        let normalizedPath = pathname;
+        let normalizedPath = pathname.split('?')[0];
+
+        // Strip locale prefix (case-insensitive)
         for (const loc of routing.locales) {
-          if (normalizedPath === `/${loc}`) {
+          const lowerPath = normalizedPath.toLowerCase();
+          const lowerLoc = loc.toLowerCase();
+          if (lowerPath === `/${lowerLoc}` || lowerPath === `/${lowerLoc}/`) {
             normalizedPath = '/';
             break;
-          } else if (normalizedPath.startsWith(`/${loc}/`)) {
+          } else if (lowerPath.startsWith(`/${lowerLoc}/`)) {
             normalizedPath = normalizedPath.slice(loc.length + 1);
             break;
           }
         }
+
+        // Remove trailing slash for Sitecore Experience Edge compatibility (except root '/')
+        if (normalizedPath.length > 1 && normalizedPath.endsWith('/')) {
+          normalizedPath = normalizedPath.slice(0, -1);
+        }
+
+        if (!normalizedPath.startsWith('/')) {
+          normalizedPath = `/${normalizedPath}`;
+        }
+
         return originalGetPersonalizeInfo(normalizedPath, language, siteName);
       };
     }
+  }
+
+  /**
+   * By default, PersonalizeMiddleware skips personalization on Next.js prefetch requests.
+   * In App Router, this causes Next.js to prefetch & cache the unpersonalized default variant.
+   * Returning false ensures prefetch requests are also personalized, avoiding stale default cache on client navigation.
+   */
+  protected override isPrefetch(_req: NextRequest): boolean {
+    return false;
+  }
+
+  /**
+   * Fix cookieDomain on localhost/HTTP development so browsers don't reject the bid cookie
+   * due to Domain=localhost or SameSite=None; Secure over plain HTTP.
+   */
+  protected override async initPersonalizeServer({
+    hostname,
+    siteName,
+    request,
+    response,
+  }: {
+    hostname: string;
+    siteName: string;
+    request: NextRequest;
+    response: NextResponse;
+  }): Promise<void> {
+    const isLocalhost = hostname === 'localhost' || hostname.startsWith('localhost:');
+    const cookieDomain = isLocalhost ? undefined : hostname;
+
+    await CloudSDK(request, response, {
+      sitecoreEdgeUrl: this.config.edgeUrl,
+      sitecoreEdgeContextId: this.config.contextId,
+      siteName,
+      cookieDomain,
+      enableServerCookie: true,
+    })
+      .addPersonalize({ enablePersonalizeCookie: true })
+      .initialize();
   }
 }
 
