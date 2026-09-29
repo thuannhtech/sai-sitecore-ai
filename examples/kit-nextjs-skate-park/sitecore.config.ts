@@ -34,9 +34,9 @@ export default defineConfig({
         scope: process.env.NEXT_PUBLIC_PERSONALIZE_SCOPE,
         edgeTimeout: process.env.PERSONALIZE_MIDDLEWARE_EDGE_TIMEOUT
             ? parseInt(process.env.PERSONALIZE_MIDDLEWARE_EDGE_TIMEOUT, 10)
-            : 2000,
+            : 4000,
         cdpTimeout: process.env.PERSONALIZE_MIDDLEWARE_CDP_TIMEOUT
             ? parseInt(process.env.PERSONALIZE_MIDDLEWARE_CDP_TIMEOUT, 10)
-            : 2000,
+            : 4000,
     },
 });

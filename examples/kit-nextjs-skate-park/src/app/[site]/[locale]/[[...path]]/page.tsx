@@ -16,6 +16,9 @@ import { Page as PageData } from "@sitecore-content-sdk/nextjs";
 import { getServerUser } from 'src/lib/ordercloud/server-auth';
 import { MeUser } from "ordercloud-javascript-sdk";
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 type PageProps = {
   params: Promise<{
     site: string;

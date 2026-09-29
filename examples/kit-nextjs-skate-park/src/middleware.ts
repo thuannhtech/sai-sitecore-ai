@@ -164,8 +164,10 @@ const personalize = new AppRouterPersonalizeMiddleware({
   skip: () => false,
 });
 
-export function middleware(req: NextRequest, ev: NextFetchEvent) {
-  return defineMiddleware(locale, multisite, redirects, personalize).exec(req, ev);
+export async function middleware(req: NextRequest, ev: NextFetchEvent) {
+  const response = await defineMiddleware(locale, multisite, redirects, personalize).exec(req, ev);
+  response.headers.set('x-middleware-cache', 'no-cache');
+  return response;
 }
 
 export const config = {
