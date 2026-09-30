@@ -202,6 +202,7 @@ const BlogListing: React.FC<BlogListingProps> = (props) => {
 
         try {
             setLoading(true);
+            debugger;
             const excludedNames = ['Data'];
             const res: any = await client.getData(GET_BLOG_ITEMS_QUERY, {
                 path: rootFolder,
