@@ -28,6 +28,7 @@ import * as Navigation from 'src/components/navigation/Navigation';
 import * as MultiPromoItemdev from 'src/components/multi-promo/MultiPromoItem.dev';
 import * as MultiPromo from 'src/components/multi-promo/MultiPromo';
 import * as LanguageSwitcher from 'src/components/MenuHeader/LanguageSwitcher';
+import * as HeaderSearch from 'src/components/MenuHeader/HeaderSearch';
 import * as Menu from 'src/components/Menu/Menu';
 import * as BasicForm from 'src/components/forms/BasicForm';
 import * as BlogListing from 'src/components/BlogListing/BlogListing';
@@ -65,6 +66,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['MultiPromoItem', { ...MultiPromoItemdev }],
   ['MultiPromo', { ...MultiPromo }],
   ['LanguageSwitcher', { ...LanguageSwitcher }],
+  ['HeaderSearch', { ...HeaderSearch }],
   ['Menu', { ...Menu }],
   ['BasicForm', { ...BasicForm }],
   ['BlogListing', { ...BlogListing }],

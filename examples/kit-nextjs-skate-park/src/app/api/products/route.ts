@@ -9,6 +9,7 @@ export async function GET(req: Request) {
     const page = Number(searchParams.get('page') ?? '1')
     const pageSize = Number(searchParams.get('pageSize') ?? '8')
     const q = (searchParams.get('q') ?? '').toLowerCase()
+    const queryTerms = q.normalize('NFKD').replace(/[^\p{L}\p{N}]+/gu, ' ').trim().split(/\s+/).filter(Boolean)
     const sort = searchParams.get('sort') ?? 'name-asc'
     const locale = searchParams.get('locale') ?? 'en'
     const rootPathFromQuery = searchParams.get('rootPath')
@@ -31,9 +32,13 @@ export async function GET(req: Request) {
 
     // Filter
     if (q) {
-      items = items.filter((p) =>
-        p.name.toLowerCase().includes(q)
-      )
+      items = items.filter((p) => {
+        const searchableText = `${p.name} ${p.description}`
+          .toLowerCase()
+          .normalize('NFKD')
+          .replace(/[^\p{L}\p{N}]+/gu, ' ')
+        return queryTerms.every((term) => searchableText.includes(term))
+      })
     }
 
     // Sort

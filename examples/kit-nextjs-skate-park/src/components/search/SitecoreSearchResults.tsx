@@ -15,6 +15,7 @@ import {
 import { ComponentProps } from "src/lib/component-props";
 import { useLocale } from "next-intl";
 import config from "src/lib/config";
+import { Link } from "src/i18n/navigation";
 
 type SearchResultItem = {
   id?: string;
@@ -37,6 +38,15 @@ type SearchResultItem = {
   excerpt?: string;
   summary?: string;
   [key: string]: unknown;
+};
+
+type ProductSearchItem = {
+  name: string;
+  image?: string;
+  price?: number | null;
+  description?: string;
+  url?: string;
+  slug: string;
 };
 
 type SitecoreSearchResultsProps = ComponentProps;
@@ -668,6 +678,51 @@ function SitecoreSearchResultsInner({
   const router = useRouter();
   const currentKeyphrase = searchParams.get("q") ?? "";
   const [inputValue, setInputValue] = useState(currentKeyphrase);
+  const [productResults, setProductResults] = useState<ProductSearchItem[]>([]);
+  const [productTotal, setProductTotal] = useState(0);
+  const [isProductsLoading, setIsProductsLoading] = useState(false);
+  const [showBlog, setShowBlog] = useState(true);
+  const [showProducts, setShowProducts] = useState(true);
+
+  useEffect(() => {
+    const keyword = currentKeyphrase.trim();
+    if (!keyword) {
+      setProductResults([]);
+      setProductTotal(0);
+      setIsProductsLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setIsProductsLoading(true);
+    const params = new URLSearchParams({
+      q: keyword,
+      page: "1",
+      pageSize: "12",
+      locale: locale || "en",
+    });
+
+    fetch(`/api/products?${params.toString()}`, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error("Product search failed");
+        return response.json();
+      })
+      .then((data) => {
+        setProductResults(data.items ?? []);
+        setProductTotal(data.total ?? 0);
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") {
+          setProductResults([]);
+          setProductTotal(0);
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsProductsLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [currentKeyphrase, locale]);
 
   const {
     actions: { onKeyphraseChange, onPageNumberChange, onFacetClick, onClearFilters },
@@ -735,6 +790,9 @@ function SitecoreSearchResultsInner({
 
   const results = queryResult.data?.content ?? [];
   const totalResults = queryResult.data?.total_item ?? 0;
+  const visibleBlogResults = showBlog ? results : [];
+  const visibleProductResults = showProducts ? productResults : [];
+  const combinedTotal = (showBlog ? totalResults : 0) + (showProducts ? productTotal : 0);
   const containerStyles = params?.styles ?? "";
   const renderingId = params?.RenderingIdentifier;
   const isSearchLoading = queryResult.isLoading || queryResult.isFetching;
@@ -760,7 +818,7 @@ function SitecoreSearchResultsInner({
               <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.05)] md:p-8">
                 <div className="mt-6 max-w-3xl">
                   <h1 className="text-[2.75rem] font-semibold leading-none text-slate-950 md:text-[4.5rem]">
-                    Find blog posts fast.
+                    Search Result
                   </h1>
                 </div>
 
@@ -801,9 +859,9 @@ function SitecoreSearchResultsInner({
                     Search summary
                   </p>
                   <div className="mt-2 text-2xl font-semibold text-slate-950 md:text-[2.35rem]">
-                    {isSearchLoading
+                    {isSearchLoading || isProductsLoading
                       ? "Searching the archive..."
-                      : `${totalResults} results${currentKeyphrase ? ` for "${currentKeyphrase}"` : " across the blog archive"}`}
+                      : `${combinedTotal} results${currentKeyphrase ? ` for "${currentKeyphrase}"` : " across the archive"}`}
                   </div>
                 </div>
 
@@ -816,6 +874,18 @@ function SitecoreSearchResultsInner({
                   </span>
                 </div>
               </div>
+
+              <fieldset className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-slate-200 bg-white px-5 py-4">
+                <legend className="px-1 text-sm font-semibold text-slate-700">Type</legend>
+                <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-700">
+                  <input type="checkbox" checked={showBlog} onChange={(event) => setShowBlog(event.target.checked)} className="h-4 w-4 accent-slate-900" />
+                  Content/Blog
+                </label>
+                <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-700">
+                  <input type="checkbox" checked={showProducts} onChange={(event) => setShowProducts(event.target.checked)} className="h-4 w-4 accent-slate-900" />
+                  Product/Supply
+                </label>
+              </fieldset>
 
               {queryResult.isError ? (
                 <div className="mt-6 rounded-[28px] border border-red-200 bg-red-50 p-6 text-red-900 shadow-[0_20px_40px_rgba(239,68,68,0.08)]">
@@ -838,7 +908,7 @@ function SitecoreSearchResultsInner({
                 </div>
               ) : null}
 
-              {!isSearchLoading && !queryResult.isError && results.length === 0 ? (
+              {!isSearchLoading && !isProductsLoading && !queryResult.isError && visibleBlogResults.length === 0 && visibleProductResults.length === 0 ? (
                 <div className="mt-6 rounded-[32px] border border-dashed border-slate-300 bg-white/70 px-6 py-10 text-center shadow-[0_18px_60px_rgba(15,23,42,0.05)]">
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-slate-950 text-white">
                     <Search size={24} aria-hidden="true" />
@@ -847,19 +917,31 @@ function SitecoreSearchResultsInner({
                 </div>
               ) : null}
 
-              {!isSearchLoading && !queryResult.isError && results.length > 0 ? (
+              {!isSearchLoading && !isProductsLoading && (visibleBlogResults.length > 0 || visibleProductResults.length > 0) ? (
                 <>
                   <div className="mt-6 space-y-4">
-                    {results.map((item, index) => (
-                      <ResultCard key={String(item.id ?? item.url ?? index)} item={item} index={index} />
+                    {visibleBlogResults.map((item, index) => (
+                      <ResultCard key={`blog-${String(item.id ?? item.url ?? index)}`} item={item} index={index} />
+                    ))}
+                    {visibleProductResults.map((product) => (
+                      <article key={`product-${product.slug}`} className="flex flex-col gap-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:flex-row">
+                        {product.image ? <img src={product.image} alt={product.name} className="h-48 w-full rounded-2xl object-cover sm:w-64" /> : null}
+                        <div className="min-w-0 flex-1">
+                          <p className="m-0 text-xs font-semibold uppercase tracking-wider text-sky-700">Product/Supply</p>
+                          <h2 className="mt-2 text-2xl font-semibold text-slate-950">{product.name}</h2>
+                          {product.description ? <p className="mt-2 line-clamp-3 text-slate-600">{product.description}</p> : null}
+                          {product.price != null ? <p className="mt-3 font-semibold text-slate-900">${product.price.toFixed(2)}</p> : null}
+                          {product.url ? <Link href={product.url as any} className="mt-3 inline-flex items-center gap-2 font-semibold text-sky-700 hover:underline">View product <ArrowRight size={16} /></Link> : null}
+                        </div>
+                      </article>
                     ))}
                   </div>
-                  <PaginationPreview
+                  {showBlog && visibleBlogResults.length > 0 ? <PaginationPreview
                     totalItems={totalResults}
                     pageSize={12}
                     currentPage={page}
                     onPageChange={(pageNumber) => onPageNumberChange({ page: pageNumber })}
-                  />
+                  /> : null}
                 </>
               ) : null}
 
