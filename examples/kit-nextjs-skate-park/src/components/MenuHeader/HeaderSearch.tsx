@@ -2,13 +2,19 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 export function HeaderSearch() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations('sai-sitecore');
+
+  const translate = (keys: string[], fallback: string) => {
+    const key = keys.find((candidate) => t.has(candidate));
+    return key ? t(key) : fallback;
+  };
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -30,7 +36,7 @@ export function HeaderSearch() {
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
-        <span>Search</span>
+        <span>{translate(['HEADER_SEARCH', 'HEADER_SEARCH_BUTTON', 'HEADER_SEARCH'], 'Search')}</span>
       </button>
       {isOpen && (
         <div className="header-search-panel" id="header-search-panel">
@@ -40,10 +46,10 @@ export function HeaderSearch() {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search here..."
-              aria-label="Search"
+              placeholder={translate(['HEADER_SEARCH_PLACEHOLDER', 'PLACEHOLDER_SEARCH'], 'Search here...')}
+              aria-label={translate(['HEADER_SEARCH', 'HEADER_SEARCH_BUTTON', 'HEADER_SEARCH'], 'Search')}
             />
-            <button type="submit">Search</button>
+            <button type="submit">{translate(['HEADER_SEARCH_BUTTON', 'HEADER_SEARCH', 'HEADER_SEARCH'], 'Search')}</button>
           </form>
         </div>
       )}

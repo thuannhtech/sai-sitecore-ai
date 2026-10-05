@@ -1,7 +1,8 @@
 "use client";
 
-import React, { FormEvent, useEffect, useState } from "react";
+import React, { FormEvent, useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { widget, useSearchResults, FilterEqual, WidgetsProvider } from "@sitecore-search/react";
 import { WidgetDataType } from "@sitecore-search/data";
 import {
@@ -15,7 +16,6 @@ import {
 import { ComponentProps } from "src/lib/component-props";
 import { useLocale } from "next-intl";
 import config from "src/lib/config";
-import { Link } from "src/i18n/navigation";
 
 type SearchResultItem = {
   id?: string;
@@ -41,21 +41,49 @@ type SearchResultItem = {
 };
 
 type ProductSearchItem = {
-  name: string;
-  image?: string;
-  price?: number | null;
+  id?: string;
+  name?: string;
+  language?: string;
+  image_url?: string | null;
+  price?: number | string | null;
   description?: string;
   url?: string;
-  slug: string;
+  product_url?: string;
+  source_id?: string;
+  category_names?: string[];
+};
+
+type ProductSearchWidgetProps = {
+  rfkId: string;
+  onResults: (
+    items: ProductSearchItem[],
+    total: number,
+    loading: boolean,
+    facets: FacetGroup[],
+    selectedFacets: Array<any>,
+    facetActions: { onFacetClick: (params: any) => void; onClearFilters: () => void }
+  ) => void;
 };
 
 type SitecoreSearchResultsProps = ComponentProps;
 
 type SitecoreSearchResultsInnerProps = SitecoreSearchResultsProps & {
   rfkId: string;
+  productResults: ProductSearchItem[];
+  productTotal: number;
+  isProductsLoading: boolean;
+  productFacets: FacetGroup[];
+  productSelectedFacets: Array<any>;
+  productFacetActions: { onFacetClick: (params: any) => void; onClearFilters: () => void };
 };
 
 const DEFAULT_RFK_ID = "TEST";
+
+function dictionaryText(t: any, key: string, fallback: string, values?: Record<string, string | number>) {
+  debugger;
+  var result = t.has(key) ? t(key, values) : fallback;
+  return result;
+}
 
 type FacetValue = {
   id: string;
@@ -72,7 +100,9 @@ type FacetGroup = {
 type PreviewFacetSidebarProps = {
   facets: FacetGroup[];
   selectedFacets: Array<any>;
+  productSelectedFacets: Array<any>;
   onFacetClick: (params: any) => void;
+  onProductFacetClick: (params: any) => void;
   onClearFilters: () => void;
 };
 
@@ -84,6 +114,7 @@ type PaginationProps = {
 };
 
 function PaginationPreview({ totalItems, pageSize, currentPage, onPageChange }: PaginationProps) {
+  const t = useTranslations("SAI-Sitecore");
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
   const pages: number[] = [];
@@ -103,7 +134,7 @@ function PaginationPreview({ totalItems, pageSize, currentPage, onPageChange }: 
 
   return (
     <nav
-      aria-label="Pagination"
+      aria-label={dictionaryText(t, "SEARCH_PAGINATION_LABEL", "Pagination")}
       className="mt-8 flex flex-wrap items-center justify-center gap-3 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.05)]"
     >
       <button
@@ -112,7 +143,7 @@ function PaginationPreview({ totalItems, pageSize, currentPage, onPageChange }: 
         onClick={() => onPageChange(currentPage - 1)}
         className="inline-flex items-center rounded-full border border-slate-200 px-5 py-3 text-lg font-semibold text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition"
       >
-        Previous
+        {dictionaryText(t, "SEARCH_PREVIOUS", "Previous")}
       </button>
       {pages.map((page) => (
         <button
@@ -146,7 +177,7 @@ function PaginationPreview({ totalItems, pageSize, currentPage, onPageChange }: 
         onClick={() => onPageChange(currentPage + 1)}
         className="inline-flex items-center rounded-full border border-slate-200 px-5 py-3 text-lg font-semibold text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition"
       >
-        Next
+        {dictionaryText(t, "SEARCH_NEXT", "Next")}
       </button>
     </nav>
   );
@@ -401,11 +432,15 @@ function formatDate(value: unknown): string | null {
 function PreviewFacetSidebar({
   facets = [],
   selectedFacets = [],
+  productSelectedFacets = [],
   onFacetClick,
+  onProductFacetClick,
   onClearFilters,
 }: PreviewFacetSidebarProps) {
+  const t = useTranslations("SAI-Sitecore");
   const isFacetChecked = (facetId: string, facetValueId: string) => {
-    return selectedFacets.some(
+    const facetSelection = facetId === "category_names" ? productSelectedFacets : selectedFacets;
+    return facetSelection.some(
       (sf) => sf.facetId === facetId && sf.facetValueId === facetValueId
     );
   };
@@ -417,9 +452,12 @@ function PreviewFacetSidebar({
     facetValueIndex: number,
     checked: boolean
   ) => {
-    onFacetClick({
+    const handler = facetId === "category_names" ? onProductFacetClick : onFacetClick;
+    handler({
       facetId,
-      facetIndex,
+      // The merged sidebar also contains Blog facets; Product's category facet
+      // is the first (and currently only) requested Product facet.
+      facetIndex: facetId === "category_names" ? 0 : facetIndex,
       facetValueId,
       facetValueIndex,
       checked,
@@ -431,22 +469,28 @@ function PreviewFacetSidebar({
     (group) => group.name !== "blog_tags_ids" && group.name !== "categories"
   );
 
+  const translate = (keys: string[], fallback: string) => {
+    const key = keys.find((candidate) => t.has(candidate));
+    return key ? t(key) : fallback;
+  };
+
   const getFacetLabel = (name: string, label: string) => {
-    if (name === "blog_tags" || name === "blogTags") return "blogTags";
-    if (name === "categories_names") return "categories_names";
+    if (name === "blog_tags" || name === "blogTags") return "Tags";
+    if (name === "categories_names") return "Categories";
+    if (name === "category_names") return dictionaryText(t, "SEARCH_PRODUCT_CATEGORIES", "CPU Categories");
     return label || name;
   };
 
-  const totalActiveFilters = selectedFacets.length;
+  const totalActiveFilters = selectedFacets.length + productSelectedFacets.length;
 
   return (
     <aside className="rounded-[28px] border border-white/65 bg-white/85 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur xl:sticky xl:top-8">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="m-0 text-base font-semibold uppercase tracking-[0.22em] text-cyan-700">
-            Filters
+            {dictionaryText(t, "SEARCH_FILTERS", "Filters")}
           </p>
-          <h2 className="mt-2 text-3xl font-bold text-slate-900">Browse topics</h2>
+          <h2 className="mt-2 text-3xl font-bold text-slate-900">{translate(['SEARCH_BROWSE_TOPICS'], 'Browse topics')}</h2>
         </div>
         <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 text-white">
           <SlidersHorizontal size={20} aria-hidden="true" />
@@ -456,21 +500,23 @@ function PreviewFacetSidebar({
       {totalActiveFilters > 0 && (
         <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-cyan-50/50 border border-cyan-100 p-4">
           <span className="text-xl font-bold text-cyan-800">
-            {totalActiveFilters} active filter{totalActiveFilters > 1 ? "s" : ""}
+            {totalActiveFilters > 1
+              ? dictionaryText(t, "SEARCH_ACTIVE_FILTERS", `${totalActiveFilters} active filters`, { count: totalActiveFilters })
+              : dictionaryText(t, "SEARCH_ACTIVE_FILTER", `${totalActiveFilters} active filter`, { count: totalActiveFilters })}
           </span>
           <button
             type="button"
             onClick={onClearFilters}
             className="text-xl font-bold text-cyan-855 underline hover:text-cyan-950 transition cursor-pointer"
           >
-            Clear all
+            {dictionaryText(t, "SEARCH_CLEAR_ALL", "Clear all")}
           </button>
         </div>
       )}
 
       <div className="mt-6 space-y-6">
         {visibleFacets.length === 0 ? (
-          <p className="text-xl text-slate-500 italic">No filters available for this query.</p>
+          <p className="text-xl text-slate-500 italic">{dictionaryText(t, "SEARCH_NO_FILTERS", "No filters available for this query.")}</p>
         ) : (
           visibleFacets.map((group, groupIdx) => (
             <section key={group.name} className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-5">
@@ -549,6 +595,7 @@ function ResultCard({
   item: SearchResultItem;
   index: number;
 }) {
+  const t = useTranslations("sai-sitecore");
   const title = String(item.title ?? item.name ?? item.id ?? `Result ${index + 1}`);
   const url = item.url ? String(item.url) : undefined;
   const description = item.description
@@ -609,7 +656,7 @@ function ResultCard({
             <div className="mt-5 space-y-3">
               {categories.length > 0 ? (
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="text-xl font-semibold text-slate-500">Categories:</span>
+                  <span className="text-xl font-semibold text-slate-500">{dictionaryText(t, "SEARCH_CATEGORIES", "Categories:")}</span>
                   {categories.map((category) => (
                     <span
                       key={category}
@@ -623,7 +670,7 @@ function ResultCard({
 
               {tags.length > 0 ? (
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="text-xl font-semibold text-slate-500">Tags:</span>
+                  <span className="text-xl font-semibold text-slate-500">{dictionaryText(t, "SEARCH_TAGS", "Tags:")}</span>
                   {tags.map((tag) => (
                     <span
                       key={tag}
@@ -658,7 +705,7 @@ function ResultCard({
               href={url}
               className="mt-5 inline-flex items-center gap-2 self-start rounded-full bg-slate-950 px-5 py-3.5 text-xl font-semibold text-white no-underline transition hover:bg-cyan-800"
             >
-              Read article
+              {dictionaryText(t, "SEARCH_READ_ARTICLE", "Read article")}
               <ArrowRight size={18} aria-hidden="true" />
             </a>
           ) : null}
@@ -671,58 +718,22 @@ function ResultCard({
 function SitecoreSearchResultsInner({
   params,
   rfkId,
+  productResults,
+  productTotal,
+  isProductsLoading,
+  productFacets,
+  productSelectedFacets,
+  productFacetActions,
 }: SitecoreSearchResultsInnerProps) {
+  const t = useTranslations("sai-sitecore");
   const locale = useLocale();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
   const currentKeyphrase = searchParams.get("q") ?? "";
   const [inputValue, setInputValue] = useState(currentKeyphrase);
-  const [productResults, setProductResults] = useState<ProductSearchItem[]>([]);
-  const [productTotal, setProductTotal] = useState(0);
-  const [isProductsLoading, setIsProductsLoading] = useState(false);
   const [showBlog, setShowBlog] = useState(true);
   const [showProducts, setShowProducts] = useState(true);
-
-  useEffect(() => {
-    const keyword = currentKeyphrase.trim();
-    if (!keyword) {
-      setProductResults([]);
-      setProductTotal(0);
-      setIsProductsLoading(false);
-      return;
-    }
-
-    const controller = new AbortController();
-    setIsProductsLoading(true);
-    const params = new URLSearchParams({
-      q: keyword,
-      page: "1",
-      pageSize: "12",
-      locale: locale || "en",
-    });
-
-    fetch(`/api/products?${params.toString()}`, { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error("Product search failed");
-        return response.json();
-      })
-      .then((data) => {
-        setProductResults(data.items ?? []);
-        setProductTotal(data.total ?? 0);
-      })
-      .catch((error) => {
-        if (error.name !== "AbortError") {
-          setProductResults([]);
-          setProductTotal(0);
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setIsProductsLoading(false);
-      });
-
-    return () => controller.abort();
-  }, [currentKeyphrase, locale]);
 
   const {
     actions: { onKeyphraseChange, onPageNumberChange, onFacetClick, onClearFilters },
@@ -766,6 +777,10 @@ function SitecoreSearchResultsInner({
     },
   });
 
+  // The Search API Explorer sends one entity per request. Keep the Blog request
+  // in its own SDK debounce group so it is never batched with Product under TEST.
+  query.setDebounceBy(DEFAULT_RFK_ID, "blogitem");
+
   useEffect(() => {
     setInputValue(currentKeyphrase);
     onKeyphraseChange({ keyphrase: currentKeyphrase });
@@ -808,17 +823,25 @@ function SitecoreSearchResultsInner({
         <div className="rounded-[36px] border border-slate-200 bg-white p-5 shadow-[0_30px_120px_rgba(15,23,42,0.06)] md:p-8 lg:p-10">
           <div className="grid gap-8 xl:grid-cols-[300px_minmax(0,1fr)] xl:gap-10">
             <PreviewFacetSidebar
-              facets={queryResult.data?.facet ?? []}
+              facets={[
+                ...(queryResult.data?.facet ?? []),
+                ...productFacets.filter((facet) => facet.name === "category_names"),
+              ]}
               selectedFacets={selectedFacets}
+              productSelectedFacets={productSelectedFacets}
               onFacetClick={onFacetClick}
-              onClearFilters={onClearFilters}
+              onProductFacetClick={productFacetActions.onFacetClick}
+              onClearFilters={() => {
+                onClearFilters();
+                productFacetActions.onClearFilters();
+              }}
             />
 
             <div className="min-w-0">
               <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.05)] md:p-8">
                 <div className="mt-6 max-w-3xl">
                   <h1 className="text-[2.75rem] font-semibold leading-none text-slate-950 md:text-[4.5rem]">
-                    Search Result
+                    {dictionaryText(t, "SEARCH_PAGE_TITLE", "Search Result")}
                   </h1>
                 </div>
 
@@ -837,7 +860,7 @@ function SitecoreSearchResultsInner({
                         type="text"
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
-                        placeholder="Search posts..."
+                        placeholder={dictionaryText(t, "SEARCH_INPUT_PLACEHOLDER", "Search...")}
                         className="w-full rounded-[22px] border border-slate-200 bg-slate-50/50 py-4 pl-12 pr-6 text-lg text-slate-950 placeholder-slate-400 focus:border-slate-350 focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-350 transition-all font-medium"
                       />
                     </div>
@@ -846,7 +869,7 @@ function SitecoreSearchResultsInner({
                       type="submit"
                       className="inline-flex h-full cursor-pointer items-center justify-center gap-2 rounded-[22px] bg-slate-950 px-6 py-4 text-lg font-semibold text-white transition hover:bg-slate-800"
                     >
-                      Search
+                      {dictionaryText(t, "SEARCH_BUTTON", "Search")}
                       <ArrowRight size={18} aria-hidden="true" />
                     </button>
                   </div>
@@ -856,46 +879,47 @@ function SitecoreSearchResultsInner({
               <div className="mt-6 flex flex-col gap-4 rounded-[28px] border border-white/70 bg-white/85 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur md:flex-row md:items-center md:justify-between md:p-5">
                 <div>
                   <p className="m-0 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
-                    Search summary
+                    {dictionaryText(t, "SEARCH_SUMMARY", "Search summary")}
                   </p>
                   <div className="mt-2 text-2xl font-semibold text-slate-950 md:text-[2.35rem]">
                     {isSearchLoading || isProductsLoading
-                      ? "Searching the archive..."
-                      : `${combinedTotal} results${currentKeyphrase ? ` for "${currentKeyphrase}"` : " across the archive"}`}
+                      ? dictionaryText(t, "SEARCH_LOADING", "Searching the archive...")
+                      : currentKeyphrase
+                        ? dictionaryText(t, "SEARCH_RESULTS_FOR_KEYWORD", `${combinedTotal} results for "${currentKeyphrase}"`, { count: combinedTotal, keyword: currentKeyphrase })
+                        : dictionaryText(t, "SEARCH_RESULTS_ARCHIVE", `${combinedTotal} results across the archive`, { count: combinedTotal })}
                   </div>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
                   <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-lg font-medium text-slate-600">
-                    Cards
+                    {dictionaryText(t, "SEARCH_CARDS", "Cards")}
                   </span>
                   <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-lg font-medium text-slate-600">
-                    Most relevant
+                    {dictionaryText(t, "SEARCH_MOST_RELEVANT", "Most relevant")}
                   </span>
                 </div>
               </div>
 
               <fieldset className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-slate-200 bg-white px-5 py-4">
-                <legend className="px-1 text-sm font-semibold text-slate-700">Type</legend>
+                <legend className="px-1 text-sm font-semibold text-slate-700">{dictionaryText(t, "SEARCH_TYPE", "Type")}</legend>
                 <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-700">
                   <input type="checkbox" checked={showBlog} onChange={(event) => setShowBlog(event.target.checked)} className="h-4 w-4 accent-slate-900" />
-                  Content/Blog
+                  {dictionaryText(t, "SEARCH_CONTENT_BLOG", "Content/Blog")}
                 </label>
                 <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-700">
                   <input type="checkbox" checked={showProducts} onChange={(event) => setShowProducts(event.target.checked)} className="h-4 w-4 accent-slate-900" />
-                  Product/Supply
+                  {dictionaryText(t, "SEARCH_PRODUCT_SUPPLY", "Product/Supply")}
                 </label>
               </fieldset>
 
               {queryResult.isError ? (
                 <div className="mt-6 rounded-[28px] border border-red-200 bg-red-50 p-6 text-red-900 shadow-[0_20px_40px_rgba(239,68,68,0.08)]">
                   <p className="m-0 text-sm font-semibold uppercase tracking-[0.2em] text-red-700">
-                    Search error
+                    {dictionaryText(t, "SEARCH_ERROR_LABEL", "Search error")}
                   </p>
-                  <h2 className="mt-3 text-2xl font-semibold">The search service did not respond.</h2>
+                  <h2 className="mt-3 text-2xl font-semibold">{dictionaryText(t, "SEARCH_ERROR_TITLE", "The search service did not respond.")}</h2>
                   <p className="mt-2 max-w-2xl text-sm leading-7 text-red-800/90">
-                    Keep the shell visible, show a clear fallback, and prompt the user to retry
-                    without losing their keyword.
+                    {dictionaryText(t, "SEARCH_ERROR_BODY", "Please try again without losing your keyword.")}
                   </p>
                 </div>
               ) : null}
@@ -913,7 +937,7 @@ function SitecoreSearchResultsInner({
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-slate-950 text-white">
                     <Search size={24} aria-hidden="true" />
                   </div>
-                  <h2 className="mt-5 text-3xl font-semibold text-slate-950">No results found.</h2>
+                  <h2 className="mt-5 text-3xl font-semibold text-slate-950">{dictionaryText(t, "SEARCH_NO_RESULTS", "No results found.")}</h2>
                 </div>
               ) : null}
 
@@ -923,15 +947,15 @@ function SitecoreSearchResultsInner({
                     {visibleBlogResults.map((item, index) => (
                       <ResultCard key={`blog-${String(item.id ?? item.url ?? index)}`} item={item} index={index} />
                     ))}
-                    {visibleProductResults.map((product) => (
-                      <article key={`product-${product.slug}`} className="flex flex-col gap-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:flex-row">
-                        {product.image ? <img src={product.image} alt={product.name} className="h-48 w-full rounded-2xl object-cover sm:w-64" /> : null}
+                    {visibleProductResults.map((product, index) => (
+                      <article key={`product-${product.id ?? product.source_id ?? index}`} className="flex flex-col gap-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:flex-row">
+                        {product.image_url ? <a href={product.product_url || `/${locale}/products/${encodeURIComponent(product.name!)}`} className="mt-3 inline-flex items-center gap-2 font-semibold text-sky-700 hover:underline"><img src={product.image_url} alt={product.name ?? "Product"} className="h-48 w-full rounded-2xl object-cover sm:w-64" /></a> : null}
                         <div className="min-w-0 flex-1">
-                          <p className="m-0 text-xs font-semibold uppercase tracking-wider text-sky-700">Product/Supply</p>
-                          <h2 className="mt-2 text-2xl font-semibold text-slate-950">{product.name}</h2>
+                          <p className="m-0 text-xs font-semibold uppercase tracking-wider text-sky-700">{dictionaryText(t, "SEARCH_PRODUCT_SUPPLY", "Product/Supply")}</p>
+                          <h2 className="mt-2 text-2xl font-semibold text-slate-950">{product.name ?? dictionaryText(t, "SEARCH_PRODUCT_FALLBACK", "Product")}</h2>
                           {product.description ? <p className="mt-2 line-clamp-3 text-slate-600">{product.description}</p> : null}
-                          {product.price != null ? <p className="mt-3 font-semibold text-slate-900">${product.price.toFixed(2)}</p> : null}
-                          {product.url ? <Link href={product.url as any} className="mt-3 inline-flex items-center gap-2 font-semibold text-sky-700 hover:underline">View product <ArrowRight size={16} /></Link> : null}
+                          {product.price != null && Number.isFinite(Number(product.price)) ? <p className="mt-3 font-semibold text-slate-900">${Number(product.price).toFixed(2)}</p> : null}
+                          {(product.product_url || product.name) ? <a href={product.product_url || `/${locale}/products/${encodeURIComponent(product.name!)}`} className="mt-3 inline-flex items-center gap-2 font-semibold text-sky-700 hover:underline">{dictionaryText(t, "SEARCH_VIEW_PRODUCT", "View product")} <ArrowRight size={16} /></a> : null}
                         </div>
                       </article>
                     ))}
@@ -954,6 +978,71 @@ function SitecoreSearchResultsInner({
   );
 }
 
+function ProductSearchResultsInner({
+  rfkId,
+  onResults,
+}: ProductSearchWidgetProps) {
+  const locale = useLocale();
+  const searchParams = useSearchParams();
+  const currentKeyphrase = searchParams.get("q") ?? "";
+
+  const {
+    actions: { onKeyphraseChange, onFacetClick, onClearFilters },
+    state: { selectedFacets },
+    queryResult,
+    query,
+    widgetRef,
+  } = useSearchResults<ProductSearchItem>({
+    query: (requestQuery) => {
+      const request = requestQuery.getRequest();
+      request.setSearchLimit(12);
+      request.setSearchFacetType("category_names", { max: 50 });
+
+      // The index contains one document per language. Keep only the active
+      // locale so localized copies do not appear as duplicate products.
+      if (locale) {
+        request.setSearchFilter(new FilterEqual("language", locale));
+      }
+
+      if (currentKeyphrase) {
+        request.setSearchQueryKeyphrase(currentKeyphrase);
+      } else {
+        request.resetSearchQueryKeyphrase();
+      }
+    },
+  });
+
+  // TEST is valid for Product and Blog as separate API Explorer requests.
+  // Separate debounce groups prevent the SDK from merging the two entities
+  // into a single request with duplicate RFK IDs.
+  query.setDebounceBy(DEFAULT_RFK_ID, "product");
+
+  useEffect(() => {
+    onKeyphraseChange({ keyphrase: currentKeyphrase });
+  }, [currentKeyphrase, onKeyphraseChange]);
+
+  const isLoading = queryResult.isLoading || queryResult.isFetching;
+
+  useEffect(() => {
+    onResults(
+      queryResult.data?.content ?? [],
+      queryResult.data?.total_item ?? 0,
+      isLoading,
+      queryResult.data?.facet ?? [],
+      selectedFacets,
+      { onFacetClick, onClearFilters }
+    );
+  }, [queryResult.data, isLoading, onResults, selectedFacets, onFacetClick, onClearFilters]);
+
+  return <div ref={widgetRef} data-rfkid={rfkId} className="hidden" aria-hidden="true" />;
+}
+
+const ProductSearchWidget = widget(
+  ProductSearchResultsInner,
+  WidgetDataType.SEARCH_RESULTS,
+  "product"
+);
+
 const SearchResultsWidget = widget(
   SitecoreSearchResultsInner,
   WidgetDataType.SEARCH_RESULTS,
@@ -961,7 +1050,35 @@ const SearchResultsWidget = widget(
 );
 
 export default function Default(props: SitecoreSearchResultsProps) {
+  const t = useTranslations("sai-sitecore");
   const [mounted, setMounted] = useState(false);
+  const [productResults, setProductResults] = useState<ProductSearchItem[]>([]);
+  const [productTotal, setProductTotal] = useState(0);
+  const [isProductsLoading, setIsProductsLoading] = useState(false);
+  const [productFacets, setProductFacets] = useState<FacetGroup[]>([]);
+  const [productSelectedFacets, setProductSelectedFacets] = useState<Array<any>>([]);
+  const [productFacetActions, setProductFacetActions] = useState({
+    onFacetClick: (_params: any) => {},
+    onClearFilters: () => {},
+  });
+  const handleProductResults = useCallback(
+    (
+      items: ProductSearchItem[],
+      total: number,
+      loading: boolean,
+      facets: FacetGroup[],
+      selectedFacets: Array<any>,
+      facetActions: { onFacetClick: (params: any) => void; onClearFilters: () => void }
+    ) => {
+      setProductResults(items);
+      setProductTotal(total);
+      setIsProductsLoading(loading);
+      setProductFacets(facets);
+      setProductSelectedFacets(selectedFacets);
+      setProductFacetActions(facetActions);
+    },
+    []
+  );
 
   useEffect(() => {
     setMounted(true);
@@ -1002,8 +1119,8 @@ export default function Default(props: SitecoreSearchResultsProps) {
                 <aside className="rounded-[28px] border border-white/65 bg-white/85 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur xl:sticky xl:top-8">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="m-0 text-base font-semibold uppercase tracking-[0.22em] text-cyan-700">Filters</p>
-                      <h2 className="mt-2 text-3xl font-bold text-slate-900">Browse topics</h2>
+                      <p className="m-0 text-base font-semibold uppercase tracking-[0.22em] text-cyan-700">{dictionaryText(t, "SEARCH_FILTERS", "Filters")}</p>
+                      <h2 className="mt-2 text-3xl font-bold text-slate-900">{dictionaryText(t, "SEARCH_BROWSE_TOPICS", "Browse topics")}</h2>
                     </div>
                     <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 text-white">
                       <SlidersHorizontal size={20} aria-hidden="true" />
@@ -1039,22 +1156,22 @@ export default function Default(props: SitecoreSearchResultsProps) {
                 {/* Mock Search Results */}
                 <div className="min-w-0">
                   <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_16px_40px_rgba(15,23,42,0.05)] md:p-8">
-                    <h1 className="text-[2.75rem] font-semibold leading-none text-slate-950 md:text-[4.5rem]">Find blog posts fast.</h1>
+                    <h1 className="text-[2.75rem] font-semibold leading-none text-slate-950 md:text-[4.5rem]">{dictionaryText(t, "SEARCH_PAGE_TITLE", "Find blog posts fast.")}</h1>
                     <div className="mt-8 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
                       <div className="relative flex items-center">
                         <Search size={20} className="absolute left-5 text-slate-400" />
-                        <input type="text" placeholder="Search posts..." defaultValue="Skateboarding" className="w-full rounded-[22px] border border-slate-200 bg-slate-50/50 py-4 pl-12 pr-6 text-lg text-slate-950 transition-all font-medium" readOnly />
+                      <input type="text" placeholder={dictionaryText(t, "SEARCH_INPUT_PLACEHOLDER", "Search posts...")} defaultValue="Skateboarding" className="w-full rounded-[22px] border border-slate-200 bg-slate-50/50 py-4 pl-12 pr-6 text-lg text-slate-950 transition-all font-medium" readOnly />
                       </div>
                       <button className="inline-flex h-full items-center justify-center gap-2 rounded-[22px] bg-slate-950 px-6 py-4 text-lg font-semibold text-white cursor-not-allowed">
-                        Search <ArrowRight size={18} />
+                        {dictionaryText(t, "HEADER_SEARCH", "Search")} <ArrowRight size={18} />
                       </button>
                     </div>
                   </div>
 
                   <div className="mt-6 flex flex-col gap-4 rounded-[28px] border border-white/70 bg-white/85 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur md:flex-row md:items-center md:justify-between md:p-5">
                     <div>
-                      <p className="m-0 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Search summary</p>
-                      <div className="mt-2 text-2xl font-semibold text-slate-950 md:text-[2.35rem]">2 results for "Skateboarding"</div>
+                      <p className="m-0 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{dictionaryText(t, "SEARCH_SUMMARY", "Search summary")}</p>
+                      <div className="mt-2 text-2xl font-semibold text-slate-950 md:text-[2.35rem]">{dictionaryText(t, "SEARCH_RESULTS_FOR_KEYWORD", '2 results for "Skateboarding"', { count: 2, keyword: "Skateboarding" })}</div>
                     </div>
                   </div>
 
@@ -1070,7 +1187,7 @@ export default function Default(props: SitecoreSearchResultsProps) {
                           <p className="mt-4 max-w-3xl text-xl leading-8 text-slate-600">Learn the essential steps to master the kickflip, from foot placement to landing safely on your board.</p>
                           <div className="mt-5 space-y-3">
                             <div className="flex flex-wrap items-center gap-3">
-                              <span className="text-xl font-semibold text-slate-500">Categories:</span>
+                              <span className="text-xl font-semibold text-slate-500">{dictionaryText(t, "SEARCH_CATEGORIES", "Categories:")}</span>
                               <span className="inline-flex items-center rounded-full border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-xl font-semibold text-cyan-800">marketing-automation</span>
                             </div>
                           </div>
@@ -1089,7 +1206,7 @@ export default function Default(props: SitecoreSearchResultsProps) {
                           <p className="mt-4 max-w-3xl text-xl leading-8 text-slate-600">A comprehensive guide to choosing your first skateboard, with reviews of top brands and setups.</p>
                           <div className="mt-5 space-y-3">
                             <div className="flex flex-wrap items-center gap-3">
-                              <span className="text-xl font-semibold text-slate-500">Categories:</span>
+                              <span className="text-xl font-semibold text-slate-500">{dictionaryText(t, "SEARCH_CATEGORIES", "Categories:")}</span>
                               <span className="inline-flex items-center rounded-full border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-xl font-semibold text-cyan-800">personalization</span>
                             </div>
                           </div>
@@ -1110,9 +1227,9 @@ export default function Default(props: SitecoreSearchResultsProps) {
         <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600">
           <SlidersHorizontal size={28} />
         </div>
-        <h2 className="mt-6 text-3xl font-bold text-slate-900">Search is currently unavailable</h2>
+        <h2 className="mt-6 text-3xl font-bold text-slate-900">{dictionaryText(t, "SEARCH_UNAVAILABLE_TITLE", "Search is currently unavailable")}</h2>
         <p className="mt-3 text-xl text-slate-500 max-w-xl mx-auto leading-relaxed">
-          The Sitecore Search integration requires environment configuration. Please set up the search environment variables on your hosting platform and trigger a new redeployment.
+          {dictionaryText(t, "SEARCH_UNAVAILABLE_DESCRIPTION", "The Sitecore Search integration requires environment configuration. Please set up the search environment variables on your hosting platform and trigger a new redeployment.")}
         </p>
       </div>
     );
@@ -1127,7 +1244,20 @@ export default function Default(props: SitecoreSearchResultsProps) {
       publicSuffix={publicSuffix}
       trackConsent={trackConsent}
     >
-      <SearchResultsWidget {...props} rfkId={DEFAULT_RFK_ID} />
+      <>
+        <SearchResultsWidget
+          {...props}
+          rfkId={DEFAULT_RFK_ID}
+          productResults={productResults}
+          productTotal={productTotal}
+          isProductsLoading={isProductsLoading}
+          productFacets={productFacets}
+          productSelectedFacets={productSelectedFacets}
+          productFacetActions={productFacetActions}
+        />
+        {/* Keep both entity widgets as siblings: the SDK reuses a nested context when RFK IDs match. */}
+        <ProductSearchWidget rfkId={DEFAULT_RFK_ID} onResults={handleProductResults} />
+      </>
     </WidgetsProvider>
   );
 }
