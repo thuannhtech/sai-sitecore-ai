@@ -88,40 +88,132 @@
   top: 100%;
   left: 0;
   width: 100%;
-  min-height: 74px;
-  padding: 15px 24px;
+  max-height: calc(100vh - 70px);
+  padding: 20px 24px 24px;
   box-sizing: border-box;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   justify-content: center;
-  background: #dce0ee;
+  gap: 10px;
+  overflow-y: auto;
+  background: #fff;
+  box-shadow: 0 16px 34px rgb(15 23 42 / 16%);
 }
 
 .header-search-form {
   display: flex;
   width: min(1032px, 100%);
   height: 43px;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 5%);
 }
 
 .header-search-form input {
   flex: 1;
   min-width: 0;
   padding: 0 10px;
-  border: 1px solid #111;
-  border-right: 0;
+  border: 0;
   border-radius: 0;
   background: #fff;
   color: #222;
-  font: 13px Arial, sans-serif;
+  font: 14px Arial, sans-serif;
+  outline: 0;
 }
 
 .header-search-form button {
-  width: 80px;
+  min-width: 96px;
   border: 0;
   border-radius: 0;
   background: #17349f;
   color: white;
   font: 600 12px Arial, sans-serif;
+  cursor: pointer;
+}
+
+.sitecore-preview-search-panel-content {
+  width: min(1032px, 100%);
+  margin: 0 auto;
+}
+
+.sitecore-preview-search-results {
+  position: relative;
+  z-index: 1000;
+  width: min(1032px, 100%);
+  margin: 0 auto;
+  max-height: min(62vh, 520px);
+  overflow-y: auto;
+  border: 1px solid #d8deeb;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgb(15 23 42 / 18%);
+}
+
+.sitecore-preview-search-result {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  color: #172033;
+  text-decoration: none;
+  border-bottom: 1px solid #e8ebf1;
+}
+
+.sitecore-preview-search-result:hover,
+.sitecore-preview-search-result:focus-visible {
+  background: #f4f6fb;
+}
+
+.sitecore-preview-search-result img {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  object-fit: contain;
+}
+
+.sitecore-preview-search-result-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sitecore-preview-search-result-copy small {
+  color: #3157be;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.sitecore-preview-search-result-copy strong,
+.sitecore-preview-search-result-copy > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sitecore-preview-search-result-copy > span {
+  color: #5c6678;
+  font-size: 13px;
+}
+
+.sitecore-preview-search-status,
+.sitecore-preview-search-all {
+  display: block;
+  width: 100%;
+  padding: 14px 16px;
+  color: #4e5b70;
+  text-align: left;
+}
+
+.sitecore-preview-search-all {
+  border: 0;
+  background: #f4f6fb;
+  color: #17349f;
+  font-weight: 700;
   cursor: pointer;
 }
 

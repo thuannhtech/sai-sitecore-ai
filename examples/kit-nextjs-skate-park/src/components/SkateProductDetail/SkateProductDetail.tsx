@@ -18,6 +18,7 @@ interface SkateProductDetailProps {
 export const Default = (props: SkateProductDetailProps): JSX.Element => {
   const product = props.product || props.fields?.product;
   const { params } = props;
+  const brand = product?.brand?.trim();
 
   return (
     <section className={`bg-white overflow-hidden ${params?.styles || ''}`} id={params?.RenderingIdentifier}>
@@ -61,6 +62,14 @@ export const Default = (props: SkateProductDetailProps): JSX.Element => {
                   </span>
                 )}
               </div>
+              {brand ? (
+                <div className="mt-5 flex items-center gap-3">
+                  <span className="text-sm font-semibold uppercase tracking-wide text-gray-500">CPU</span>
+                  <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-sm font-bold text-blue-700">
+                    {brand}
+                  </span>
+                </div>
+              ) : null}
             </div>
 
             <div className="prose prose-blue prose-lg max-w-none text-gray-600 leading-relaxed">

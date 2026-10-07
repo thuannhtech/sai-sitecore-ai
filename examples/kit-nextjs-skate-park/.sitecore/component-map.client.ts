@@ -27,11 +27,14 @@ import * as NewBannerSlider from 'src/components/NewBannerSlider/NewBannerSlider
 import * as Navigation from 'src/components/navigation/Navigation';
 import * as MultiPromoItemdev from 'src/components/multi-promo/MultiPromoItem.dev';
 import * as MultiPromo from 'src/components/multi-promo/MultiPromo';
+import * as HomePagePersonalizedForYou from 'src/components/multi-promo/HomePagePersonalizedForYou';
+import * as SitecorePreviewSearch from 'src/components/MenuHeader/SitecorePreviewSearch';
 import * as LanguageSwitcher from 'src/components/MenuHeader/LanguageSwitcher';
 import * as HeaderSearch from 'src/components/MenuHeader/HeaderSearch';
 import * as Menu from 'src/components/Menu/Menu';
 import * as BasicForm from 'src/components/forms/BasicForm';
 import * as BlogListing from 'src/components/BlogListing/BlogListing';
+import * as BlogMayWeSuggest from 'src/components/Blog/BlogMayWeSuggest';
 import * as BannerSlider from 'src/components/BannerSlider/BannerSlider';
 import * as BannerSlideItem from 'src/components/BannerSlideItem/BannerSlideItem';
 import * as UserHydrator from 'src/components/AccountIndicator/UserHydrator';
@@ -65,11 +68,14 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['Navigation', { ...Navigation }],
   ['MultiPromoItem', { ...MultiPromoItemdev }],
   ['MultiPromo', { ...MultiPromo }],
+  ['HomePagePersonalizedForYou', { ...HomePagePersonalizedForYou }],
+  ['SitecorePreviewSearch', { ...SitecorePreviewSearch }],
   ['LanguageSwitcher', { ...LanguageSwitcher }],
   ['HeaderSearch', { ...HeaderSearch }],
   ['Menu', { ...Menu }],
   ['BasicForm', { ...BasicForm }],
   ['BlogListing', { ...BlogListing }],
+  ['BlogMayWeSuggest', { ...BlogMayWeSuggest }],
   ['BannerSlider', { ...BannerSlider }],
   ['BannerSlideItem', { ...BannerSlideItem }],
   ['UserHydrator', { ...UserHydrator }],

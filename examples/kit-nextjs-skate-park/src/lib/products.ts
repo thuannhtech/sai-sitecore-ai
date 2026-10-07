@@ -27,6 +27,7 @@ export type ProductDetail = {
   orderCloudId?: string;
   status?: string;
   createdDate?: string;
+  brand?: string;
 };
 
 type RawProductItem = {
@@ -45,6 +46,7 @@ type RawProductItem = {
   };
   createdDate?: { value?: string };
   status?: { value?: string };
+  brand?: { value?: string };
 };
 
 function extractImageUrls(imagesField?: RawProductItem['images']): string[] {
@@ -135,6 +137,7 @@ async function fetchProductBySlugRaw(
           }
           createdDate: field(name: "CreatedDate") { value }
           status: field(name: "Status") { value }
+          brand: field(name: "Brand") { value }
         }
       }
     }
@@ -217,7 +220,7 @@ export async function getProductBySlug(
 
   const decodedSlug = decodeURIComponent(slug);
   const product = await fetchProductBySlugRaw(decodedSlug, language, rootPath);
-
+  console.log('Fetched product:', product);
   if (!product) return null;
 
   const descHtml = product?.description?.value || '';
@@ -242,6 +245,7 @@ export async function getProductBySlug(
     orderCloudId: product?.orderCloudProductId?.value || undefined,
     status: product?.status?.value || '',
     createdDate: product?.createdDate?.value || '',
+    brand: product?.brand?.value?.trim() || '',
   };
 }
 

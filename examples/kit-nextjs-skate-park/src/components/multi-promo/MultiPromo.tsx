@@ -8,6 +8,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import { MultiPromoItemProps, MultiPromoProps } from 'components/multi-promo/multi-promo.props';
 import { Default as MultiPromoItem } from 'components/multi-promo/MultiPromoItem.dev';
+import { HomePagePersonalizedForYou } from 'components/multi-promo/HomePagePersonalizedForYou';
 
 export const Default: React.FC<MultiPromoProps> = (props) => {
   const { fields, params, page } = props;
@@ -15,6 +16,8 @@ export const Default: React.FC<MultiPromoProps> = (props) => {
   const rawChildren = fields?.data?.datasource?.children;
 
   const { title, description } = fields?.data?.datasource || {};
+  const showPersonalizedForYou =
+    !page?.mode?.isEditing && title?.jsonValue?.value?.trim().toLowerCase() === 'special promotions';
   const [announcement, setAnnouncement] = useState('');
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
@@ -47,6 +50,7 @@ export const Default: React.FC<MultiPromoProps> = (props) => {
   }
 
   return (
+    <>
     <div data-component="MultiPromoCarousel" data-class-change className={wrapperClasses}>
       {/* Header: title */}
       <div className="multi-promo__header">
@@ -133,5 +137,7 @@ export const Default: React.FC<MultiPromoProps> = (props) => {
         </>
       )}
     </div>
+    {showPersonalizedForYou ? <HomePagePersonalizedForYou rfkId="rfkid_1" /> : null}
+    </>
   );
 };

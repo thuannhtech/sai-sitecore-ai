@@ -6,12 +6,14 @@ import {
     Image,
 } from '@sitecore-content-sdk/nextjs';
 import { BlogDetailProps } from './BlogDetail.types';
+import BlogMayWeSuggestWidget from './BlogMayWeSuggest';
 
 const BlogDetail = (props: BlogDetailProps) => {
     const { fields } = props;
     const isEditing = props?.page?.mode?.isEditing ?? false;
 
     return (
+        <>
         <article
             className="blog-detail w-full mx-auto py-8 px-4 md:px-8 lg:px-12"
             style={{ maxWidth: '1200px' }}
@@ -69,6 +71,8 @@ const BlogDetail = (props: BlogDetailProps) => {
                 <RichText field={fields.Content} />
             </div>
         </article>
+        {!isEditing ? <BlogMayWeSuggestWidget /> : null}
+        </>
     );
 };
 

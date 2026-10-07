@@ -77,7 +77,8 @@ type SitecoreSearchResultsInnerProps = SitecoreSearchResultsProps & {
   productFacetActions: { onFacetClick: (params: any) => void; onClearFilters: () => void };
 };
 
-const DEFAULT_RFK_ID = "TEST";
+//const DEFAULT_RFK_ID = "TEST";
+const DEFAULT_RFK_ID = "rfkid_7";
 
 function dictionaryText(t: any, key: string, fallback: string, values?: Record<string, string | number>) {
   debugger;

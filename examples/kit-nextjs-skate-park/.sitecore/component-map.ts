@@ -43,6 +43,8 @@ import * as MultiPromoItemdev from 'src/components/multi-promo/MultiPromoItem.de
 import * as MultiPromo from 'src/components/multi-promo/MultiPromo';
 import * as multipromoprops from 'src/components/multi-promo/multi-promo.props';
 import * as multipromoMultiPromo2Block from 'src/components/multi-promo/multi-promo.MultiPromo2Block';
+import * as HomePagePersonalizedForYou from 'src/components/multi-promo/HomePagePersonalizedForYou';
+import * as SitecorePreviewSearch from 'src/components/MenuHeader/SitecorePreviewSearch';
 import * as MenuHeaderSitecoreAiGeneratedVariant from 'src/components/MenuHeader/MenuHeader.SitecoreAiGeneratedVariant';
 import * as MenuHeader from 'src/components/MenuHeader/MenuHeader';
 import * as LanguageSwitcher from 'src/components/MenuHeader/LanguageSwitcher';
@@ -59,6 +61,7 @@ import * as Container from 'src/components/container/Container';
 import * as ColumnSplitter from 'src/components/column-splitter/ColumnSplitter';
 import * as BlogListingtypes from 'src/components/BlogListing/BlogListing.types';
 import * as BlogListing from 'src/components/BlogListing/BlogListing';
+import * as BlogMayWeSuggest from 'src/components/Blog/BlogMayWeSuggest';
 import * as BlogDetailtypes from 'src/components/Blog/BlogDetail.types';
 import * as BlogDetail from 'src/components/Blog/BlogDetail';
 import * as BannerSlider from 'src/components/BannerSlider/BannerSlider';
@@ -110,6 +113,8 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['MultiPromoItem', { ...MultiPromoItemdev }],
   ['MultiPromo', { ...MultiPromo, componentType: 'client' }],
   ['multi-promo', { ...multipromoprops, ...multipromoMultiPromo2Block }],
+  ['HomePagePersonalizedForYou', { ...HomePagePersonalizedForYou, componentType: 'client' }],
+  ['SitecorePreviewSearch', { ...SitecorePreviewSearch, componentType: 'client' }],
   ['MenuHeader', { ...MenuHeaderSitecoreAiGeneratedVariant, ...MenuHeader }],
   ['LanguageSwitcher', { ...LanguageSwitcher, componentType: 'client' }],
   ['HeaderSearch', { ...HeaderSearch, componentType: 'client' }],
@@ -124,6 +129,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['Container', { ...Container }],
   ['ColumnSplitter', { ...ColumnSplitter }],
   ['BlogListing', { ...BlogListingtypes, ...BlogListing, componentType: 'client' }],
+  ['BlogMayWeSuggest', { ...BlogMayWeSuggest, componentType: 'client' }],
   ['BlogDetail', { ...BlogDetailtypes, ...BlogDetail }],
   ['BannerSlider', { ...BannerSlider, componentType: 'client' }],
   ['BannerSlideItem', { ...BannerSlideItem, componentType: 'client' }],
