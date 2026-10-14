@@ -6,6 +6,7 @@ import { Search as SearchIcon } from 'lucide-react';
 import { FilterEqual, usePreviewSearch, widget } from '@sitecore-search/react';
 import type { PreviewSearchInitialState } from '@sitecore-search/react';
 import { WidgetDataType } from '@sitecore-search/data';
+import { normalizeSitecoreMediaUrl } from 'lib/sitecore-media-url';
 
 const PREVIEW_SEARCH_RFK_ID = 'rfkid_6';
 const PREVIEW_RESULT_LIMIT = 4;
@@ -208,7 +209,7 @@ export function SitecorePreviewSearch() {
               role="option"
               aria-selected="false"
             >
-              {item.image_url ? <img src={item.image_url} alt="" /> : null}
+              {item.image_url ? <img src={normalizeSitecoreMediaUrl(item.image_url)} alt="" /> : null}
               <span className="sitecore-preview-search-result-copy">
                 <small>{item.resultType === 'product' ? translation('RESULT_TYPE_PRODUCT', 'Product / Supply') : translation('RESULT_TYPE_BLOG', 'Blog')}</small>
                 <strong>{item.title || item.name || translation('UNTITLED', 'Untitled')}</strong>
