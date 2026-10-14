@@ -16,6 +16,7 @@ import {
 import { ComponentProps } from "src/lib/component-props";
 import { useLocale } from "next-intl";
 import config from "src/lib/config";
+import { normalizeSitecoreMediaUrl } from "src/lib/sitecore-media-url";
 
 type SearchResultItem = {
   id?: string;
@@ -77,7 +78,8 @@ type SitecoreSearchResultsInnerProps = SitecoreSearchResultsProps & {
   productFacetActions: { onFacetClick: (params: any) => void; onClearFilters: () => void };
 };
 
-const DEFAULT_RFK_ID = "TEST";
+//const DEFAULT_RFK_ID = "TEST";
+const DEFAULT_RFK_ID = "rfkid_7";
 
 function dictionaryText(t: any, key: string, fallback: string, values?: Record<string, string | number>) {
   debugger;
@@ -376,7 +378,7 @@ function getImageSource(item: SearchResultItem): string | undefined {
   }
 
   if (typeof candidate === "string") {
-    return candidate;
+    return normalizeSitecoreMediaUrl(candidate);
   }
 
   if (typeof candidate === "object") {
@@ -390,7 +392,7 @@ function getImageSource(item: SearchResultItem): string | undefined {
       objectCandidate.image_url ??
       objectCandidate.image;
 
-    return typeof nested === "string" ? nested : undefined;
+    return normalizeSitecoreMediaUrl(nested);
   }
 
   return undefined;
@@ -629,12 +631,7 @@ function ResultCard({
       <div className="flex flex-col gap-6 md:flex-row">
         <div className="relative h-56 w-full overflow-hidden rounded-[24px] bg-slate-100 md:h-[180px] md:w-[280px] flex-shrink-0">
           {image ? (
-            <a
-              href={url}
-              className="text-[2.2rem] font-semibold leading-[1.15] text-slate-950 no-underline transition-colors hover:text-cyan-800 md:text-[2.4rem]"
-            >
-              <img src={image} alt={title} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" style={{ height: "100%", width: "100%" }} />
-            </a>
+            <img src={image} alt={title} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" style={{ height: "100%", width: "100%" }} />
           ) : (
             <div className="absolute inset-0 bg-[linear-gradient(135deg,#e2e8f0_0%,#f8fafc_45%,#cbd5e1_100%)]" />
           )}
@@ -705,7 +702,7 @@ function ResultCard({
             ) : null}
           </div>
 
-          {/* {url ? (
+          {url ? (
             <a
               href={url}
               className="mt-5 inline-flex items-center gap-2 self-start rounded-full bg-slate-950 px-5 py-3.5 text-xl font-semibold text-white no-underline transition hover:bg-cyan-800"
@@ -713,7 +710,7 @@ function ResultCard({
               {dictionaryText(t, "SEARCH_READ_ARTICLE", "Read article")}
               <ArrowRight size={18} aria-hidden="true" />
             </a>
-          ) : null} */}
+          ) : null}
         </div>
       </div>
     </article>
@@ -954,13 +951,13 @@ function SitecoreSearchResultsInner({
                     ))}
                     {visibleProductResults.map((product, index) => (
                       <article key={`product-${product.id ?? product.source_id ?? index}`} className="flex flex-col gap-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:flex-row">
-                        {product.image_url ? <a href={product.product_url || `/${locale}/products/${encodeURIComponent(product.name!)}`} className="mt-3 inline-flex items-center gap-2 font-semibold text-sky-700 hover:underline"><img src={product.image_url} alt={product.name ?? "Product"} className="h-48 w-full rounded-2xl object-cover sm:w-64" /></a> : null}
+                        {product.image_url ? <a href={product.product_url || `/${locale}/products/${encodeURIComponent(product.name!)}`} className="mt-3 inline-flex items-center gap-2 font-semibold text-sky-700 hover:underline"><img src={normalizeSitecoreMediaUrl(product.image_url)} alt={product.name ?? "Product"} className="h-48 w-full rounded-2xl object-cover sm:w-64" /></a> : null}
                         <div className="min-w-0 flex-1">
                           <p className="m-0 text-xs font-semibold uppercase tracking-wider text-sky-700">{dictionaryText(t, "SEARCH_PRODUCT_SUPPLY", "Product/Supply")}</p>
-                          <h2 className="mt-2 text-2xl font-semibold text-slate-950">{(product.product_url || product.name) ? <a href={product.product_url || `/${locale}/products/${encodeURIComponent(product.name!)}`} className="mt-3 inline-flex items-center gap-2 font-semibold text-sky-700 hover:underline">{product.name ?? dictionaryText(t, "SEARCH_PRODUCT_FALLBACK", "Product")}</a> : null}</h2>
+                          <h2 className="mt-2 text-2xl font-semibold text-slate-950">{product.name ?? dictionaryText(t, "SEARCH_PRODUCT_FALLBACK", "Product")}</h2>
                           {product.description ? <p className="mt-2 line-clamp-3 text-slate-600">{product.description}</p> : null}
                           {product.price != null && Number.isFinite(Number(product.price)) ? <p className="mt-3 font-semibold text-slate-900">${Number(product.price).toFixed(2)}</p> : null}
-                          {/* {(product.product_url || product.name) ? <a href={product.product_url || `/${locale}/products/${encodeURIComponent(product.name!)}`} className="mt-3 inline-flex items-center gap-2 font-semibold text-sky-700 hover:underline">{dictionaryText(t, "SEARCH_VIEW_PRODUCT", "View product")} <ArrowRight size={16} /></a> : null} */}
+                          {(product.product_url || product.name) ? <a href={product.product_url || `/${locale}/products/${encodeURIComponent(product.name!)}`} className="mt-3 inline-flex items-center gap-2 font-semibold text-sky-700 hover:underline">{dictionaryText(t, "SEARCH_VIEW_PRODUCT", "View product")} <ArrowRight size={16} /></a> : null}
                         </div>
                       </article>
                     ))}
