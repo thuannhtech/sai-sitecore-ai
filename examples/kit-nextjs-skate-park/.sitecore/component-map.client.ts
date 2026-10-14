@@ -21,16 +21,17 @@ import * as SkateCartSummary from 'src/components/SkateCart/SkateCartSummary';
 import * as SkateCartItemList from 'src/components/SkateCart/SkateCartItemList';
 import * as SkateCart from 'src/components/SkateCart/SkateCart';
 import * as SkateAddToCartButton from 'src/components/SkateCart/SkateAddToCartButton';
+import * as SitecorePreviewSearch from 'src/components/SitecorePreviewSearch/SitecorePreviewSearch';
 import * as SitecoreSearchResults from 'src/components/search/SitecoreSearchResults';
 import * as ProductList from 'src/components/ProductList/ProductList';
 import * as NewBannerSlider from 'src/components/NewBannerSlider/NewBannerSlider';
 import * as Navigation from 'src/components/navigation/Navigation';
 import * as MultiPromoItemdev from 'src/components/multi-promo/MultiPromoItem.dev';
 import * as MultiPromo from 'src/components/multi-promo/MultiPromo';
-import * as SitecorePreviewSearch from 'src/components/MenuHeader/SitecorePreviewSearch';
 import * as LanguageSwitcher from 'src/components/MenuHeader/LanguageSwitcher';
 import * as HeaderSearch from 'src/components/MenuHeader/HeaderSearch';
 import * as Menu from 'src/components/Menu/Menu';
+import * as HomePagePersonalizedForYou from 'src/components/HomePagePersonalizedForYou/HomePagePersonalizedForYou';
 import * as BasicForm from 'src/components/forms/BasicForm';
 import * as BlogListing from 'src/components/BlogListing/BlogListing';
 import * as BannerSlider from 'src/components/BannerSlider/BannerSlider';
@@ -60,16 +61,17 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['SkateCartItemList', { ...SkateCartItemList }],
   ['SkateCart', { ...SkateCart }],
   ['SkateAddToCartButton', { ...SkateAddToCartButton }],
+  ['SitecorePreviewSearch', { ...SitecorePreviewSearch }],
   ['SitecoreSearchResults', { ...SitecoreSearchResults }],
   ['ProductList', { ...ProductList }],
   ['NewBannerSlider', { ...NewBannerSlider }],
   ['Navigation', { ...Navigation }],
   ['MultiPromoItem', { ...MultiPromoItemdev }],
   ['MultiPromo', { ...MultiPromo }],
-  ['SitecorePreviewSearch', { ...SitecorePreviewSearch }],
   ['LanguageSwitcher', { ...LanguageSwitcher }],
   ['HeaderSearch', { ...HeaderSearch }],
   ['Menu', { ...Menu }],
+  ['HomePagePersonalizedForYou', { ...HomePagePersonalizedForYou }],
   ['BasicForm', { ...BasicForm }],
   ['BlogListing', { ...BlogListing }],
   ['BannerSlider', { ...BannerSlider }],

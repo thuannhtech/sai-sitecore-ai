@@ -1,3 +1,3 @@
 'use client';
 
-export { SitecorePreviewSearch as HeaderSearch } from './SitecorePreviewSearch';
+export { SitecorePreviewSearch as HeaderSearch } from '../SitecorePreviewSearch/SitecorePreviewSearch';

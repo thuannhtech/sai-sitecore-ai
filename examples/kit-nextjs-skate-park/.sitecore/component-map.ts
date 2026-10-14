@@ -27,6 +27,7 @@ import * as SkateCartSummary from 'src/components/SkateCart/SkateCartSummary';
 import * as SkateCartItemList from 'src/components/SkateCart/SkateCartItemList';
 import * as SkateCart from 'src/components/SkateCart/SkateCart';
 import * as SkateAddToCartButton from 'src/components/SkateCart/SkateAddToCartButton';
+import * as SitecorePreviewSearch from 'src/components/SitecorePreviewSearch/SitecorePreviewSearch';
 import * as SitecoreSearchResults from 'src/components/search/SitecoreSearchResults';
 import * as RowSplitter from 'src/components/row-splitter/RowSplitter';
 import * as RichText from 'src/components/rich-text/RichText';
@@ -43,7 +44,6 @@ import * as MultiPromoItemdev from 'src/components/multi-promo/MultiPromoItem.de
 import * as MultiPromo from 'src/components/multi-promo/MultiPromo';
 import * as multipromoprops from 'src/components/multi-promo/multi-promo.props';
 import * as multipromoMultiPromo2Block from 'src/components/multi-promo/multi-promo.MultiPromo2Block';
-import * as SitecorePreviewSearch from 'src/components/MenuHeader/SitecorePreviewSearch';
 import * as MenuHeaderSitecoreAiGeneratedVariant from 'src/components/MenuHeader/MenuHeader.SitecoreAiGeneratedVariant';
 import * as MenuHeader from 'src/components/MenuHeader/MenuHeader';
 import * as LanguageSwitcher from 'src/components/MenuHeader/LanguageSwitcher';
@@ -51,6 +51,7 @@ import * as HeaderSearch from 'src/components/MenuHeader/HeaderSearch';
 import * as Menu from 'src/components/Menu/Menu';
 import * as LinkList from 'src/components/link-list/LinkList';
 import * as Image from 'src/components/image/Image';
+import * as HomePagePersonalizedForYou from 'src/components/HomePagePersonalizedForYou/HomePagePersonalizedForYou';
 import * as BasicForm from 'src/components/forms/BasicForm';
 import * as FooterNavigationColumn from 'src/components/Footer/FooterNavigationColumn';
 import * as Footer from 'src/components/Footer/Footer';
@@ -96,6 +97,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['SkateCartItemList', { ...SkateCartItemList, componentType: 'client' }],
   ['SkateCart', { ...SkateCart, componentType: 'client' }],
   ['SkateAddToCartButton', { ...SkateAddToCartButton, componentType: 'client' }],
+  ['SitecorePreviewSearch', { ...SitecorePreviewSearch, componentType: 'client' }],
   ['SitecoreSearchResults', { ...SitecoreSearchResults, componentType: 'client' }],
   ['RowSplitter', { ...RowSplitter }],
   ['RichText', { ...RichText }],
@@ -111,13 +113,13 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['MultiPromoItem', { ...MultiPromoItemdev }],
   ['MultiPromo', { ...MultiPromo, componentType: 'client' }],
   ['multi-promo', { ...multipromoprops, ...multipromoMultiPromo2Block }],
-  ['SitecorePreviewSearch', { ...SitecorePreviewSearch, componentType: 'client' }],
   ['MenuHeader', { ...MenuHeaderSitecoreAiGeneratedVariant, ...MenuHeader }],
   ['LanguageSwitcher', { ...LanguageSwitcher, componentType: 'client' }],
   ['HeaderSearch', { ...HeaderSearch, componentType: 'client' }],
   ['Menu', { ...Menu, componentType: 'client' }],
   ['LinkList', { ...LinkList }],
   ['Image', { ...Image }],
+  ['HomePagePersonalizedForYou', { ...HomePagePersonalizedForYou, componentType: 'client' }],
   ['BasicForm', { ...BasicForm, componentType: 'client' }],
   ['FooterNavigationColumn', { ...FooterNavigationColumn }],
   ['Footer', { ...Footer }],
