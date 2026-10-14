@@ -43,7 +43,6 @@ import * as MultiPromoItemdev from 'src/components/multi-promo/MultiPromoItem.de
 import * as MultiPromo from 'src/components/multi-promo/MultiPromo';
 import * as multipromoprops from 'src/components/multi-promo/multi-promo.props';
 import * as multipromoMultiPromo2Block from 'src/components/multi-promo/multi-promo.MultiPromo2Block';
-// import * as HomePagePersonalizedForYou from 'src/components/multi-promo/HomePagePersonalizedForYou';
 import * as SitecorePreviewSearch from 'src/components/MenuHeader/SitecorePreviewSearch';
 import * as MenuHeaderSitecoreAiGeneratedVariant from 'src/components/MenuHeader/MenuHeader.SitecoreAiGeneratedVariant';
 import * as MenuHeader from 'src/components/MenuHeader/MenuHeader';
@@ -112,7 +111,6 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['MultiPromoItem', { ...MultiPromoItemdev }],
   ['MultiPromo', { ...MultiPromo, componentType: 'client' }],
   ['multi-promo', { ...multipromoprops, ...multipromoMultiPromo2Block }],
-  // ['HomePagePersonalizedForYou', { ...HomePagePersonalizedForYou }],
   ['SitecorePreviewSearch', { ...SitecorePreviewSearch, componentType: 'client' }],
   ['MenuHeader', { ...MenuHeaderSitecoreAiGeneratedVariant, ...MenuHeader }],
   ['LanguageSwitcher', { ...LanguageSwitcher, componentType: 'client' }],
