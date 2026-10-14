@@ -16,6 +16,7 @@ import {
 import { ComponentProps } from "src/lib/component-props";
 import { useLocale } from "next-intl";
 import config from "src/lib/config";
+import { normalizeSitecoreMediaUrl } from "src/lib/sitecore-media-url";
 
 type SearchResultItem = {
   id?: string;
@@ -377,7 +378,7 @@ function getImageSource(item: SearchResultItem): string | undefined {
   }
 
   if (typeof candidate === "string") {
-    return candidate;
+    return normalizeSitecoreMediaUrl(candidate);
   }
 
   if (typeof candidate === "object") {
@@ -391,7 +392,7 @@ function getImageSource(item: SearchResultItem): string | undefined {
       objectCandidate.image_url ??
       objectCandidate.image;
 
-    return typeof nested === "string" ? nested : undefined;
+    return normalizeSitecoreMediaUrl(nested);
   }
 
   return undefined;
@@ -950,7 +951,7 @@ function SitecoreSearchResultsInner({
                     ))}
                     {visibleProductResults.map((product, index) => (
                       <article key={`product-${product.id ?? product.source_id ?? index}`} className="flex flex-col gap-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:flex-row">
-                        {product.image_url ? <a href={product.product_url || `/${locale}/products/${encodeURIComponent(product.name!)}`} className="mt-3 inline-flex items-center gap-2 font-semibold text-sky-700 hover:underline"><img src={product.image_url} alt={product.name ?? "Product"} className="h-48 w-full rounded-2xl object-cover sm:w-64" /></a> : null}
+                        {product.image_url ? <a href={product.product_url || `/${locale}/products/${encodeURIComponent(product.name!)}`} className="mt-3 inline-flex items-center gap-2 font-semibold text-sky-700 hover:underline"><img src={normalizeSitecoreMediaUrl(product.image_url)} alt={product.name ?? "Product"} className="h-48 w-full rounded-2xl object-cover sm:w-64" /></a> : null}
                         <div className="min-w-0 flex-1">
                           <p className="m-0 text-xs font-semibold uppercase tracking-wider text-sky-700">{dictionaryText(t, "SEARCH_PRODUCT_SUPPLY", "Product/Supply")}</p>
                           <h2 className="mt-2 text-2xl font-semibold text-slate-950">{product.name ?? dictionaryText(t, "SEARCH_PRODUCT_FALLBACK", "Product")}</h2>

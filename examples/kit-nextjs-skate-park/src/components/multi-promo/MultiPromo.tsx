@@ -17,7 +17,7 @@ export const Default: React.FC<MultiPromoProps> = (props) => {
 
   const { title, description } = fields?.data?.datasource || {};
   const showPersonalizedForYou =
-    !page?.mode?.isEditing && title?.jsonValue?.value?.trim().toLowerCase() === 'special promotions';
+    !page?.mode?.isEditing && (title?.jsonValue?.value?.trim().toLowerCase() === 'special promotions' || title?.jsonValue?.value?.trim().toLowerCase() === 'khuyến mãi đặc biệt');
   const [announcement, setAnnouncement] = useState('');
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
@@ -137,7 +137,7 @@ export const Default: React.FC<MultiPromoProps> = (props) => {
         </>
       )}
     </div>
-    {showPersonalizedForYou ? <HomePagePersonalizedForYou rfkId="rfkid_1" /> : null}
+    {/* {showPersonalizedForYou ? <HomePagePersonalizedForYou rfkId="rfkid_1" /> : null} */}
     </>
   );
 };
