@@ -116,7 +116,7 @@ type PaginationProps = {
 };
 
 function PaginationPreview({ totalItems, pageSize, currentPage, onPageChange }: PaginationProps) {
-  const t = useTranslations("SAI-Sitecore");
+  const t = useTranslations("sai-sitecore");
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
   const pages: number[] = [];
@@ -439,7 +439,7 @@ function PreviewFacetSidebar({
   onProductFacetClick,
   onClearFilters,
 }: PreviewFacetSidebarProps) {
-  const t = useTranslations("SAI-Sitecore");
+  const t = useTranslations("sai-sitecore");
   const isFacetChecked = (facetId: string, facetValueId: string) => {
     const facetSelection = facetId === "category_names" ? productSelectedFacets : selectedFacets;
     return facetSelection.some(

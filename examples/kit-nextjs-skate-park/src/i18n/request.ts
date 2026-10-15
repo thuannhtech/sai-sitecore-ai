@@ -14,6 +14,10 @@ export default getRequestConfig(async ({ requestLocale }: GetRequestConfigParams
   const [parsedSite, parsedLocale] = requested?.split('_') || [];
   const locale = hasLocale(routing.locales, parsedLocale) ? parsedLocale : routing.defaultLocale;
 
+  // Normalize site name to lowercase so the namespace key is always consistent
+  // regardless of how the site name is resolved on different environments (local vs Vercel).
+  const normalizedSite = (parsedSite || '').toLowerCase();
+
   const messages: Record<string, object> = {};
 
   const rawMessages = await client.getDictionary({
@@ -30,7 +34,7 @@ export default getRequestConfig(async ({ requestLocale }: GetRequestConfigParams
     sanitizedMessages[safeKey] = value;
   }
 
-  messages[parsedSite] = sanitizedMessages;
+  messages[normalizedSite] = sanitizedMessages;
 
   return {
     locale,
