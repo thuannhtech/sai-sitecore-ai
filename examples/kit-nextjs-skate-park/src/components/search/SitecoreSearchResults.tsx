@@ -17,6 +17,7 @@ import { ComponentProps } from "src/lib/component-props";
 import { useLocale } from "next-intl";
 import config from "src/lib/config";
 import { normalizeSitecoreMediaUrl } from "src/lib/sitecore-media-url";
+import sitecoreConfig from "sitecore.config";
 
 type SearchResultItem = {
   id?: string;
@@ -116,7 +117,8 @@ type PaginationProps = {
 };
 
 function PaginationPreview({ totalItems, pageSize, currentPage, onPageChange }: PaginationProps) {
-  const t = useTranslations("sai-sitecore");
+  //const t = useTranslations("sai-sitecore");
+  const t = useTranslations(sitecoreConfig.defaultSite || undefined);
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
   const pages: number[] = [];
@@ -439,7 +441,7 @@ function PreviewFacetSidebar({
   onProductFacetClick,
   onClearFilters,
 }: PreviewFacetSidebarProps) {
-  const t = useTranslations("sai-sitecore");
+  const t = useTranslations(sitecoreConfig.defaultSite || undefined);
   const isFacetChecked = (facetId: string, facetValueId: string) => {
     const facetSelection = facetId === "category_names" ? productSelectedFacets : selectedFacets;
     return facetSelection.some(
@@ -597,7 +599,7 @@ function ResultCard({
   item: SearchResultItem;
   index: number;
 }) {
-  const t = useTranslations("sai-sitecore");
+  const t = useTranslations(sitecoreConfig.defaultSite || undefined);
   const title = String(item.title ?? item.name ?? item.id ?? `Result ${index + 1}`);
   const url = item.url ? String(item.url) : undefined;
   const description = item.description
@@ -727,7 +729,7 @@ function SitecoreSearchResultsInner({
   productSelectedFacets,
   productFacetActions,
 }: SitecoreSearchResultsInnerProps) {
-  const t = useTranslations("sai-sitecore");
+  const t = useTranslations(sitecoreConfig.defaultSite || undefined);
   const locale = useLocale();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -1052,7 +1054,7 @@ const SearchResultsWidget = widget(
 );
 
 export default function Default(props: SitecoreSearchResultsProps) {
-  const t = useTranslations("sai-sitecore");
+  const t = useTranslations(sitecoreConfig.defaultSite || undefined);
   const [mounted, setMounted] = useState(false);
   const [productResults, setProductResults] = useState<ProductSearchItem[]>([]);
   const [productTotal, setProductTotal] = useState(0);

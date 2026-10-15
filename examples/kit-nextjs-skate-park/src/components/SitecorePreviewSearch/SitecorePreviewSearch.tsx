@@ -7,6 +7,7 @@ import { FilterEqual, usePreviewSearch, widget } from '@sitecore-search/react';
 import type { PreviewSearchInitialState } from '@sitecore-search/react';
 import { WidgetDataType } from '@sitecore-search/data';
 import { normalizeSitecoreMediaUrl } from 'lib/sitecore-media-url';
+import sitecoreConfig from 'sitecore.config';
 
 const PREVIEW_SEARCH_RFK_ID = 'rfkid_6';
 const PREVIEW_RESULT_LIMIT = 4;
@@ -80,7 +81,8 @@ const ProductPreviewWidget = widget(
 
 export function SitecorePreviewSearch() {
   const locale = useLocale();
-  const t = useTranslations('sai-sitecore');
+  //const t = useTranslations('sai-sitecore');
+  const t = useTranslations(sitecoreConfig.defaultSite || undefined);
   const [keyphrase, setKeyphrase] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [blogResults, setBlogResults] = useState<PreviewResult[]>([]);
