@@ -3,6 +3,7 @@
 import { useLocale } from 'next-intl';
 import { FilterEqual, useRecommendation, widget } from '@sitecore-search/react';
 import { WidgetDataType } from '@sitecore-search/data';
+import { normalizeSitecoreMediaUrl } from 'lib/sitecore-media-url';
 
 type ProductRecommendation = {
   id?: string;
@@ -90,7 +91,7 @@ function PersonalizedForYouResults({ rfkId }: { rfkId: string }) {
               >
                 <div className="flex h-40 items-center justify-center overflow-hidden bg-slate-50 p-4">
                   {product.image_url ? (
-                    <img src={product.image_url} alt={product.name ?? ''} className="max-h-full max-w-full object-contain" loading="lazy" />
+                    <img src={normalizeSitecoreMediaUrl(product.image_url)} alt={product.name ?? ''} className="max-h-full max-w-full object-contain" loading="lazy" />
                   ) : (
                     <span className="text-sm text-slate-400">No image available</span>
                   )}
