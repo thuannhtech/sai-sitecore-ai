@@ -23,12 +23,90 @@ export type CustomSitecoreFormProps = {
   };
 };
 
+/**
+ * Checks whether reCAPTCHA should be enabled for this form instance.
+ * Priority:
+ * 1. Sitecore Pages Rendering / Component Parameters (params or rendering?.params)
+ *    Keys checked: enableCaptcha, enableRecaptcha, captcha, useCaptcha
+ * 2. Client-side URL query param (?captcha=1 or ?captcha=true or ?enableCaptcha=true) for easy local testing
+ * 3. Environment variable fallback (NEXT_PUBLIC_ENABLE_CAPTCHA_ALL=true)
+ */
+export function checkIsCaptchaEnabled(
+  params?: Record<string, any>,
+  renderingParams?: Record<string, any>
+): boolean {
+  const isTruthy = (val: any) => {
+    if (val === true || val === 1) return true;
+    if (typeof val === 'string') {
+      const s = val.trim().toLowerCase();
+      return s === 'true' || s === '1' || s === 'yes' || s === 'on';
+    }
+    return false;
+  };
+
+  // 1. Check Sitecore Pages Component Parameters (params)
+  if (params) {
+    if (
+      isTruthy(params.enableCaptcha) ||
+      isTruthy(params.enableRecaptcha) ||
+      isTruthy(params.captcha) ||
+      isTruthy(params.useCaptcha)
+    ) {
+      return true;
+    }
+  }
+
+  // Check rendering params
+  if (renderingParams) {
+    if (
+      isTruthy(renderingParams.enableCaptcha) ||
+      isTruthy(renderingParams.enableRecaptcha) ||
+      isTruthy(renderingParams.captcha) ||
+      isTruthy(renderingParams.useCaptcha)
+    ) {
+      return true;
+    }
+  }
+
+  // 2. Client-side URL query string (for quick testing on localhost without Sitecore Pages)
+  if (typeof window !== 'undefined') {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (
+        isTruthy(urlParams.get('captcha')) ||
+        isTruthy(urlParams.get('enableCaptcha')) ||
+        isTruthy(urlParams.get('recaptcha'))
+      ) {
+        return true;
+      }
+    } catch (e) {}
+  }
+
+  // 3. Fallback env var if configured
+  if (process.env.NEXT_PUBLIC_ENABLE_CAPTCHA_ALL === 'true') {
+    return true;
+  }
+
+  return false;
+}
+
 export const CustomSitecoreForm: React.FC<CustomSitecoreFormProps> = ({ params, rendering }) => {
   const id = params?.RenderingIdentifier;
   const [error, setError] = useState(false);
   const context = useSitecore();
   const formRef = useRef<HTMLDivElement>(null);
   const isEditing = context.page.mode.isEditing;
+
+  // Check if reCAPTCHA is enabled via Sitecore Pages Rendering/Component Parameters (e.g. enableCaptcha=true)
+  const [isCaptchaEnabled, setIsCaptchaEnabled] = useState(() => checkIsCaptchaEnabled(params, rendering?.params));
+
+  // Sync client-side URL param on mount / update
+  useEffect(() => {
+    const enabled = checkIsCaptchaEnabled(params, rendering?.params);
+    if (enabled !== isCaptchaEnabled) {
+      setIsCaptchaEnabled(enabled);
+    }
+  }, [params, rendering?.params]);
 
   // 1. Pre-fetched server data from Sitecore ComponentPropsContext
   const serverData = useComponentProps<{ formHtml?: string }>(rendering?.uid);
@@ -87,14 +165,14 @@ export const CustomSitecoreForm: React.FC<CustomSitecoreFormProps> = ({ params, 
         subscribeToFormSubmitEvent(formRef.current, rendering.uid);
       }
 
-      // Enhance DOM immediately (neutralizes Sitecore's hardcoded broken recaptcha script)
+      // Enhance DOM immediately (neutralizes Sitecore's hardcoded broken recaptcha script & elements)
       const root = formRef.current;
-      enhanceFormDom(root);
+      enhanceFormDom(root, isCaptchaEnabled);
 
       // Execute embedded scripts from Sitecore form publisher
       executeScriptElements(formRef.current);
     }
-  }, [content, params.FormId]);
+  }, [content, params.FormId, isCaptchaEnabled]);
 
   return (
     <section className="w-full bg-white py-8 sm:py-12 px-4 sm:px-8">
@@ -129,14 +207,20 @@ export const CustomSitecoreForm: React.FC<CustomSitecoreFormProps> = ({ params, 
 /**
  * DOM Enhancer function to:
  * 1. Transform rating radio buttons into interactive 5-star rating
- * 2. Detect Sitecore reCAPTCHA Placeholder and conditionally inject Google reCAPTCHA v2 widget
+ * 2. Conditionally inject Google reCAPTCHA v2 widget above submit button when enabled
  * 3. Enforce 10-digit phone validation
  * 4. Verify reCAPTCHA token with Next.js server route before Sitecore submit
- *
- * reCAPTCHA is ONLY activated if the form author added the reCAPTCHA Placeholder component
- * in Sitecore AI Form Builder. Forms without the placeholder are unaffected.
  */
-function enhanceFormDom(root: HTMLElement) {
+function enhanceFormDom(root: HTMLElement, isCaptchaEnabled: boolean = false) {
+  // Always neutralize any embedded Sitecore scripts hardcoded with Sitecore's invalid public key (6LeQQf8s)
+  const scripts = root.querySelectorAll('script');
+  scripts.forEach((s) => {
+    if (s.textContent?.includes('6LeQQf8s') || s.textContent?.includes('recaptcha')) {
+      s.textContent = '';
+      s.remove();
+    }
+  });
+
   const formEl = root.querySelector('form');
   if (!formEl) return;
 
@@ -144,7 +228,7 @@ function enhanceFormDom(root: HTMLElement) {
   enhanceRatingField(formEl);
 
   // 2. reCAPTCHA & Phone Validation & Button Enhancement
-  enhanceRecaptchaAndValidation(formEl);
+  enhanceRecaptchaAndValidation(formEl, isCaptchaEnabled);
 }
 
 /**
@@ -257,55 +341,17 @@ function enhanceRatingField(formEl: HTMLFormElement) {
 }
 
 /**
- * Detect whether Sitecore AI Forms has placed a reCAPTCHA Placeholder component in the form.
+ * Injects Google reCAPTCHA v2 widget into the form when enabled.
  *
- * Sitecore AI Forms renders the placeholder as a block element with one of these selectors:
- *   [data-component-type="captcha"]
- *   [data-component-type="recaptcha"]
- *   [data-component-type="g-recaptcha"]
- *   .g-recaptcha (when rendered with default class)
- *   [data-sc-field-key] with name containing "captcha" (fallback)
- *
- * If none of those are found → form author has NOT added reCAPTCHA → skip injection entirely.
- *
- * HOW TO INSPECT: Open the form in browser → DevTools → Elements panel → search for "captcha"
- * in the form HTML and copy the exact data-component-type value, then add it to CAPTCHA_SELECTORS.
+ * STRATEGY (Option 1):
+ * 1. Control reCAPTCHA via Sitecore Pages Component Parameters (e.g. enableCaptcha=true)
+ *    or query parameter ?captcha=1.
+ * 2. In Sitecore AI Form Builder: Remove the native "reCAPTCHA Placeholder" to avoid Sitecore backend 400.
+ * 3. When enabled: Inject clean Google reCAPTCHA v2 directly above the submit button and verify token
+ *    via Next.js server route /api/forms/validate-captcha.
+ * 4. When disabled: Form submits directly without captcha.
  */
-const CAPTCHA_SELECTORS = [
-  '[data-component-type="captcha"]',
-  '[data-component-type="recaptcha"]',
-  '[data-component-type="g-recaptcha"]',
-  '[data-component-type="google_recaptcha"]',
-  '[data-component-type="google-recaptcha"]',
-  '[data-component-type*="captcha" i]',
-  '[data-component-type*="recaptcha" i]',
-  '.g-recaptcha',
-  '.sitecore-recaptcha',
-  '.recaptcha-placeholder',
-  '[class*="recaptcha" i]',
-  '[class*="captcha" i]',
-  '[data-sc-field-name*="captcha" i]',
-  '[data-sc-field-name*="recaptcha" i]',
-].join(',');
-
-function detectSitecoreRecaptchaPlaceholder(formEl: HTMLFormElement): HTMLElement | null {
-  return formEl.querySelector<HTMLElement>(CAPTCHA_SELECTORS);
-}
-
-/**
- * Injects Google reCAPTCHA v2 widget into the form.
- *
- * STRATEGY:
- * 1. If Sitecore AI Forms has a reCAPTCHA Placeholder element → replace its content with
- *    our actual Google reCAPTCHA v2 widget (anchor = the placeholder itself).
- * 2. If no placeholder found → do NOT inject reCAPTCHA (form author didn't want it).
- *
- * This means reCAPTCHA only appears on forms where the author explicitly added the
- * reCAPTCHA Placeholder component in Sitecore AI Form Builder.
- *
- * Phone validation still runs independently of reCAPTCHA.
- */
-function enhanceRecaptchaAndValidation(formEl: HTMLFormElement) {
+function enhanceRecaptchaAndValidation(formEl: HTMLFormElement, isCaptchaEnabled: boolean = false) {
   const submitButton =
     formEl.querySelector<HTMLButtonElement>('.submit-button') ||
     formEl.querySelector<HTMLButtonElement>('button[type="submit"]');
@@ -313,12 +359,19 @@ function enhanceRecaptchaAndValidation(formEl: HTMLFormElement) {
 
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
-  // --- Detect Sitecore reCAPTCHA Placeholder ---
-  // If form author did NOT add a reCAPTCHA Placeholder in Sitecore AI Form Builder → skip reCAPTCHA
-  const sitecorePlaceholder = siteKey ? detectSitecoreRecaptchaPlaceholder(formEl) : null;
-  const shouldRenderRecaptcha = !!siteKey && !!sitecorePlaceholder;
+  // Always neutralize any broken native Sitecore reCAPTCHA elements in the form DOM
+  const brokenElements = formEl.querySelectorAll<HTMLElement>(
+    '[id^="recaptcha"], .global-recaptcha-element, [data-is-recaptcha="true"], [data-component-type*="captcha" i], [data-component-type*="recaptcha" i], .global-recaptcha-wrapper'
+  );
+  brokenElements.forEach((el) => {
+    el.removeAttribute('id');
+    el.style.display = 'none';
+    el.remove();
+  });
 
-  // 1. Load Google reCAPTCHA v2 script only when needed
+  const shouldRenderRecaptcha = !!siteKey && isCaptchaEnabled;
+
+  // 1. Load Google reCAPTCHA v2 script only when reCAPTCHA is enabled
   if (shouldRenderRecaptcha && typeof window !== 'undefined') {
     if (!document.getElementById('google-recaptcha-v2-script')) {
       const script = document.createElement('script');
@@ -330,55 +383,41 @@ function enhanceRecaptchaAndValidation(formEl: HTMLFormElement) {
     }
   }
 
-  // 2. Inject reCAPTCHA widget into Sitecore Placeholder (or skip if no placeholder)
+  // 2. Handle Custom reCAPTCHA Widget DOM
   let recaptchaWrapper = formEl.querySelector<HTMLElement>('#custom-recaptcha-wrapper');
-  if (!recaptchaWrapper && shouldRenderRecaptcha) {
-    recaptchaWrapper = document.createElement('div');
-    recaptchaWrapper.id = 'custom-recaptcha-wrapper';
-    recaptchaWrapper.className = 'custom-recaptcha-wrapper';
 
-    const widgetBox = document.createElement('div');
-    widgetBox.id = 'custom-recaptcha-widget-element';
+  if (shouldRenderRecaptcha) {
+    if (!recaptchaWrapper) {
+      recaptchaWrapper = document.createElement('div');
+      recaptchaWrapper.id = 'custom-recaptcha-wrapper';
+      recaptchaWrapper.className = 'custom-recaptcha-wrapper my-4 flex flex-col items-start';
 
-    const errBox = document.createElement('div');
-    errBox.id = 'custom-recaptcha-error';
-    errBox.className = 'recaptcha-error-text';
-    errBox.style.display = 'none';
+      const widgetBox = document.createElement('div');
+      widgetBox.id = 'custom-recaptcha-widget-element';
 
-    recaptchaWrapper.appendChild(widgetBox);
-    recaptchaWrapper.appendChild(errBox);
+      const errBox = document.createElement('div');
+      errBox.id = 'custom-recaptcha-error';
+      errBox.className = 'recaptcha-error-text text-sm text-red-600 font-medium mt-1.5';
+      errBox.style.display = 'none';
 
-    // Neutralize Sitecore's native reCAPTCHA element so its embedded script does not render a second broken widget
-    const nativeSitecoreElements = formEl.querySelectorAll<HTMLElement>(
-      '[id^="recaptcha"], .global-recaptcha-element, [data-is-recaptcha="true"]'
-    );
-    nativeSitecoreElements.forEach((el) => {
-      el.removeAttribute('id');
-      el.remove();
-    });
+      recaptchaWrapper.appendChild(widgetBox);
+      recaptchaWrapper.appendChild(errBox);
 
-    // Replace the Sitecore placeholder/wrapper with our clean custom widget
-    const sitecoreWrapper =
-      formEl.querySelector<HTMLElement>('.global-recaptcha-wrapper') ||
-      sitecorePlaceholder.closest('.component, .global-recaptcha-wrapper') ||
-      sitecorePlaceholder;
-
-    if (sitecoreWrapper && sitecoreWrapper.parentNode) {
-      sitecoreWrapper.parentNode.insertBefore(recaptchaWrapper, sitecoreWrapper);
-      sitecoreWrapper.remove();
-    } else {
-      sitecorePlaceholder.insertAdjacentElement('afterend', recaptchaWrapper);
-      sitecorePlaceholder.remove();
+      // Place above the submit button container or button
+      const submitContainer = submitButton.closest('.component, .form-component') || submitButton;
+      if (submitContainer && submitContainer.parentNode) {
+        submitContainer.parentNode.insertBefore(recaptchaWrapper, submitContainer);
+      } else {
+        submitButton.insertAdjacentElement('beforebegin', recaptchaWrapper);
+      }
     }
 
     const tryRenderWidget = () => {
       const grecaptcha = (window as any).grecaptcha;
       if (grecaptcha && typeof grecaptcha.render === 'function') {
         try {
-          if (
-            (window as any)._customRecaptchaWidgetId === undefined &&
-            document.getElementById('custom-recaptcha-widget-element')
-          ) {
+          const widgetElem = document.getElementById('custom-recaptcha-widget-element');
+          if (widgetElem && !widgetElem.hasChildNodes()) {
             (window as any)._customRecaptchaWidgetId = grecaptcha.render('custom-recaptcha-widget-element', {
               sitekey: siteKey,
               callback: () => {
@@ -395,15 +434,20 @@ function enhanceRecaptchaAndValidation(formEl: HTMLFormElement) {
             });
           }
         } catch (e) {
-          // ignore if already rendered
+          // Widget already rendered or element not ready
         }
       } else {
-        setTimeout(tryRenderWidget, 400);
+        setTimeout(tryRenderWidget, 300);
       }
     };
 
     (window as any).onCustomRecaptchaLoad = tryRenderWidget;
     tryRenderWidget();
+  } else {
+    // If not enabled, make sure any leftover wrapper is removed
+    if (recaptchaWrapper) {
+      recaptchaWrapper.remove();
+    }
   }
 
   // 3. Ensure Submit Button retains author-defined text and clean container
@@ -495,14 +539,16 @@ function enhanceRecaptchaAndValidation(formEl: HTMLFormElement) {
         if (originalSitecoreOnClick) {
           originalSitecoreOnClick.call(submitButton, e);
         }
-        // Also show reCAPTCHA reminder if not checked
-        const grecaptcha = (window as any).grecaptcha;
-        const widgetId = (window as any)._customRecaptchaWidgetId;
-        const recapErr = document.getElementById('custom-recaptcha-error');
-        if (shouldRenderRecaptcha && grecaptcha && widgetId !== undefined && !grecaptcha.getResponse(widgetId)) {
-          if (recapErr) {
-            recapErr.textContent = 'Please verify you are not a robot (reCAPTCHA) before submitting.';
-            recapErr.style.display = 'block';
+        // Also show reCAPTCHA reminder if enabled and not checked
+        if (shouldRenderRecaptcha) {
+          const grecaptcha = (window as any).grecaptcha;
+          const widgetId = (window as any)._customRecaptchaWidgetId;
+          const recapErr = document.getElementById('custom-recaptcha-error');
+          if (grecaptcha && widgetId !== undefined && !grecaptcha.getResponse(widgetId)) {
+            if (recapErr) {
+              recapErr.textContent = 'Please verify you are not a robot (reCAPTCHA) before submitting.';
+              recapErr.style.display = 'block';
+            }
           }
         }
         return;
@@ -514,13 +560,12 @@ function enhanceRecaptchaAndValidation(formEl: HTMLFormElement) {
         return;
       }
 
-      // Check reCAPTCHA — only if widget was actually rendered (form had Sitecore placeholder)
-      const grecaptcha = (window as any).grecaptcha;
-      const widgetId = (window as any)._customRecaptchaWidgetId;
-      const recapErr = document.getElementById('custom-recaptcha-error');
-      const recaptchaActive = shouldRenderRecaptcha;
+      // Check reCAPTCHA — only if enabled for this form
+      if (shouldRenderRecaptcha) {
+        const grecaptcha = (window as any).grecaptcha;
+        const widgetId = (window as any)._customRecaptchaWidgetId;
+        const recapErr = document.getElementById('custom-recaptcha-error');
 
-      if (recaptchaActive) {
         if (!grecaptcha || widgetId === undefined) {
           if (recapErr) {
             recapErr.textContent = 'reCAPTCHA is still initializing. Please wait a moment...';
@@ -563,8 +608,6 @@ function enhanceRecaptchaAndValidation(formEl: HTMLFormElement) {
           }
 
           // Verification succeeded! Now submit through Sitecore's native onclick
-          isSubmitting = true;
-          submitButton.disabled = true;
           if (originalSitecoreOnClick) {
             originalSitecoreOnClick.call(submitButton, e);
           }
@@ -579,6 +622,7 @@ function enhanceRecaptchaAndValidation(formEl: HTMLFormElement) {
           }, 3500);
         }
       } else {
+        // reCAPTCHA is disabled for this form: submit directly!
         isSubmitting = true;
         submitButton.disabled = true;
         if (originalSitecoreOnClick) {
