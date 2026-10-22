@@ -262,14 +262,7 @@ function PersonalizedForYouResults({ rfkId = 'rfkid_25' }: { rfkId: string }) {
     >
       <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-3 border-b border-slate-200 pb-4">
         <div>
-          <div className="mb-2 flex items-center gap-2">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[11px] font-black uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-300">
-              Cách 2: Xử lý bằng Widget (rfkid_25)
-            </span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
-              OOTB Top Viewed Recipe
-            </span>
-          </div>
+          
           <h2 id="personalized-for-you-title" className="text-2xl font-black text-slate-900 md:text-3xl tracking-tight">
             Trending Products <span className="text-purple-600">(Sitecore Search Widget rfkid_25)</span>
           </h2>
