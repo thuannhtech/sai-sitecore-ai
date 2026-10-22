@@ -377,6 +377,9 @@ function enhanceRecaptchaAndValidation(formEl: HTMLFormElement) {
     let isSubmitting = false;
 
     submitButton.onclick = async function (e: MouseEvent) {
+      e.preventDefault();
+      e.stopPropagation();
+
       if (isSubmitting) return;
 
       // Check Sitecore required inputs (FullName, Phone, Email, etc.)
@@ -491,7 +494,8 @@ function enhanceRecaptchaAndValidation(formEl: HTMLFormElement) {
           }
 
           // Verification succeeded! Now submit through Sitecore's native onclick
-          submitButton.disabled = false;
+          isSubmitting = true;
+          submitButton.disabled = true;
           if (originalSitecoreOnClick) {
             originalSitecoreOnClick.call(submitButton, e);
           }
@@ -502,12 +506,19 @@ function enhanceRecaptchaAndValidation(formEl: HTMLFormElement) {
         } finally {
           setTimeout(() => {
             isSubmitting = false;
-          }, 2500);
+            submitButton.disabled = false;
+          }, 3500);
         }
       } else {
+        isSubmitting = true;
+        submitButton.disabled = true;
         if (originalSitecoreOnClick) {
           originalSitecoreOnClick.call(submitButton, e);
         }
+        setTimeout(() => {
+          isSubmitting = false;
+          submitButton.disabled = false;
+        }, 3500);
       }
     };
   }
