@@ -9,7 +9,7 @@ import { WidgetDataType } from '@sitecore-search/data';
 import { normalizeSitecoreMediaUrl } from 'lib/sitecore-media-url';
 import sitecoreConfig from 'sitecore.config';
 
-const PREVIEW_SEARCH_RFK_ID = 'rfkid_6';
+const PREVIEW_SEARCH_RFK_ID = 'rfkid_65';
 const PREVIEW_RESULT_LIMIT = 4;
 
 type PreviewResult = {

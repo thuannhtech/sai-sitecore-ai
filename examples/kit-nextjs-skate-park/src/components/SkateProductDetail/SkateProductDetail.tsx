@@ -2,6 +2,9 @@ import React, { JSX } from 'react';
 import { ProductDetail } from 'src/lib/products';
 import { SkateAddToCartButton } from '../SkateCart/SkateAddToCartButton';
 import { SkateProductGallery } from './SkateProductGallery';
+import { ProductMoreLikeThis } from './ProductMoreLikeThis';
+import { SkateProductDetailTracker } from './SkateProductDetailTracker';
+import { getProductBrand } from 'src/lib/product-brand';
 
 interface SkateProductDetailProps {
   params?: {
@@ -19,9 +22,18 @@ export const Default = (props: SkateProductDetailProps): JSX.Element => {
   const product = props.product || props.fields?.product;
   const { params } = props;
 
+  const brand = getProductBrand({
+    name: product?.modelName,
+    brand: (product as any)?.brand,
+    category_names: (product as any)?.category_names,
+  });
+  const isIntel = brand.toUpperCase() === 'INTEL';
+
   return (
-    <section className={`bg-white overflow-hidden ${params?.styles || ''}`} id={params?.RenderingIdentifier}>
-      <div className="max-w-7xl mx-auto px-6 py-12 md:py-20">
+    <>
+      <SkateProductDetailTracker productId={product?.id} />
+      <section className={`bg-white overflow-hidden ${params?.styles || ''}`} id={params?.RenderingIdentifier}>
+        <div className="max-w-7xl mx-auto px-6 py-12 md:py-20">
         <nav className="flex items-center gap-2.5 text-base text-gray-400 mb-10 font-medium">
           <a href="/" className="hover:text-blue-600 transition-colors">Home</a>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6" /></svg>
@@ -38,6 +50,17 @@ export const Default = (props: SkateProductDetailProps): JSX.Element => {
 
           <div className="flex flex-col gap-8">
             <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Brand:</span>
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
+                  isIntel
+                    ? 'bg-blue-100 text-blue-800 border border-blue-200 shadow-sm'
+                    : 'bg-orange-100 text-orange-800 border border-orange-200 shadow-sm'
+                }`}>
+                  {brand}
+                </span>
+              </div>
+
               <h1 className="text-4xl md:text-6xl font-black text-gray-900 leading-[1.1] mb-6 tracking-tight">
                 {product?.modelName ?? "Sample product"}
               </h1>
@@ -103,8 +126,17 @@ export const Default = (props: SkateProductDetailProps): JSX.Element => {
             </div>
           </div>
         </div>
-      </div>
-    </section>
+        </div>
+      </section>
+      {product?.id ? (
+        <ProductMoreLikeThis
+          productId={product.id}
+          productName={product.modelName}
+          brand={brand}
+          rfkId="rfkid_35"
+        />
+      ) : null}
+    </>
   );
 };
 

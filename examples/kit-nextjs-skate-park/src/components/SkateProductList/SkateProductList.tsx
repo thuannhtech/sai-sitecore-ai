@@ -33,6 +33,7 @@ interface SkateProductListProps {
 }
 
 type Product = {
+  id?: string
   name: string
   image?: string
   price?: number | null
@@ -395,7 +396,7 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
                           <div className="mt-8 flex flex-col gap-3">
                             <SkateAddToCartButton
                               product={{
-                                id: product.slug,
+                                id: product.id || product.slug,
                                 orderCloudId: product.orderCloudId,
                                 name: product.name,
                                 price: product.price || 0,

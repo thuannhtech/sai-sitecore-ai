@@ -3,7 +3,7 @@ import { Text, AppPlaceholder } from "@sitecore-content-sdk/nextjs";
 import { SkateCartSummary } from '../SkateCart/SkateCartSummary';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import Script from 'next/script';
+import { CheckoutScriptLoader } from './CheckoutScriptLoader';
 import componentMap from '.sitecore/component-map';
 import { ComponentProps } from 'lib/component-props';
 
@@ -18,7 +18,7 @@ export const Default = (props: SkateCheckoutProps): JSX.Element => {
 
   return (
     <div className={`component skate-checkout pt-12 pb-24 mb-10 ${styles}`}>
-      <Script src="/storefront/js/checkout.js" strategy="afterInteractive" />
+      <CheckoutScriptLoader />
       <div className="container mx-auto px-4">
 
         {/* Header */}

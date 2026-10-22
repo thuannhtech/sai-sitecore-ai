@@ -137,7 +137,7 @@ export const Default: React.FC<MultiPromoProps> = (props) => {
         </>
       )}
     </div>
-    {showPersonalizedForYou ? <HomePagePersonalizedForYou rfkId="rfkid_1" /> : null}
+    {showPersonalizedForYou ? <HomePagePersonalizedForYou rfkId="rfkid_25" /> : null}
     </>
   );
 };

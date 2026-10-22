@@ -35,13 +35,16 @@ const SkateCheckoutBridge = {
         this.bindEvents();
         await this.prefillShippingAddressFromProfile();
 
-        // Chờ một chút để Zustand Store kịp hydrate dữ liệu từ sessionStorage
-        setTimeout(() => this.rehydrateUI(), 100);
+        // Chờ React và Zustand Store hoàn tất hydration trước khi tác động DOM
+        setTimeout(() => this.rehydrateUI(), 300);
     },
 
     // Helper: Nạp script từ URL
     loadScript(url) {
         return new Promise((resolve, reject) => {
+            if (document.querySelector(`script[src="${url}"]`)) {
+                return resolve();
+            }
             const script = document.createElement('script');
             script.src = url;
             script.onload = resolve;
@@ -753,5 +756,11 @@ const SkateCheckoutBridge = {
     }
 };
 
-
-SkateCheckoutBridge.init();
+if (typeof window !== 'undefined') {
+    window.SkateCheckoutBridge = SkateCheckoutBridge;
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => SkateCheckoutBridge.init());
+    } else {
+        SkateCheckoutBridge.init();
+    }
+}

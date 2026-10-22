@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { trackOrderConfirmEvent } from '@sitecore-search/react';
 import { ArrowRight, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -22,6 +24,7 @@ export const SkateOrderSuccess = ({
   backLabel = 'Back to Order History',
 }: SkateOrderSuccessProps) => {
   const searchParams = useSearchParams();
+  const locale = useLocale();
   const token = orderId || searchParams.get('token');
   const [order, setOrder] = useState<OrderViewModel | null>(null);
 
@@ -45,6 +48,46 @@ export const SkateOrderSuccess = ({
 
     void fetchOrder();
   }, [token]);
+
+  // Track Order Confirm Event in Sitecore Search Telemetry
+  useEffect(() => {
+    if (!order?.orderId || !order?.cart?.items?.length) return;
+
+    // Tránh gửi trùng lặp khi người dùng refresh hoặc revisit trang cảm ơn
+    const sessionKey = `sitecore_tracked_order_${order.orderId}`;
+    if (typeof window !== 'undefined' && sessionStorage.getItem(sessionKey)) {
+      return;
+    }
+
+    try {
+      const targetLang = (locale || 'en').toLowerCase().startsWith('vi') ? 'vi-VN' : 'en';
+
+      void trackOrderConfirmEvent('product', {
+        orderId: order.orderId,
+        orderTotal: order.cart.total || 0,
+        orderSubtotal: order.cart.subtotal || order.cart.total || 0,
+        items: order.cart.items.map((item) => {
+          const rawId = (item.productId || item.id || '').replace(/[{}-]/g, '').toUpperCase();
+          const cleanId = rawId.includes('_') ? rawId.split('_')[0] : rawId;
+          const entityId = cleanId ? `${cleanId}_${targetLang}` : item.name;
+
+          return {
+            id: entityId,
+            price: item.unitPrice,
+            quantity: item.quantity,
+          };
+        }),
+      }).then(() => {
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem(sessionKey, 'true');
+        }
+      }).catch((err) => {
+        console.warn('[Sitecore Search] trackOrderConfirmEvent error:', err);
+      });
+    } catch (err) {
+      console.warn('[Sitecore Search] Failed to dispatch trackOrderConfirmEvent:', err);
+    }
+  }, [order, locale]);
 
   if (!token) {
     return (

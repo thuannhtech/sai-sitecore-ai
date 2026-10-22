@@ -5,6 +5,7 @@ import client from 'src/lib/sitecore-client';
 import { ImageField, RichText, Text } from '@sitecore-content-sdk/nextjs';
 import { Link } from 'src/i18n/navigation';
 import { useLocale } from 'next-intl';
+import { trackPageViewEvent, trackClickEntityEvent } from '@sitecore-search/react';
 import { BlogListingProps, SitecoreField, BlogItem, RenderingParams } from './BlogListing.types';
 
 // --- GraphQL Query ---
@@ -114,7 +115,7 @@ const formatDate = (dateValue: string, locale: string = 'en-US') => {
 };
 
 
-const BlogCard = ({ item, locale }: { item: BlogItem; locale: string }) => {
+const BlogCard = ({ item, locale, index }: { item: BlogItem; locale: string; index?: number }) => {
 
     const title = getFieldValue(item.fields, 'Title') || 'No title available for this post. Please read more to find out the details.';
     const rawContent = getFieldValue(item.fields, 'Content') || '';
@@ -124,11 +125,31 @@ const BlogCard = ({ item, locale }: { item: BlogItem; locale: string }) => {
     const image = getImageUrl(item.fields, 'Image');
     const url = item?.url.path;
 
+    const handleCardClick = () => {
+        if (!item?.id) return;
+        const rawId = item.id.replace(/[{}-]/g, '').toUpperCase();
+        const cleanId = rawId.includes('_') ? rawId.split('_')[0] : rawId;
+        const targetLang = (locale || 'en').toLowerCase().startsWith('vi') ? 'vi-VN' : 'en';
+        const entityId = `${cleanId}_${targetLang}`;
+
+        try {
+            void trackClickEntityEvent('rfkid_7', 'blogitem', {
+                actionCause: 'entity',
+                index: index ?? 0,
+                items: [{ id: entityId }],
+            }).catch((err) => {
+                console.warn('[Sitecore Search] trackClickEntityEvent (blogitem) error:', err);
+            });
+        } catch (err) {
+            console.warn('[Sitecore Search] Failed to dispatch trackClickEntityEvent (blogitem):', err);
+        }
+    };
+
     return (
         <article className="group flex flex-col bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden h-full">
             <div className="relative h-48 bg-gray-100 overflow-hidden">
                 {image ? (
-                    <Link href={url}>
+                    <Link href={url} onClick={handleCardClick}>
                         <img
                             src={image}
                             alt={title}
@@ -157,7 +178,7 @@ const BlogCard = ({ item, locale }: { item: BlogItem; locale: string }) => {
 
             <div className="p-5 flex flex-col flex-grow">
                 <h3 className="font-bold text-xl text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
-                    <Link href={url}>
+                    <Link href={url} onClick={handleCardClick}>
                         {title}
                     </Link>
                 </h3>
@@ -168,7 +189,7 @@ const BlogCard = ({ item, locale }: { item: BlogItem; locale: string }) => {
 
                 <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
                     <span>{date}</span>
-                    <Link href={url}>
+                    <Link href={url} onClick={handleCardClick}>
                         <span className="font-medium text-blue-600 flex items-center gap-1 group-hover:gap-2 transition-all">
                             Read more <span aria-hidden="true">&rarr;</span>
                         </span>
@@ -202,7 +223,6 @@ const BlogListing: React.FC<BlogListingProps> = (props) => {
 
         try {
             setLoading(true);
-            debugger;
             const excludedNames = ['Data'];
             const res: any = await client.getData(GET_BLOG_ITEMS_QUERY, {
                 path: rootFolder,
@@ -226,6 +246,16 @@ const BlogListing: React.FC<BlogListingProps> = (props) => {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    useEffect(() => {
+        try {
+            void trackPageViewEvent('category').catch((err) => {
+                console.warn('[Sitecore Search] trackPageViewEvent (category) error:', err);
+            });
+        } catch (err) {
+            console.warn('[Sitecore Search] Failed to dispatch trackPageViewEvent (category):', err);
+        }
+    }, []);
 
     // --- Memoized Logic ---
     const filteredItems = useMemo(() => {
@@ -282,7 +312,7 @@ const BlogListing: React.FC<BlogListingProps> = (props) => {
                         /* Skeleton Loading State */
                         Array.from({ length: pageSize }).map((_, idx) => <SkeletonCard key={idx} />)
                     ) : paginatedItems.length > 0 ? (
-                        paginatedItems.map((item) => <BlogCard key={item.id} item={item} locale={locale} />)
+                        paginatedItems.map((item, idx) => <BlogCard key={item.id} item={item} locale={locale} index={idx} />)
                     ) : (
                         /* Empty State */
                         <div className="col-span-full py-16 text-center bg-white rounded-xl border border-dashed border-gray-300">

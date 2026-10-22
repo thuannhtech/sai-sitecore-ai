@@ -10,7 +10,9 @@ import * as Title from 'src/components/title/Title';
 import * as SkateShipmentMethod from 'src/components/SkateShipmentMethod/SkateShipmentMethod';
 import * as SkateProductList from 'src/components/SkateProductList/SkateProductList';
 import * as SkateProductGallery from 'src/components/SkateProductDetail/SkateProductGallery';
+import * as SkateProductDetailTracker from 'src/components/SkateProductDetail/SkateProductDetailTracker';
 import * as SkateProductDetail from 'src/components/SkateProductDetail/SkateProductDetail';
+import * as ProductMoreLikeThis from 'src/components/SkateProductDetail/ProductMoreLikeThis';
 import * as SkatePaymentMethod from 'src/components/SkatePaymentMethod/SkatePaymentMethod';
 import * as SkateBraintreePayment from 'src/components/SkatePaymentMethod/SkateBraintreePayment';
 import * as SkateOrderDetail from 'src/components/SkateOrderDetail/SkateOrderDetail';
@@ -21,6 +23,7 @@ import * as SkateContainer from 'src/components/SkateContainer/SkateContainer';
 import * as SkateCheckoutStep from 'src/components/SkateCheckoutStep/SkateCheckoutStep';
 import * as SkateOrderSuccess from 'src/components/SkateCheckout/SkateOrderSuccess';
 import * as SkateCheckout from 'src/components/SkateCheckout/SkateCheckout';
+import * as CheckoutScriptLoader from 'src/components/SkateCheckout/CheckoutScriptLoader';
 import * as SkateMiniCart from 'src/components/SkateCart/SkateMiniCart';
 import * as SkateCartToggle from 'src/components/SkateCart/SkateCartToggle';
 import * as SkateCartSummary from 'src/components/SkateCart/SkateCartSummary';
@@ -52,6 +55,7 @@ import * as Menu from 'src/components/Menu/Menu';
 import * as LinkList from 'src/components/link-list/LinkList';
 import * as Image from 'src/components/image/Image';
 import * as HomePagePersonalizedForYou from 'src/components/HomePagePersonalizedForYou/HomePagePersonalizedForYou';
+import * as CustomSitecoreForm from 'src/components/forms/CustomSitecoreForm';
 import * as BasicForm from 'src/components/forms/BasicForm';
 import * as FooterNavigationColumn from 'src/components/Footer/FooterNavigationColumn';
 import * as Footer from 'src/components/Footer/Footer';
@@ -61,6 +65,7 @@ import * as Container from 'src/components/container/Container';
 import * as ColumnSplitter from 'src/components/column-splitter/ColumnSplitter';
 import * as BlogListingtypes from 'src/components/BlogListing/BlogListing.types';
 import * as BlogListing from 'src/components/BlogListing/BlogListing';
+import * as BlogDetailTracker from 'src/components/Blog/BlogDetailTracker';
 import * as BlogDetailtypes from 'src/components/Blog/BlogDetail.types';
 import * as BlogDetail from 'src/components/Blog/BlogDetail';
 import * as BannerSlider from 'src/components/BannerSlider/BannerSlider';
@@ -80,7 +85,9 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['SkateShipmentMethod', { ...SkateShipmentMethod, componentType: 'client' }],
   ['SkateProductList', { ...SkateProductList, componentType: 'client' }],
   ['SkateProductGallery', { ...SkateProductGallery, componentType: 'client' }],
+  ['SkateProductDetailTracker', { ...SkateProductDetailTracker, componentType: 'client' }],
   ['SkateProductDetail', { ...SkateProductDetail }],
+  ['ProductMoreLikeThis', { ...ProductMoreLikeThis, componentType: 'client' }],
   ['SkatePaymentMethod', { ...SkatePaymentMethod, componentType: 'client' }],
   ['SkateBraintreePayment', { ...SkateBraintreePayment, componentType: 'client' }],
   ['SkateOrderDetail', { ...SkateOrderDetail, componentType: 'client' }],
@@ -91,6 +98,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['SkateCheckoutStep', { ...SkateCheckoutStep, componentType: 'client' }],
   ['SkateOrderSuccess', { ...SkateOrderSuccess, componentType: 'client' }],
   ['SkateCheckout', { ...SkateCheckout }],
+  ['CheckoutScriptLoader', { ...CheckoutScriptLoader, componentType: 'client' }],
   ['SkateMiniCart', { ...SkateMiniCart, componentType: 'client' }],
   ['SkateCartToggle', { ...SkateCartToggle, componentType: 'client' }],
   ['SkateCartSummary', { ...SkateCartSummary, componentType: 'client' }],
@@ -120,6 +128,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['LinkList', { ...LinkList }],
   ['Image', { ...Image }],
   ['HomePagePersonalizedForYou', { ...HomePagePersonalizedForYou, componentType: 'client' }],
+  ['CustomSitecoreForm', { ...CustomSitecoreForm, componentType: 'client' }],
   ['BasicForm', { ...BasicForm, componentType: 'client' }],
   ['FooterNavigationColumn', { ...FooterNavigationColumn }],
   ['Footer', { ...Footer }],
@@ -128,6 +137,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['Container', { ...Container }],
   ['ColumnSplitter', { ...ColumnSplitter }],
   ['BlogListing', { ...BlogListingtypes, ...BlogListing, componentType: 'client' }],
+  ['BlogDetailTracker', { ...BlogDetailTracker, componentType: 'client' }],
   ['BlogDetail', { ...BlogDetailtypes, ...BlogDetail }],
   ['BannerSlider', { ...BannerSlider, componentType: 'client' }],
   ['BannerSlideItem', { ...BannerSlideItem, componentType: 'client' }],

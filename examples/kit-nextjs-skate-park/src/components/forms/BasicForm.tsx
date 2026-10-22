@@ -16,6 +16,8 @@ type FieldType =
   | 'rich text'
   | 'radio'
   | 'row'
+  | 'rating'
+  | 'phone'
   | 'label';
 
 type FormOption = { label: string; value: string };
@@ -75,25 +77,37 @@ export default function BasicForm(props: BasicFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const formRef = React.useRef<HTMLFormElement>(null);
 
+  // Load Google reCAPTCHA script if site key is configured
+  useEffect(() => {
+    const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+    if (siteKey && typeof window !== 'undefined') {
+      if (!document.getElementById('google-recaptcha-v2-script')) {
+        const script = document.createElement('script');
+        script.id = 'google-recaptcha-v2-script';
+        script.src = 'https://www.google.com/recaptcha/api.js';
+        script.async = true;
+        script.defer = true;
+        document.body.appendChild(script);
+      }
+    }
+  }, []);
+
   // --- Helper để lấy giá trị field linh hoạt ---
   const getFieldValue = (item: any, fieldName: string): any => {
     if (!item) return null;
 
-    // Sitecore có thể trả về fields trực tiếp hoặc bọc trong .fields
     const fields = item.fields || item;
 
-    // Các biến thể của tên field
     const candidates = [
-      fieldName,                                    // VD: SubmitText
-      fieldName.toLowerCase(),                      // submittext
-      fieldName.replace(/([A-Z])/g, ' $1').trim(),  // Submit Text
-      fieldName.charAt(0).toLowerCase() + fieldName.slice(1) // submitText
+      fieldName,
+      fieldName.toLowerCase(),
+      fieldName.replace(/([A-Z])/g, ' $1').trim(),
+      fieldName.charAt(0).toLowerCase() + fieldName.slice(1)
     ];
 
     for (const name of candidates) {
       const f = fields[name];
       if (f !== undefined) {
-        // Trả về .value nếu có, nếu không trả về chính nó
         return f?.value !== undefined ? f.value : f;
       }
     }
@@ -118,7 +132,6 @@ export default function BasicForm(props: BasicFormProps) {
     if (!rootItem) return null;
 
     const mapSingleField = (f: any): FormField => {
-      // Parse Options cho Select
       const optionsStr = String(getFieldValue(f, 'Options') || '');
       const options = optionsStr
         .split('\n')
@@ -136,8 +149,9 @@ export default function BasicForm(props: BasicFormProps) {
       if (type === 'richtext' || type === 'rich-text') type = 'rich text';
       if (type === 'radiobutton' || type === 'radio-button' || type === 'radiobutton') type = 'radio';
       if (type === 'label') type = 'label';
+      if (type === 'radio' || type === 'stars' || type === 'starrating') type = 'radio';
+      if (type === 'phone' || type === 'tel' || type === 'telephone') type = 'phone';
 
-      // Nhận diện FormRow qua template name hoặc item name
       const isRow =
         f.templateName === 'FormRow' ||
         f.template?.name === 'FormRow' ||
@@ -160,14 +174,11 @@ export default function BasicForm(props: BasicFormProps) {
         validationMessage: String(getFieldValue(f, 'ValidationMessage') || ''),
         defaultValue: String(getFieldValue(f, 'DefaultValue') || ''),
         children: isRow && childItems.length > 0 ? childItems.map(mapSingleField) : undefined,
-        url: f.url, // Lưu tạm URL để xử lý cây
+        url: f.url,
       } as FormField & { url?: string };
     };
 
-    // Bước 1: Map tất cả thành FormField (vẫn là mảng phẳng)
     const allMapped = fieldItems.map(mapSingleField);
-
-    // Bước 2: Xây dựng cấu trúc cây dựa trên URL (đối với trường hợp Resolver trả về flat list)
     const rootPath = rootItem.url || '';
     const finalFields: FormField[] = [];
 
@@ -175,35 +186,26 @@ export default function BasicForm(props: BasicFormProps) {
       const url = (f as any).url || '';
       const parentPath = url.substring(0, url.lastIndexOf('/'));
 
-      // Nếu là con trực tiếp của Form hoặc không có path (fallback)
       if (parentPath === rootPath || !parentPath || !rootPath) {
         finalFields.push(f);
       } else {
-        // Tìm Row cha trong danh sách đã map
         const parentRow = allMapped.find((p) => (p as any).url === parentPath && p.type === 'row');
         if (parentRow) {
           parentRow.children = parentRow.children || [];
-
-          // Kiểm tra nếu đã có field cùng Key trong Row này (đặc biệt hữu ích cho Radio Group)
           const existingField = parentRow.children.find((c) => c.key === f.key);
 
           if (existingField && existingField.type === 'radio' && f.type === 'radio') {
-            // Gộp options lại thay vì tạo field mới
             existingField.options = [...(existingField.options || []), ...(f.options || [])];
           } else {
-            // Tránh add trùng item vật lý (dựa trên URL)
             if (!parentRow.children.find((c) => (c as any).url === (f as any).url)) {
               parentRow.children.push(f);
             }
           }
         } else {
-          // Nếu không tìm thấy row cha, vẫn đẩy ra ngoài để không mất data
           finalFields.push(f);
         }
       }
     });
-
-    const mappedFields = finalFields;
 
     const script = rootItem?.fields?.Script?.value || '';
 
@@ -216,7 +218,7 @@ export default function BasicForm(props: BasicFormProps) {
       secondaryButtonText: String(getFieldValue(rootItem, 'SecondaryButtonText') || ''),
       secondaryButtonUrl: String(getFieldValue(rootItem, 'SecondaryButtonUrl') || ''),
       successRedirect: getFieldValue(rootItem, 'SuccessRedirect')?.href || null,
-      fields: mappedFields,
+      fields: finalFields,
       script: script,
       style: rootItem?.fields?.Style?.value || '',
     };
@@ -241,21 +243,60 @@ export default function BasicForm(props: BasicFormProps) {
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Check if external script (bridge) handled the submission
     if (e.defaultPrevented) return;
 
-    // Extract data from the form using native FormData API
+    // 1. Google reCAPTCHA Validation (Client & Server)
+    const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+    if (siteKey) {
+      const captchaToken = (window as any).grecaptcha?.getResponse();
+      if (!captchaToken) {
+        setError('Vui lòng xác nhận bạn không phải người máy (reCAPTCHA) trước khi gửi.');
+        return;
+      }
+
+      setSubmitting(true);
+      setError(null);
+
+      // Verify token with Next.js Backend API
+      try {
+        const verifyRes = await fetch('/api/forms/validate-captcha', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: captchaToken }),
+        });
+
+        const verifyData = await verifyRes.json();
+        if (!verifyData.success) {
+          setError('Xác thực reCAPTCHA không thành công. Vui lòng thử lại.');
+          (window as any).grecaptcha?.reset();
+          setSubmitting(false);
+          return;
+        }
+      } catch (captchaErr: any) {
+        setError('Lỗi khi kiểm tra reCAPTCHA: ' + captchaErr.message);
+        setSubmitting(false);
+        return;
+      }
+    }
+
+    // 2. Extract data from the form using native FormData API
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
 
-    // If no endpoint, do nothing (dumb form mode)
-    if (!formDef?.endpoint) return;
+    // Target endpoint: use configured endpoint or fallback to built-in webhook receiver
+    const targetEndpoint = formDef?.endpoint || '/api/forms/webhook';
+
+    // Auto-attach helpful metadata
+    data['_formId'] = formDef?.id || 'contact-us';
+    data['_formName'] = formDef?.name || formDef?.title || 'Contact Us Form';
+    data['_pageUrl'] = typeof window !== 'undefined' ? window.location.href : '';
+    data['recaptcha_verified'] = 'true';
 
     setSubmitting(true);
     setError(null);
 
     try {
-      const res = await fetch(formDef.endpoint, {
+      const res = await fetch(targetEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -263,10 +304,13 @@ export default function BasicForm(props: BasicFormProps) {
 
       if (!res.ok) throw new Error('Submission failed.');
 
-      if (formDef.successRedirect) {
+      if (formDef?.successRedirect) {
         window.location.href = formDef.successRedirect;
       } else {
-        alert("Success!");
+        alert("Cảm ơn bạn! Thông tin đã được gửi thành công.");
+        if ((window as any).grecaptcha) {
+          (window as any).grecaptcha.reset();
+        }
       }
     } catch (err: any) {
       setError(err.message);
@@ -289,8 +333,8 @@ export default function BasicForm(props: BasicFormProps) {
 
   if (!formDef) return null;
 
-  // Lấy dữ liệu đã lưu trong session cho form này (nếu có)
   const savedData = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem(`checkout_form_${formDef.name}`) || '{}') : {};
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
   return (
     <>
@@ -401,6 +445,34 @@ export default function BasicForm(props: BasicFormProps) {
                         </label>
                       ))}
                     </div>
+                  ) : field.type === 'rating' ? (
+                    <div className="flex items-center gap-2 py-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <label key={star} className="cursor-pointer text-2xl hover:scale-110 transition-transform">
+                          <input
+                            type="radio"
+                            name={field.key}
+                            value={star}
+                            defaultChecked={String(val || '5') === String(star)}
+                            className="sr-only peer"
+                          />
+                          <span className="text-gray-300 peer-checked:text-amber-400 hover:text-amber-300">★</span>
+                        </label>
+                      ))}
+                      <span className="text-xs text-gray-500 ml-2 font-medium">({field.placeholder || 'Chọn từ 1 đến 5 sao'})</span>
+                    </div>
+                  ) : field.type === 'phone' ? (
+                    <input
+                      type="tel"
+                      name={field.key}
+                      defaultValue={val}
+                      pattern="^0[0-9]{9}$"
+                      maxLength={10}
+                      minLength={10}
+                      title="Số điện thoại phải gồm đúng 10 chữ số (bắt đầu bằng số 0)"
+                      placeholder={field.placeholder || '0901234567'}
+                      className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    />
                   ) : (
                     <input
                       type={field.type === 'number' ? 'number' : field.type}
@@ -417,6 +489,13 @@ export default function BasicForm(props: BasicFormProps) {
             return renderFieldContent(f);
           })}
         </div>
+
+        {/* Google reCAPTCHA v2 Widget Container */}
+        {siteKey && (
+          <div className="pt-2 pb-1">
+            <div className="g-recaptcha" data-sitekey={siteKey}></div>
+          </div>
+        )}
 
         <div className="pt-4 flex gap-3">
           <button
@@ -445,26 +524,21 @@ export default function BasicForm(props: BasicFormProps) {
   );
 }
 
-// Component helper để nhúng Script (từ URL) và Style (CSS raw)
 function DynamicAssetsInjector({ scripts, style }: { scripts?: string; style?: string }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
 
-  // Hàm helper để giải mã các ký tự đặc biệt và xuống dòng từ Sitecore Multi-line text
   const cleanSitecoreText = (text: string) => {
     if (!text) return '';
     let result = text;
-    // Xử lý nếu chuỗi bị bọc trong ngoặc kép (JSON literal)
     if (result.startsWith('"') && result.endsWith('"')) {
       try { result = JSON.parse(result); } catch (e) { }
     }
-    // Giải mã HTML Entities cơ bản
     result = result
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
       .replace(/&#39;/g, "'")
       .replace(/&amp;/g, '&');
-    // Chuyển \n literal thành xuống dòng thực
     return result.replace(/\\n/g, '\n').replace(/\\r/g, '\r');
   };
 
@@ -472,7 +546,6 @@ function DynamicAssetsInjector({ scripts, style }: { scripts?: string; style?: s
     const rawScripts = cleanSitecoreText(scripts || '');
     if (!rawScripts) return;
 
-    // Tách các link JS theo từng dòng
     const scriptUrls = rawScripts
       .split('\n')
       .map((s) => s.trim())

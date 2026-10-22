@@ -117,6 +117,65 @@ const injectActivationStatusIntoComponentProps = (
   );
 };
 
+
+const prefetchFormsIntoComponentProps = async (
+  page: PageData,
+  componentProps: ComponentPropsCollection
+) => {
+  const contextId =
+    process.env.SITECORE_EDGE_CONTEXT_ID ||
+    process.env.NEXT_PUBLIC_SITECORE_EDGE_CONTEXT_ID ||
+    '6OM3uBKqOwHRtBezsycWJ0';
+  const edgeUrl =
+    process.env.SITECORE_EDGE_URL ||
+    process.env.NEXT_PUBLIC_SITECORE_EDGE_URL ||
+    'https://edge-platform.sitecorecloud.io';
+
+  const promises: Promise<void>[] = [];
+
+  const inspectPlaceholders = (placeholders?: Record<string, any[]>) => {
+    if (!placeholders) return;
+    for (const renderings of Object.values(placeholders)) {
+      for (const rendering of renderings) {
+        if (rendering.componentName === 'Form' && rendering.uid && rendering.params?.FormId) {
+          const formId = rendering.params.FormId;
+          const uid = rendering.uid;
+          if (!componentProps[uid] || !(componentProps[uid] as any)?.formHtml) {
+            promises.push(
+              (async () => {
+                try {
+                  const url = `${edgeUrl.replace(/\/+$/, '')}/v1/forms/publisher/${formId}?sitecoreContextId=${contextId}`;
+                  const rsp = await fetch(url, {
+                    method: 'GET',
+                    next: { revalidate: 60, tags: [`form-${formId}`] },
+                  });
+                  if (rsp.ok) {
+                    const formHtml = await rsp.text();
+                    componentProps[uid] = {
+                      ...((componentProps[uid] as Record<string, unknown>) || {}),
+                      formHtml,
+                    };
+                  }
+                } catch (e) {
+                  console.error(`[Form Prefetch Error] Form ${formId}:`, e);
+                }
+              })()
+            );
+          }
+        }
+        if (rendering.placeholders) {
+          inspectPlaceholders(rendering.placeholders as Record<string, any[]>);
+        }
+      }
+    }
+  };
+
+  inspectPlaceholders(page.layout.sitecore.route?.placeholders as Record<string, any[]> | undefined);
+  if (promises.length > 0) {
+    await Promise.all(promises);
+  }
+};
+
 export default async function Page({ params, searchParams }: PageProps) {
   const { site, locale: pathLocale, path } = await params;
   const editingParams = await searchParams;
@@ -164,6 +223,7 @@ export default async function Page({ params, searchParams }: PageProps) {
   injectUserIntoComponentProps(page, componentProps, user);
   const status = typeof editingParams.status === 'string' ? editingParams.status : undefined;
   injectActivationStatusIntoComponentProps(page, componentProps, status);
+  await prefetchFormsIntoComponentProps(page, componentProps);
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>

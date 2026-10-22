@@ -84,6 +84,24 @@
                 // --- 4. Success Handling ---
                 document.cookie = `oc-token=${result.access_token}; path=/; max-age=${result.expires_in}; SameSite=Lax`;
 
+                // Track only a confirmed login, while the Search SDK still has
+                // access to the visitor's anonymous identity before redirect.
+                await new Promise((resolve) => {
+                    let completed = false;
+                    const finish = () => {
+                        if (completed) return;
+                        completed = true;
+                        resolve();
+                    };
+
+                    document.dispatchEvent(new CustomEvent('sitecore-search:user-login', {
+                        detail: { email: data.email, onComplete: finish }
+                    }));
+
+                    // Do not block sign-in if the Search provider is unavailable.
+                    window.setTimeout(finish, 1200);
+                });
+
                 // Call the profile API to let the server set the user-data cookie
                 await fetch('/api/customer/me');
 

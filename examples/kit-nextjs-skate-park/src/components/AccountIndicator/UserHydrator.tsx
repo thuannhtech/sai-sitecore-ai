@@ -2,8 +2,11 @@
 
 import { useEffect } from 'react';
 import { MeUser } from 'ordercloud-javascript-sdk';
+import { trackUserLoginEvent } from '@sitecore-search/react';
 import { useUserStore } from 'src/lib/user/store';
 import { tokenHelper } from 'src/lib/ordercloud/token-helper';
+
+const SITECORE_SEARCH_LOGIN_EVENT = 'sitecore-search:user-login';
 
 interface UserHydratorProps {
   user: MeUser | null;
@@ -18,7 +21,29 @@ export const UserHydrator: React.FC<UserHydratorProps> = ({ user }) => {
       isGuest,
       loading: false 
     });
+
   }, [user]);
+
+  useEffect(() => {
+    const handleSearchLogin = (event: Event) => {
+      const { email, onComplete } = (event as CustomEvent<{
+        email?: string;
+        onComplete?: () => void;
+      }>).detail ?? {};
+
+      if (!email) {
+        onComplete?.();
+        return;
+      }
+
+      void trackUserLoginEvent({ email }).catch((error) => {
+        console.warn('[Sitecore Search] trackUserLoginEvent error:', error);
+      }).finally(() => onComplete?.());
+    };
+
+    document.addEventListener(SITECORE_SEARCH_LOGIN_EVENT, handleSearchLogin);
+    return () => document.removeEventListener(SITECORE_SEARCH_LOGIN_EVENT, handleSearchLogin);
+  }, []);
 
   return null;
 };

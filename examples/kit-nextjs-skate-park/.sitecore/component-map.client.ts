@@ -6,6 +6,8 @@ import { Form } from '@sitecore-content-sdk/nextjs';
 import * as SkateShipmentMethod from 'src/components/SkateShipmentMethod/SkateShipmentMethod';
 import * as SkateProductList from 'src/components/SkateProductList/SkateProductList';
 import * as SkateProductGallery from 'src/components/SkateProductDetail/SkateProductGallery';
+import * as SkateProductDetailTracker from 'src/components/SkateProductDetail/SkateProductDetailTracker';
+import * as ProductMoreLikeThis from 'src/components/SkateProductDetail/ProductMoreLikeThis';
 import * as SkatePaymentMethod from 'src/components/SkatePaymentMethod/SkatePaymentMethod';
 import * as SkateBraintreePayment from 'src/components/SkatePaymentMethod/SkateBraintreePayment';
 import * as SkateOrderDetail from 'src/components/SkateOrderDetail/SkateOrderDetail';
@@ -15,6 +17,7 @@ import * as SkateLoginLayout from 'src/components/SkateLoginLayout/SkateLoginLay
 import * as SkateContainer from 'src/components/SkateContainer/SkateContainer';
 import * as SkateCheckoutStep from 'src/components/SkateCheckoutStep/SkateCheckoutStep';
 import * as SkateOrderSuccess from 'src/components/SkateCheckout/SkateOrderSuccess';
+import * as CheckoutScriptLoader from 'src/components/SkateCheckout/CheckoutScriptLoader';
 import * as SkateMiniCart from 'src/components/SkateCart/SkateMiniCart';
 import * as SkateCartToggle from 'src/components/SkateCart/SkateCartToggle';
 import * as SkateCartSummary from 'src/components/SkateCart/SkateCartSummary';
@@ -32,8 +35,10 @@ import * as LanguageSwitcher from 'src/components/MenuHeader/LanguageSwitcher';
 import * as HeaderSearch from 'src/components/MenuHeader/HeaderSearch';
 import * as Menu from 'src/components/Menu/Menu';
 import * as HomePagePersonalizedForYou from 'src/components/HomePagePersonalizedForYou/HomePagePersonalizedForYou';
+import * as CustomSitecoreForm from 'src/components/forms/CustomSitecoreForm';
 import * as BasicForm from 'src/components/forms/BasicForm';
 import * as BlogListing from 'src/components/BlogListing/BlogListing';
+import * as BlogDetailTracker from 'src/components/Blog/BlogDetailTracker';
 import * as BannerSlider from 'src/components/BannerSlider/BannerSlider';
 import * as BannerSlideItem from 'src/components/BannerSlideItem/BannerSlideItem';
 import * as UserHydrator from 'src/components/AccountIndicator/UserHydrator';
@@ -46,6 +51,8 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['SkateShipmentMethod', { ...SkateShipmentMethod }],
   ['SkateProductList', { ...SkateProductList }],
   ['SkateProductGallery', { ...SkateProductGallery }],
+  ['SkateProductDetailTracker', { ...SkateProductDetailTracker }],
+  ['ProductMoreLikeThis', { ...ProductMoreLikeThis }],
   ['SkatePaymentMethod', { ...SkatePaymentMethod }],
   ['SkateBraintreePayment', { ...SkateBraintreePayment }],
   ['SkateOrderDetail', { ...SkateOrderDetail }],
@@ -55,6 +62,7 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['SkateContainer', { ...SkateContainer }],
   ['SkateCheckoutStep', { ...SkateCheckoutStep }],
   ['SkateOrderSuccess', { ...SkateOrderSuccess }],
+  ['CheckoutScriptLoader', { ...CheckoutScriptLoader }],
   ['SkateMiniCart', { ...SkateMiniCart }],
   ['SkateCartToggle', { ...SkateCartToggle }],
   ['SkateCartSummary', { ...SkateCartSummary }],
@@ -72,8 +80,10 @@ export const componentMap = new Map<string, NextjsContentSdkComponent>([
   ['HeaderSearch', { ...HeaderSearch }],
   ['Menu', { ...Menu }],
   ['HomePagePersonalizedForYou', { ...HomePagePersonalizedForYou }],
+  ['CustomSitecoreForm', { ...CustomSitecoreForm }],
   ['BasicForm', { ...BasicForm }],
   ['BlogListing', { ...BlogListing }],
+  ['BlogDetailTracker', { ...BlogDetailTracker }],
   ['BannerSlider', { ...BannerSlider }],
   ['BannerSlideItem', { ...BannerSlideItem }],
   ['UserHydrator', { ...UserHydrator }],

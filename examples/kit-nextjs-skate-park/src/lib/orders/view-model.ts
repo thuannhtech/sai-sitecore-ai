@@ -81,6 +81,7 @@ export const mapOrderApiResponse = (result: { order?: Record<string, any>; lineI
     cart: {
       items: ocItems.map((item: SourceLineItem) => ({
         id: item.id || item.ID || '',
+        productId: item.ProductID || (item.Product as any)?.ID || item.id || item.ID || '',
         name: item.name || item.Product?.Name || item.ProductID || 'Product',
         quantity: Number(item.quantity || item.Quantity) || 0,
         unitPrice: Number(item.unitPrice || item.price || item.UnitPrice) || 0,

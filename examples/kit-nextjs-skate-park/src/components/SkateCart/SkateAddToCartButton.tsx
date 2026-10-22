@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { ShoppingCart, Loader2 } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { trackAddToCartEvent } from '@sitecore-search/react';
 import { useSkateCartStore } from 'src/lib/cart/store';
 import { SkateProduct } from 'src/lib/cart/types';
 import { clsx, type ClassValue } from 'clsx';
@@ -22,6 +24,7 @@ export const SkateAddToCartButton: React.FC<SkateAddToCartButtonProps> = ({
   quantity = 1,
   className,
 }) => {
+  const locale = useLocale();
   const { addToCart } = useSkateCartStore();
   const [isLocalLoading, setIsLocalLoading] = React.useState(false);
 
@@ -32,6 +35,28 @@ export const SkateAddToCartButton: React.FC<SkateAddToCartButtonProps> = ({
     setIsLocalLoading(true);
     try {
       await addToCart(product, quantity);
+
+      // Track Add to Cart event in Sitecore Search to boost product value & recommendations
+      try {
+        const rawId = (product.id || '').replace(/[{}-]/g, '').toUpperCase();
+        const cleanId = rawId.includes('_') ? rawId.split('_')[0] : rawId;
+        const targetLang = (locale || 'en').toLowerCase().startsWith('vi') ? 'vi-VN' : 'en';
+        const entityId = `${cleanId}_${targetLang}`;
+
+        void trackAddToCartEvent('product', {
+          items: [
+            {
+              id: entityId,
+              price: product.price,
+              quantity: quantity,
+            },
+          ],
+        }).catch((err) => {
+          console.warn('[Sitecore Search] trackAddToCartEvent error:', err);
+        });
+      } catch (trackError) {
+        console.warn('[Sitecore Search] Failed to dispatch trackAddToCartEvent:', trackError);
+      }
     } catch (error) {
       console.error('Error adding to cart:', error);
       alert(error instanceof Error ? error.message : 'Failed to add to cart');

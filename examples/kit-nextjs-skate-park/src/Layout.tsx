@@ -6,6 +6,10 @@ import SitecoreStyles from "components/content-sdk/SitecoreStyles";
 import { DesignLibraryApp } from "@sitecore-content-sdk/nextjs";
 import { AppPlaceholder } from "@sitecore-content-sdk/nextjs";
 import componentMap from ".sitecore/component-map";
+import * as CustomSitecoreForm from "src/components/forms/CustomSitecoreForm";
+
+// Ensure custom enhanced Form with Star Rating, reCAPTCHA, Phone validation and modern UI is used
+componentMap.set("Form", { ...CustomSitecoreForm, componentType: "client" });
 
 interface LayoutProps {
   page: Page;

@@ -83,7 +83,6 @@ type SitecoreSearchResultsInnerProps = SitecoreSearchResultsProps & {
 const DEFAULT_RFK_ID = "rfkid_7";
 
 function dictionaryText(t: any, key: string, fallback: string, values?: Record<string, string | number>) {
-  debugger;
   var result = t.has(key) ? t(key, values) : fallback;
   return result;
 }
@@ -1007,6 +1006,10 @@ function ProductSearchResultsInner({
       if (locale) {
         request.setSearchFilter(new FilterEqual("language", locale));
       }
+
+      // Personalize product ranking from the visitor's affinity for brands.
+      // The `brand` attribute must be enabled for Personalization in Search.
+      request.setSearchPersonalization({ algorithm: "affinity", fields: ["brand"] });
 
       if (currentKeyphrase) {
         request.setSearchQueryKeyphrase(currentKeyphrase);

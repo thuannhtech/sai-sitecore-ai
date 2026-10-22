@@ -21,6 +21,7 @@ export async function GET(req: Request) {
     const list = await getAllProducts(locale, rootPath);
 
     let items = list.map(p => ({
+      id: p.id,
       name: p.modelName,
       image: p.imageUrl || '',
       price: p.price,
