@@ -95,6 +95,7 @@ export const Default = (props: SkateProductDetailProps): JSX.Element => {
                 product={{
                   id: product?.id || 'pdp-mock',
                   orderCloudId: product?.orderCloudId,
+                  searchEntityId: product?.id,
                   name: product?.modelName || 'Product',
                   price: product?.price || 0,
                   imageUrl: product?.images?.[0],

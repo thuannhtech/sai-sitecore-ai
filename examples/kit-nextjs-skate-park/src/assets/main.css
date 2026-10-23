@@ -3,7 +3,7 @@
 @import './base/index.css';
 @import './components/index.css';
 @import './skate-checkout-overrides.css';
-@import './sitecore-form.css';
+@import './components/sitecore-form.css';
 
 /* bootstrap grid to tailwind plugin */
 @plugin 'tailwind-bootstrap-grid' {

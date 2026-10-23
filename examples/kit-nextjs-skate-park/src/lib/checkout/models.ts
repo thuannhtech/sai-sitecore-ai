@@ -39,6 +39,7 @@ export type OrderPlacementRequest = z.infer<typeof OrderPlacementRequestSchema>;
 export interface OrderViewModelItem {
   id: string;
   productId?: string;
+  searchProductId?: string;
   name: string;
   quantity: number;
   unitPrice: number;
@@ -86,6 +87,8 @@ export interface OrderViewModel {
     firstName?: string;
     lastName?: string;
     phoneNumber?: string;
+    email?: string;
+    id?: string;
   };
   shippingAddress?: OrderViewModelAddress;
   shippingMethod?: OrderViewModelShippingMethod;

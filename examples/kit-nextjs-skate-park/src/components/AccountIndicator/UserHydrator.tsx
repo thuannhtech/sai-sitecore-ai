@@ -26,17 +26,19 @@ export const UserHydrator: React.FC<UserHydratorProps> = ({ user }) => {
 
   useEffect(() => {
     const handleSearchLogin = (event: Event) => {
-      const { email, onComplete } = (event as CustomEvent<{
+      const { id, email, onComplete } = (event as CustomEvent<{
+        id?: string;
         email?: string;
         onComplete?: () => void;
       }>).detail ?? {};
 
-      if (!email) {
+      if (!id || !email) {
+        console.warn('[Sitecore Search] Skipping login event: user ID and email are required.');
         onComplete?.();
         return;
       }
 
-      void trackUserLoginEvent({ email }).catch((error) => {
+      void trackUserLoginEvent({ id, email }).catch((error) => {
         console.warn('[Sitecore Search] trackUserLoginEvent error:', error);
       }).finally(() => onComplete?.());
     };

@@ -3,7 +3,7 @@
 import React, { FormEvent, useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { widget, useSearchResults, FilterEqual, WidgetsProvider } from "@sitecore-search/react";
+import { widget, useSearchResults, FilterEqual, WidgetsProvider, trackSearchResultsClickEntityEvent } from "@sitecore-search/react";
 import { WidgetDataType } from "@sitecore-search/data";
 import {
   ArrowRight,
@@ -952,13 +952,13 @@ function SitecoreSearchResultsInner({
                     ))}
                     {visibleProductResults.map((product, index) => (
                       <article key={`product-${product.id ?? product.source_id ?? index}`} className="flex flex-col gap-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:flex-row">
-                        {product.image_url ? <a href={product.product_url || `/${locale}/products/${encodeURIComponent(product.name!)}`} className="mt-3 inline-flex items-center gap-2 font-semibold text-sky-700 hover:underline"><img src={normalizeSitecoreMediaUrl(product.image_url)} alt={product.name ?? "Product"} className="h-48 w-full rounded-2xl object-cover sm:w-64" /></a> : null}
+                        {product.image_url ? <a href={product.product_url || `/${locale}/products/${encodeURIComponent(product.name!)}`} onClick={() => { if (product.id) void trackSearchResultsClickEntityEvent(DEFAULT_RFK_ID, "product", { index, items: [{ id: product.id, sourceId: product.source_id }], keyword: currentKeyphrase, numResults: productTotal, pageSize: 12 }).catch((err) => console.warn("[Sitecore Search] Product search result click tracking failed:", err)); }} className="mt-3 inline-flex items-center gap-2 font-semibold text-sky-700 hover:underline"><img src={normalizeSitecoreMediaUrl(product.image_url)} alt={product.name ?? "Product"} className="h-48 w-full rounded-2xl object-cover sm:w-64" /></a> : null}
                         <div className="min-w-0 flex-1">
                           <p className="m-0 text-xs font-semibold uppercase tracking-wider text-sky-700">{dictionaryText(t, "SEARCH_PRODUCT_SUPPLY", "Product/Supply")}</p>
                           <h2 className="mt-2 text-2xl font-semibold text-slate-950">{product.name ?? dictionaryText(t, "SEARCH_PRODUCT_FALLBACK", "Product")}</h2>
                           {product.description ? <p className="mt-2 line-clamp-3 text-slate-600">{product.description}</p> : null}
                           {product.price != null && Number.isFinite(Number(product.price)) ? <p className="mt-3 font-semibold text-slate-900">${Number(product.price).toFixed(2)}</p> : null}
-                          {(product.product_url || product.name) ? <a href={product.product_url || `/${locale}/products/${encodeURIComponent(product.name!)}`} className="mt-3 inline-flex items-center gap-2 font-semibold text-sky-700 hover:underline">{dictionaryText(t, "SEARCH_VIEW_PRODUCT", "View product")} <ArrowRight size={16} /></a> : null}
+                          {(product.product_url || product.name) ? <a href={product.product_url || `/${locale}/products/${encodeURIComponent(product.name!)}`} onClick={() => { if (product.id) void trackSearchResultsClickEntityEvent(DEFAULT_RFK_ID, "product", { index, items: [{ id: product.id, sourceId: product.source_id }], keyword: currentKeyphrase, numResults: productTotal, pageSize: 12 }).catch((err) => console.warn("[Sitecore Search] Product search result click tracking failed:", err)); }} className="mt-3 inline-flex items-center gap-2 font-semibold text-sky-700 hover:underline">{dictionaryText(t, "SEARCH_VIEW_PRODUCT", "View product")} <ArrowRight size={16} /></a> : null}
                         </div>
                       </article>
                     ))}
@@ -1058,6 +1058,8 @@ const SearchResultsWidget = widget(
 
 export default function Default(props: SitecoreSearchResultsProps) {
   const t = useTranslations(sitecoreConfig.defaultSite || undefined);
+  const searchParams = useSearchParams();
+  const currentKeyphrase = searchParams.get("q") ?? "";
   const [mounted, setMounted] = useState(false);
   const [productResults, setProductResults] = useState<ProductSearchItem[]>([]);
   const [productTotal, setProductTotal] = useState(0);

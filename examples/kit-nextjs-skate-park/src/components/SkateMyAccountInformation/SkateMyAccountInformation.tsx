@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useUserStore } from 'src/lib/user/store';
 import {
   Calendar,
@@ -108,6 +108,9 @@ export const Default = (props: any) => {
   const [ordersFetchedForUser, setOrdersFetchedForUser] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState('');
 
+    const locale = useLocale();
+    const targetLang = locale.toLowerCase().startsWith('vi') ? '' : 'en';
+
   const showComingSoon = async (featureName: string) => {
     try {
       const swal = await getSwal();
@@ -188,7 +191,7 @@ export const Default = (props: any) => {
           Please sign in to access your account information, orders, and settings.
         </p>
         <a
-          href="/account/login"
+          href={`/${targetLang}/account/login`}
           className="rounded-2xl bg-gray-900 px-10 py-4 font-bold text-white shadow-lg shadow-gray-200 transition-all hover:bg-gray-800"
         >
           Sign In

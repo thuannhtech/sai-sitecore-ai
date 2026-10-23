@@ -20,7 +20,7 @@ interface SkateCartState {
   setIsOpen: (open: boolean) => void;
   initializeCart: () => Promise<void>;
   fetchCart: () => Promise<void>;
-  addToCart: (product: SkateProduct, quantity: number) => Promise<void>;
+  addToCart: (product: SkateProduct, quantity: number) => Promise<boolean>;
   updateQuantity: (lineItemId: string, quantity: number) => Promise<void>;
   removeItem: (lineItemId: string) => Promise<void>;
   applyPromotion: (code: string) => Promise<void>;
@@ -213,8 +213,9 @@ export const useSkateCartStore = create<SkateCartState>((set, get) => ({
 
   addToCart: async (product: SkateProduct, quantity: number) => {
     set({ isLoading: true });
+    let response: Response;
     try {
-      const response = await fetch(CART_LINE_ITEMS_API_URL, {
+      response = await fetch(CART_LINE_ITEMS_API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -223,16 +224,27 @@ export const useSkateCartStore = create<SkateCartState>((set, get) => ({
           ProductID: product.orderCloudId ?? product.id,
           Quantity: quantity,
           ImageUrl: product.imageUrl,
+          SitecoreProductId: product.searchEntityId ?? product.id,
         }),
       });
 
       await handleCartApiResponse(response);
+    } catch {
+      set({ error: 'Failed to add to cart', isLoading: false });
+      return false;
+    }
+
+    try {
       const cart = await fetchCartFromApi();
       persistCart(cart);
       set({ cart, isLoading: false, isOpen: true });
     } catch {
-      set({ error: 'Failed to add to cart', isLoading: false });
+      // The add request itself succeeded; keep its Search conversion even if
+      // refreshing the cart display fails afterward.
+      set({ error: 'Failed to refresh cart', isLoading: false, isOpen: true });
     }
+
+    return true;
   },
 
   updateQuantity: async (lineItemId: string, quantity: number) => {

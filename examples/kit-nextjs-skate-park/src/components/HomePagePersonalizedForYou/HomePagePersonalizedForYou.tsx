@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLocale } from 'next-intl';
-import { FilterEqual, useRecommendation, widget } from '@sitecore-search/react';
+import { FilterEqual, useRecommendation, widget, trackRecommendationClickEntityEvent } from '@sitecore-search/react';
 import { WidgetDataType } from '@sitecore-search/data';
 import { normalizeSitecoreMediaUrl } from 'lib/sitecore-media-url';
 import { getProductBrand } from 'src/lib/product-brand';
@@ -29,6 +29,7 @@ type ProductRecommendation = {
 function HomePageTrendingCode() {
   const locale = useLocale();
   const [products, setProducts] = useState<ProductRecommendation[]>([]);
+  const [rfkId, setRfkId] = useState('rfkid_25');
   const [loading, setLoading] = useState(true);
 
   const targetLang = locale.toLowerCase().startsWith('vi') ? 'vi-VN' : 'en';
@@ -76,17 +77,17 @@ function HomePageTrendingCode() {
           return (json.widgets?.[0]?.content || []) as ProductRecommendation[];
         }
 
-        let rawItems = await queryWidget('rfkid_25');
+        let activeRfkId = 'rfkid_25';
+        let rawItems = await queryWidget(activeRfkId);
         if (!rawItems.length) {
-          rawItems = await queryWidget('rfkid_1');
+          activeRfkId = 'rfkid_1';
+          rawItems = await queryWidget(activeRfkId);
         }
 
-        // Lọc chính xác theo Language (en / vi-VN)
-        // Thứ tự xếp hạng hoàn toàn do AI Recommendation Recipe của Sitecore Search
-        // tính toán thời gian thực tại thời điểm khách vào, KHÔNG dùng mảng hard-code!
         const filtered = rawItems.filter((item) => item.language === targetLang);
 
         if (isMounted) {
+          setRfkId(activeRfkId);
           setProducts(filtered.slice(0, 4));
         }
       } catch (err) {
@@ -111,7 +112,7 @@ function HomePageTrendingCode() {
         <div>
           <div className="mb-2 flex items-center gap-2">
             <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[11px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
-              Cách 1: Xử lý bằng Code
+              Hand with code
             </span>
             <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
               Lang: {targetLang}
@@ -159,6 +160,15 @@ function HomePageTrendingCode() {
               <a
                 key={product.id ?? product.name ?? index}
                 href={href}
+                onClick={() => {
+                  if (!product.id) return;
+                  void trackRecommendationClickEntityEvent(rfkId, 'product', {
+                    index,
+                    items: [{ id: product.id }],
+                  }).catch((error) => {
+                    console.warn('[Sitecore Search] Personalized product click tracking failed:', error);
+                  });
+                }}
                 className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between"
               >
                 <div>
@@ -304,6 +314,15 @@ function PersonalizedForYouResults({ rfkId = 'rfkid_25' }: { rfkId: string }) {
               <a
                 key={product.id ?? product.name ?? index}
                 href={href}
+                onClick={() => {
+                  if (!product.id) return;
+                  void trackRecommendationClickEntityEvent(rfkId, 'product', {
+                    index,
+                    items: [{ id: product.id }],
+                  }).catch((error) => {
+                    console.warn('[Sitecore Search] Personalized product click tracking failed:', error);
+                  });
+                }}
                 className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between"
               >
                 <div>

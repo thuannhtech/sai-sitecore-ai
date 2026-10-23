@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { checkIsCaptchaEnabled } from './CustomSitecoreForm';
 
 type FieldType =
   | 'text'
@@ -77,10 +78,15 @@ export default function BasicForm(props: BasicFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const formRef = React.useRef<HTMLFormElement>(null);
 
-  // Load Google reCAPTCHA script if site key is configured
+  // Check if reCAPTCHA is enabled via Sitecore Pages Parameters (e.g. enableCaptcha=true) or URL (?captcha=1)
+  const isCaptchaEnabled = useMemo(() => {
+    return checkIsCaptchaEnabled(props.params, (props.rendering as any)?.params);
+  }, [props.params, props.rendering]);
+
+  // Load Google reCAPTCHA script only if site key is configured AND captcha is enabled
   useEffect(() => {
     const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-    if (siteKey && typeof window !== 'undefined') {
+    if (siteKey && isCaptchaEnabled && typeof window !== 'undefined') {
       if (!document.getElementById('google-recaptcha-v2-script')) {
         const script = document.createElement('script');
         script.id = 'google-recaptcha-v2-script';
@@ -90,7 +96,7 @@ export default function BasicForm(props: BasicFormProps) {
         document.body.appendChild(script);
       }
     }
-  }, []);
+  }, [isCaptchaEnabled]);
 
   // --- Helper để lấy giá trị field linh hoạt ---
   const getFieldValue = (item: any, fieldName: string): any => {
@@ -245,9 +251,9 @@ export default function BasicForm(props: BasicFormProps) {
 
     if (e.defaultPrevented) return;
 
-    // 1. Google reCAPTCHA Validation (Client & Server)
+    // 1. Google reCAPTCHA Validation (Client & Server) - only if enabled
     const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-    if (siteKey) {
+    if (siteKey && isCaptchaEnabled) {
       const captchaToken = (window as any).grecaptcha?.getResponse();
       if (!captchaToken) {
         setError('Vui lòng xác nhận bạn không phải người máy (reCAPTCHA) trước khi gửi.');
@@ -490,8 +496,8 @@ export default function BasicForm(props: BasicFormProps) {
           })}
         </div>
 
-        {/* Google reCAPTCHA v2 Widget Container */}
-        {siteKey && (
+        {/* Google reCAPTCHA v2 Widget Container - only rendered when enabled */}
+        {siteKey && isCaptchaEnabled && (
           <div className="pt-2 pb-1">
             <div className="g-recaptcha" data-sitekey={siteKey}></div>
           </div>

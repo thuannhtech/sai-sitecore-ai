@@ -23,6 +23,7 @@ interface SourceLineItem {
   imageUrl?: string;
   xp?: {
     ImageUrl?: string;
+    SitecoreProductId?: string;
   };
   ShippingAddress?: {
     FirstName?: string;
@@ -51,6 +52,8 @@ export const mapOrderApiResponse = (result: { order?: Record<string, any>; lineI
       firstName: ocOrder?.FromUser?.FirstName || 'N/A',
       lastName: ocOrder?.FromUser?.LastName || '',
       phoneNumber: ocOrder?.FromUser?.Phone || 'N/A',
+      email: ocOrder?.xp?.Email || ocOrder?.FromUser?.Email || storefrontCheckout?.customer?.email || (shippingAddress as any)?.Email || '',
+      id: ocOrder?.FromUser?.ID || ocOrder?.FromUserID || '',
     },
     shippingAddress: {
       FullName: `${shippingAddress.FirstName || ''} ${shippingAddress.LastName || ''}`.trim(),
@@ -82,6 +85,7 @@ export const mapOrderApiResponse = (result: { order?: Record<string, any>; lineI
       items: ocItems.map((item: SourceLineItem) => ({
         id: item.id || item.ID || '',
         productId: item.ProductID || (item.Product as any)?.ID || item.id || item.ID || '',
+        searchProductId: item.xp?.SitecoreProductId,
         name: item.name || item.Product?.Name || item.ProductID || 'Product',
         quantity: Number(item.quantity || item.Quantity) || 0,
         unitPrice: Number(item.unitPrice || item.price || item.UnitPrice) || 0,

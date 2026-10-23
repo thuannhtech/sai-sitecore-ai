@@ -32,6 +32,8 @@ export async function POST(req: NextRequest) {
     // Return the auth response (tokens) and user info to the client
     return NextResponse.json({
       ok: true,
+      user_id: user?.ID,
+      email: user?.Email || email,
       access_token: authResponse.access_token,
       refresh_token: authResponse.refresh_token,
       expires_in: authResponse.expires_in,

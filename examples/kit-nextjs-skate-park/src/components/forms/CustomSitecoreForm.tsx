@@ -3,7 +3,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { form as sitecoreForm } from '@sitecore-content-sdk/core';
 import { useSitecore, useComponentProps } from '@sitecore-content-sdk/nextjs';
-import 'assets/sitecore-form.css';
 
 const { executeScriptElements, loadForm, subscribeToFormSubmitEvent } = sitecoreForm;
 
@@ -196,7 +195,7 @@ export const CustomSitecoreForm: React.FC<CustomSitecoreFormProps> = ({ params, 
         <div
           ref={formRef}
           id={id || undefined}
-          className={`brother-sitecore-form ${params.styles?.trimEnd() || ''}`}
+          className={`brother-sitecore-form mw-13 ${params.styles?.trimEnd() || ''}`}
           dangerouslySetInnerHTML={{ __html: content }}
         />
       </div>

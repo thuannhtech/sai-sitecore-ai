@@ -7,6 +7,7 @@ import { useSkateCartStore } from 'src/lib/cart/store';
 import { Link, useRouter } from 'src/i18n/navigation';
 import { MeUser } from 'ordercloud-javascript-sdk';
 import { tokenHelper } from 'src/lib/ordercloud/token-helper';
+import { useLocale } from 'next-intl';
 
 interface SkateAccountIndicatorProps {
   user?: MeUser | null;
@@ -26,6 +27,8 @@ export const SkateAccountIndicator: React.FC<SkateAccountIndicatorProps> = ({ us
   const displayName = effectiveIsGuest
     ? 'Sign in / Sign up'
     : `${user?.FirstName ?? ''} ${user?.LastName ?? ''}`.trim() || 'Account';
+  const locale = useLocale();
+  const targetLang = locale.toLowerCase().startsWith('vi') ? '' : 'en';
 
   const handleLogout = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -64,9 +67,10 @@ export const SkateAccountIndicator: React.FC<SkateAccountIndicatorProps> = ({ us
   };
 
   if (!effectiveIsAuthenticated || !user) {
+    
     return (
       <Link
-        href="/account/login"
+        href={`/${targetLang}/account/login`}
         className="flex items-center gap-[8px] cursor-pointer transition-opacity duration-200 hover:opacity-80 group"
       >
         <div className="flex items-center">

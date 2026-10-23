@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
+import { Eye } from 'lucide-react';
 import { useLocale } from 'next-intl';
-import { FilterEqual, PageController, useRecommendation, widget } from '@sitecore-search/react';
+import { FilterEqual, PageController, useRecommendation, widget, trackRecommendationClickEntityEvent, trackSearchResultsClickEntityEvent } from '@sitecore-search/react';
 import { WidgetDataType } from '@sitecore-search/data';
 import { normalizeSitecoreMediaUrl } from 'src/lib/sitecore-media-url';
 import { getProductBrand } from 'src/lib/product-brand';
@@ -259,16 +260,23 @@ function ProductMoreLikeThisCode({
               <a
                 key={product.id ?? product.name ?? index}
                 href={href}
+                onClick={() => {
+                  if (!product.id) return;
+                  void trackSearchResultsClickEntityEvent('rfkid_7', 'product', {
+                    index,
+                    items: [{ id: product.id }],
+                    numResults: products.length,
+                  }).catch((error) => {
+                    console.warn('[Sitecore Search] Related product click tracking failed:', error);
+                  });
+                }}
                 className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between"
               >
                 <div>
                   <div className="relative flex h-40 items-center justify-center bg-slate-50 p-4">
                     {/* View count badge */}
                     <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-slate-900/85 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-sm backdrop-blur-sm">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
+                      <Eye size={12} strokeWidth={2.5} />
                       {itemViews.toLocaleString()} views
                     </span>
 
@@ -422,6 +430,15 @@ function ProductMoreLikeThisWidgetResults({
               <a
                 key={product.id ?? product.name ?? index}
                 href={href}
+                onClick={() => {
+                  if (!product.id) return;
+                  void trackRecommendationClickEntityEvent(rfkId, 'product', {
+                    index,
+                    items: [{ id: product.id }],
+                  }).catch((error) => {
+                    console.warn('[Sitecore Search] More Like This product click tracking failed:', error);
+                  });
+                }}
                 className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between"
               >
                 <div>

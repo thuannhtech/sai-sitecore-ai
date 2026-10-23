@@ -1,0 +1,379 @@
+/* Sitecore AI Form Custom Styling */
+
+.brother-sitecore-form {
+  font-family: inherit;
+}
+
+/* 1. Remove limit-counter (0/20, 0/1000) */
+.brother-sitecore-form .limit-counter {
+  display: none !important;
+}
+
+/* 2. Text components inside form (dynamic titles, descriptions from author) */
+.brother-sitecore-form .text-component {
+  color: #212121 !important;
+  line-height: 1.5 !important;
+}
+
+/* 3. Remove default Sitecore borders on wrappers to avoid double-borders */
+.brother-sitecore-form .form-input-wrapper-div,
+.brother-sitecore-form .global-input-wrapper {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  padding: 0 !important;
+  display: block !important;
+}
+
+/* Container & Row overrides */
+.brother-sitecore-form .main-form-wrapper,
+.brother-sitecore-form .form-page,
+.brother-sitecore-form form.content {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.brother-sitecore-form .landing-page-row {
+  width: 100% !important;
+  margin-bottom: 1.5rem !important;
+  box-sizing: border-box !important;
+}
+
+.brother-sitecore-form .inner-row-div,
+.brother-sitecore-form .border-wrapper {
+  width: 100% !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.brother-sitecore-form .row-slot-wrapper {
+  width: 100% !important;
+  display: flex !important;
+  gap: 2rem !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 768px) {
+  .brother-sitecore-form .row-slot-wrapper {
+    flex-direction: column !important;
+    gap: 1.25rem !important;
+  }
+}
+
+/* Slot layout: HALF takes 50%, FULL takes 100% */
+.brother-sitecore-form .landing-page-slot.HALF {
+  flex: 1 1 50% !important;
+  width: calc(50% - 1rem) !important;
+  max-width: calc(50% - 1rem) !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 768px) {
+  .brother-sitecore-form .landing-page-slot.HALF {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+.brother-sitecore-form .landing-page-slot.FULL {
+  flex: 1 1 100% !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.brother-sitecore-form .slot-container,
+.brother-sitecore-form .component,
+.brother-sitecore-form .shared-input-field,
+.brother-sitecore-form .col-slot-wrapper,
+.brother-sitecore-form label.form-input-wrapper-element {
+  width: 100% !important;
+  max-width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+}
+
+/* Input Labels */
+.brother-sitecore-form .form-field-label,
+.brother-sitecore-form .global-input-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #212121;
+  margin-bottom: 0.5rem;
+  display: inline-block;
+}
+
+.brother-sitecore-form .required-indicator,
+.brother-sitecore-form span[style*="color: red"] {
+  color: #ef4444 !important;
+  margin-left: 2px !important;
+  font-weight: bold !important;
+}
+
+/* 4. Form Inputs: Text & Email */
+.brother-sitecore-form input[type="text"],
+.brother-sitecore-form input[type="email"],
+.brother-sitecore-form input.form-input-element:not([type="tel"]) {
+  width: 100% !important;
+  min-width: 100% !important;
+  height: 48px !important;
+  font-size: 15px !important;
+  color: #212529 !important;
+  background-color: #ffffff !important;
+  border: 1px solid #ced4da !important;
+  border-radius: 6px !important;
+  padding: 10px 16px !important;
+  line-height: 1.5 !important;
+  outline: none !important;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+  box-sizing: border-box !important;
+}
+
+.brother-sitecore-form input[type="text"]:focus,
+.brother-sitecore-form input[type="email"]:focus,
+.brother-sitecore-form input.form-input-element:not([type="tel"]):focus {
+  border-color: #1965E1 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(25, 101, 225, 0.15) !important;
+}
+
+/* 5. Phone Input styling */
+.brother-sitecore-form .iti {
+  width: 100% !important;
+  display: block !important;
+  position: relative !important;
+}
+
+.brother-sitecore-form .iti__country-container {
+  position: absolute !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  z-index: 4 !important;
+}
+
+.brother-sitecore-form .iti__selected-country {
+  height: 30px !important;
+  margin: auto 0 auto 6px !important;
+  padding: 0 10px 0 10px !important;
+  background: transparent !important;
+  border: none !important;
+  border-right: 1px solid #d1d5db !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.brother-sitecore-form input.iti__tel-input,
+.brother-sitecore-form input[type="tel"] {
+  width: 100% !important;
+  min-width: 100% !important;
+  height: 48px !important;
+  padding-left: 75px !important;
+  padding-right: 16px !important;
+  font-size: 15px !important;
+  color: #212529 !important;
+  background-color: #ffffff !important;
+  border: 1px solid #ced4da !important;
+  border-radius: 6px !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+.brother-sitecore-form input.iti__tel-input:focus,
+.brother-sitecore-form input[type="tel"]:focus {
+  border-color: #1965E1 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(25, 101, 225, 0.15) !important;
+}
+
+/* Textarea */
+.brother-sitecore-form textarea,
+.brother-sitecore-form textarea.form-input-element {
+  width: 100% !important;
+  min-width: 100% !important;
+  font-size: 15px !important;
+  color: #212529 !important;
+  background-color: #ffffff !important;
+  border: 1px solid #ced4da !important;
+  border-radius: 6px !important;
+  padding: 12px 16px !important;
+  line-height: 1.5 !important;
+  outline: none !important;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+  min-height: 130px !important;
+  box-sizing: border-box !important;
+  font-family: inherit !important;
+}
+
+.brother-sitecore-form textarea:focus {
+  border-color: #1965E1 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(25, 101, 225, 0.15) !important;
+}
+
+/* Custom Star Rating */
+.star-rating-custom-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+  margin-bottom: 8px;
+}
+
+.stars-container {
+  display: flex;
+  gap: 8px;
+}
+
+.star-item {
+  font-size: 2rem;
+  line-height: 1;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: transform 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+
+.star-item:hover {
+  transform: scale(1.2);
+}
+
+.star-item.active {
+  color: #f59e0b;
+}
+
+.star-rating-badge {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #b45309;
+  background-color: #fef3c7;
+  border: 1px solid #fde68a;
+  padding: 3px 12px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+/* reCAPTCHA Widget - Left-aligned */
+.custom-recaptcha-wrapper {
+  margin: 1.5rem 0 1.5rem 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  min-height: 80px !important;
+}
+
+.recaptcha-error-text {
+  color: #dc2626 !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  margin-top: 0.5rem !important;
+  text-align: left !important;
+}
+
+.phone-custom-error {
+  color: #dc2626 !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  margin-top: 0.375rem !important;
+}
+
+/* Centered Submit Button - Blue pill style matching SitecoreAI Form Editor */
+.brother-sitecore-form [data-component-type="submit_button"] {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  margin-top: 1rem !important;
+}
+
+.brother-sitecore-form .submit-button,
+.brother-sitecore-form button.submit-button {
+  width: auto;
+  min-width: 180px;
+  max-width: 280px;
+  margin: 0 auto;
+  background-color: #4f8df7;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  height: 48px;
+  border-radius: 50px;
+  padding: 0 2.5rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.15s ease !important;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brother-sitecore-form .submit-button:hover,
+.brother-sitecore-form button.submit-button:hover {
+  background-color: #3b82f6 !important;
+  transform: translateY(-1px) !important;
+}
+
+.brother-sitecore-form .submit-button:active,
+.brother-sitecore-form button.submit-button:active {
+  transform: translateY(0) !important;
+}
+
+.brother-sitecore-form .submit-button:disabled,
+.brother-sitecore-form button.submit-button:disabled {
+  opacity: 0.65 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+/* Error and Popups */
+.brother-sitecore-form .form-input-error-message,
+.brother-sitecore-form .global-input-error-message {
+  color: #dc2626 !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  margin-top: 0.375rem !important;
+  position: static !important;
+}
+
+.brother-sitecore-form .success-popup {
+  background-color: #ecfdf5 !important;
+  border: 1.5px solid #10b981 !important;
+  color: #065f46 !important;
+  padding: 1.5rem !important;
+  border-radius: 0.75rem !important;
+  text-align: center !important;
+  font-weight: 600 !important;
+  font-size: 1.05rem !important;
+  margin-top: 1.5rem !important;
+}
+
+.brother-sitecore-form .fail-popup {
+  background-color: #fef2f2 !important;
+  border: 1.5px solid #ef4444 !important;
+  color: #991b1b !important;
+  padding: 1.5rem !important;
+  border-radius: 0.75rem !important;
+  text-align: center !important;
+  font-weight: 600 !important;
+  margin-top: 1.5rem !important;
+}
+
+.mw-13 {
+    max-width: 1320px;
+    margin-left: auto;
+    margin-right: auto;
+}

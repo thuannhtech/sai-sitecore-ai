@@ -95,7 +95,11 @@
                     };
 
                     document.dispatchEvent(new CustomEvent('sitecore-search:user-login', {
-                        detail: { email: data.email, onComplete: finish }
+                        detail: {
+                            id: result.user_id,
+                            email: result.email || data.email,
+                            onComplete: finish
+                        }
                     }));
 
                     // Do not block sign-in if the Search provider is unavailable.

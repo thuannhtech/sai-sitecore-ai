@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { trackOrderConfirmEvent } from '@sitecore-search/react';
+import { trackOrderConfirmEvent, EventContext } from '@sitecore-search/react';
+import { useUserStore } from 'src/lib/user/store';
 import { ArrowRight, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -52,8 +53,7 @@ export const SkateOrderSuccess = ({
   // Track Order Confirm Event in Sitecore Search Telemetry
   useEffect(() => {
     if (!order?.orderId || !order?.cart?.items?.length) return;
-
-    // Tránh gửi trùng lặp khi người dùng refresh hoặc revisit trang cảm ơn
+    
     const sessionKey = `sitecore_tracked_order_${order.orderId}`;
     if (typeof window !== 'undefined' && sessionStorage.getItem(sessionKey)) {
       return;
@@ -62,12 +62,29 @@ export const SkateOrderSuccess = ({
     try {
       const targetLang = (locale || 'en').toLowerCase().startsWith('vi') ? 'vi-VN' : 'en';
 
+      debugger;
+      const currentUser = useUserStore.getState().user;
+      const customerEmail = order.customer?.email || currentUser?.Email || '';
+      const customerId = order.customer?.id || currentUser?.ID || order.orderId;
+
+      const eventContext = EventContext.get() as any;
+      const prevUser = eventContext?.data?.user ? { ...eventContext.data.user } : undefined;
+
+      if (eventContext) {
+        eventContext.data = eventContext.data || {};
+        eventContext.data.user = {
+          ...(eventContext.data.user || {}),
+          ...(customerEmail ? { email: customerEmail } : {}),
+          cuid: customerId || eventContext.data.user?.uuid || order.orderId,
+        };
+      }
+
       void trackOrderConfirmEvent('product', {
         orderId: order.orderId,
         orderTotal: order.cart.total || 0,
         orderSubtotal: order.cart.subtotal || order.cart.total || 0,
         items: order.cart.items.map((item) => {
-          const rawId = (item.productId || item.id || '').replace(/[{}-]/g, '').toUpperCase();
+          const rawId = (item.searchProductId || item.productId || item.id || '').replace(/[{}-]/g, '').toUpperCase();
           const cleanId = rawId.includes('_') ? rawId.split('_')[0] : rawId;
           const entityId = cleanId ? `${cleanId}_${targetLang}` : item.name;
 
@@ -83,6 +100,15 @@ export const SkateOrderSuccess = ({
         }
       }).catch((err) => {
         console.warn('[Sitecore Search] trackOrderConfirmEvent error:', err);
+      }).finally(() => {
+        if (eventContext && eventContext.data) {
+          if (prevUser) {
+            eventContext.data.user = prevUser;
+          } else if (eventContext.data.user) {
+            delete eventContext.data.user.cuid;
+            delete eventContext.data.user.email;
+          }
+        }
       });
     } catch (err) {
       console.warn('[Sitecore Search] Failed to dispatch trackOrderConfirmEvent:', err);

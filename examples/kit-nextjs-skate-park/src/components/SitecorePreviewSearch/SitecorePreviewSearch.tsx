@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Search as SearchIcon } from 'lucide-react';
-import { FilterEqual, usePreviewSearch, widget } from '@sitecore-search/react';
+import { FilterEqual, usePreviewSearch, widget, trackPreviewSearchClickEvent } from '@sitecore-search/react';
 import type { PreviewSearchInitialState } from '@sitecore-search/react';
 import { WidgetDataType } from '@sitecore-search/data';
 import { normalizeSitecoreMediaUrl } from 'lib/sitecore-media-url';
@@ -21,6 +21,7 @@ type PreviewResult = {
   image_url?: string | null;
   url?: string;
   product_url?: string;
+  source_id?: string;
   language?: string;
   type?: string;
 };
@@ -58,11 +59,11 @@ function PreviewEntityWidget({ rfkId, entity, locale, keyphrase, onResults }: Pr
     onKeyphraseChange({ keyphrase });
   }, [keyphrase, onKeyphraseChange]);
 
-  const results = queryResult.data?.content ?? [];
+  const content = queryResult.data?.content;
   const loading = queryResult.isLoading || queryResult.isFetching;
   useEffect(() => {
-    onResults(entity, results, loading);
-  }, [entity, loading, onResults, results]);
+    onResults(entity, content ?? [], loading);
+  }, [entity, loading, onResults, content]);
 
   return <div ref={widgetRef} data-rfkid={rfkId} data-entity={entity} hidden />;
 }
@@ -93,11 +94,19 @@ export function SitecorePreviewSearch() {
   const handleResults = useMemo(
     () => (entity: PreviewEntity, results: PreviewResult[], loading: boolean) => {
       if (entity === 'blogitem') {
-        setBlogResults(results);
-        setBlogLoading(loading);
+        setBlogLoading((prev) => (prev !== loading ? loading : prev));
+        setBlogResults((prev) => {
+          if (prev.length === 0 && results.length === 0) return prev;
+          if (prev === results) return prev;
+          return results;
+        });
       } else {
-        setProductResults(results);
-        setProductLoading(loading);
+        setProductLoading((prev) => (prev !== loading ? loading : prev));
+        setProductResults((prev) => {
+          if (prev.length === 0 && results.length === 0) return prev;
+          if (prev === results) return prev;
+          return results;
+        });
       }
     },
     []
@@ -207,6 +216,18 @@ export function SitecorePreviewSearch() {
             <a
               className="sitecore-preview-search-result"
               href={getResultUrl(item)}
+              onClick={() => {
+                if (!item.id) return;
+                const entity = item.resultType === 'product' ? 'product' : 'blogitem';
+                void trackPreviewSearchClickEvent(PREVIEW_SEARCH_RFK_ID, entity, {
+                  index,
+                  items: [{ id: item.id, sourceId: item.source_id }],
+                  keyword: cleanKeyphrase,
+                  numResults: allResults.length,
+                }).catch((error) => {
+                  console.warn('[Sitecore Search] Preview result click tracking failed:', error);
+                });
+              }}
               key={`${item.resultType}-${item.id ?? item.name ?? index}`}
               role="option"
               aria-selected="false"

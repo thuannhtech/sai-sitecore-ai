@@ -34,7 +34,10 @@ export const SkateAddToCartButton: React.FC<SkateAddToCartButtonProps> = ({
 
     setIsLocalLoading(true);
     try {
-      await addToCart(product, quantity);
+      const added = await addToCart(product, quantity);
+      if (!added) {
+        throw new Error('Failed to add product to cart');
+      }
 
       // Track Add to Cart event in Sitecore Search to boost product value & recommendations
       try {

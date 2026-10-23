@@ -377,7 +377,7 @@ export const Default = ({ params, fields, page: sitecorePage }: SkateProductList
 
                         {/* Content Section */}
                         <div className="p-8 pt-0 flex-1 flex flex-col">
-                          <Link href={productHref} locale={locale}>
+                          <Link href={productHref}>
                             <h3 className="text-xl font-black text-slate-900 group-hover:text-[#1965e1] transition-colors line-clamp-2 uppercase tracking-tighter leading-none mb-3">
                               {product.name}
                             </h3>

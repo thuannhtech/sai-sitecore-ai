@@ -33,6 +33,7 @@ export interface AddCartLineItemInput {
   ProductID: string;
   Quantity: number;
   ImageUrl?: string;
+  SitecoreProductId?: string;
 }
 
 export interface UpdateCartLineItemQuantityInput {
@@ -212,7 +213,14 @@ export const cartService = {
 
         return await Cart.PatchLineItem(
           lineItemId,
-          { Quantity: currentQuantity + item.Quantity },
+          {
+            Quantity: currentQuantity + item.Quantity,
+            xp: {
+              ...(existingItem.xp ?? {}),
+              ImageUrl: item.ImageUrl ?? existingItem.xp?.ImageUrl,
+              SitecoreProductId: item.SitecoreProductId ?? existingItem.xp?.SitecoreProductId,
+            },
+          },
           { accessToken }
         );
       }
@@ -222,6 +230,7 @@ export const cartService = {
         Quantity: item.Quantity,
         xp: {
           ImageUrl: item.ImageUrl,
+          SitecoreProductId: item.SitecoreProductId,
         },
       };
 
