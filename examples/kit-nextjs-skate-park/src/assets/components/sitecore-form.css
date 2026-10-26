@@ -17,8 +17,11 @@
 
 /* 3. Remove default Sitecore borders on wrappers to avoid double-borders */
 .brother-sitecore-form .form-input-wrapper-div,
-.brother-sitecore-form .global-input-wrapper {
+.brother-sitecore-form .global-input-wrapper,
+.brother-sitecore-form .form-input-wrapper-div:has(.form-input-element:focus),
+.brother-sitecore-form .form-input-wrapper-div:focus-within {
   border: none !important;
+  outline: none;
   background: transparent !important;
   box-shadow: none !important;
   width: 100% !important;
@@ -200,20 +203,20 @@
 /* Textarea */
 .brother-sitecore-form textarea,
 .brother-sitecore-form textarea.form-input-element {
+  display: block;
   width: 100% !important;
   min-width: 100% !important;
-  font-size: 15px !important;
+  font-size: 15px;
   color: #212529 !important;
   background-color: #ffffff !important;
   border: 1px solid #ced4da !important;
-  border-radius: 6px !important;
-  padding: 12px 16px !important;
-  line-height: 1.5 !important;
-  outline: none !important;
+  border-radius: 6px;
+  padding: 12px 16px;
+  line-height: 1.5;
+  outline: none;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
   min-height: 130px !important;
   box-sizing: border-box !important;
-  font-family: inherit !important;
 }
 
 .brother-sitecore-form textarea:focus {
