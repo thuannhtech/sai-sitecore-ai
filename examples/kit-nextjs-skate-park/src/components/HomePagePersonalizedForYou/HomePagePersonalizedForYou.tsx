@@ -112,7 +112,7 @@ function HomePageTrendingCode() {
         <div>
           <div className="mb-2 flex items-center gap-2">
             <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[11px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
-              Hand with code
+              Handle with code
             </span>
             <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
               Lang: {targetLang}

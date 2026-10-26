@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getRecaptchaSettingsForSite } from 'lib/recaptcha-settings';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,12 +15,12 @@ export async function OPTIONS() {
 
 /**
  * Server-side Google reCAPTCHA Verification Endpoint
- * Verifies client captchaToken against Google's siteverify API using RECAPTCHA_SECRET_KEY
+ * Dynamically fetches Secret Key exclusively from Sitecore Edge:
+ * /sitecore/content/{siteName}/{siteName}/Settings/Google reCAPTCHA
  */
 export async function POST(req: NextRequest) {
   try {
-    const { token } = await req.json();
-    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+    const { token, siteName } = await req.json();
 
     if (!token) {
       return NextResponse.json(
@@ -28,11 +29,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const effectiveSite = siteName || process.env.NEXT_PUBLIC_DEFAULT_SITE_NAME || 'sai-sitecore';
+    const settings = await getRecaptchaSettingsForSite(effectiveSite);
+    const secretKey = settings.secretKey;
+
     if (!secretKey) {
-      console.warn('[reCAPTCHA] RECAPTCHA_SECRET_KEY not set in .env.local, bypassing validation for development');
+      console.error(
+        `[reCAPTCHA] Secret key not found in Sitecore path: /sitecore/content/${effectiveSite}/${effectiveSite}/Settings/Google reCAPTCHA`
+      );
       return NextResponse.json(
-        { success: true, bypassed: true, message: 'Dev mode bypass' },
-        { status: 200, headers: CORS_HEADERS }
+        {
+          success: false,
+          error: `reCAPTCHA Secret Key is not configured in Sitecore Settings for site "${effectiveSite}".`,
+        },
+        { status: 500, headers: CORS_HEADERS }
       );
     }
 

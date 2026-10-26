@@ -96,6 +96,18 @@ export const CustomSitecoreForm: React.FC<CustomSitecoreFormProps> = ({ params, 
   const formRef = useRef<HTMLDivElement>(null);
   const isEditing = context.page.mode.isEditing;
 
+  // Site name from Sitecore Context
+  const siteName =
+    context?.page?.siteName ||
+    (context as any)?.page?.layout?.sitecore?.context?.site?.name ||
+    params?.siteName ||
+    rendering?.params?.siteName ||
+    process.env.NEXT_PUBLIC_DEFAULT_SITE_NAME ||
+    'sai-sitecore';
+
+  // Detect Country / Site for Global Postal Code Lookup (SG: OneMap, AU: Australia Post)
+  const country = resolveCountryFromSitecore(context, params, rendering?.params);
+
   // Check if reCAPTCHA is enabled via Sitecore Pages Rendering/Component Parameters (e.g. enableCaptcha=true)
   const [isCaptchaEnabled, setIsCaptchaEnabled] = useState(() => checkIsCaptchaEnabled(params, rendering?.params));
 
@@ -166,12 +178,12 @@ export const CustomSitecoreForm: React.FC<CustomSitecoreFormProps> = ({ params, 
 
       // Enhance DOM immediately (neutralizes Sitecore's hardcoded broken recaptcha script & elements)
       const root = formRef.current;
-      enhanceFormDom(root, isCaptchaEnabled);
+      enhanceFormDom(root, isCaptchaEnabled, country, siteName);
 
       // Execute embedded scripts from Sitecore form publisher
       executeScriptElements(formRef.current);
     }
-  }, [content, params.FormId, isCaptchaEnabled]);
+  }, [content, params.FormId, isCaptchaEnabled, country, siteName]);
 
   return (
     <section className="w-full bg-white py-8 sm:py-12 px-4 sm:px-8">
@@ -209,8 +221,14 @@ export const CustomSitecoreForm: React.FC<CustomSitecoreFormProps> = ({ params, 
  * 2. Conditionally inject Google reCAPTCHA v2 widget above submit button when enabled
  * 3. Enforce 10-digit phone validation
  * 4. Verify reCAPTCHA token with Next.js server route before Sitecore submit
+ * 5. Global Postal Code Lookup based on Sitecore site / country context (SG: OneMap, AU: Australia Post)
  */
-function enhanceFormDom(root: HTMLElement, isCaptchaEnabled: boolean = false) {
+function enhanceFormDom(
+  root: HTMLElement,
+  isCaptchaEnabled: boolean = false,
+  country: 'AU' | 'SG' = 'SG',
+  siteName: string = 'sai-sitecore'
+) {
   // Always neutralize any embedded Sitecore scripts hardcoded with Sitecore's invalid public key (6LeQQf8s)
   const scripts = root.querySelectorAll('script');
   scripts.forEach((s) => {
@@ -226,8 +244,327 @@ function enhanceFormDom(root: HTMLElement, isCaptchaEnabled: boolean = false) {
   // 1. Rating Field Transformation
   enhanceRatingField(formEl);
 
-  // 2. reCAPTCHA & Phone Validation & Button Enhancement
-  enhanceRecaptchaAndValidation(formEl, isCaptchaEnabled);
+  // 2. Explicit Read-only Fields (configured via placeholder, field name, or CSS class in Sitecore)
+  enhanceExplicitReadOnlyFields(formEl);
+
+  // 3. Global Postal Code Lookup & Coupled Address Field (SG: OneMap, AU: Australia Post)
+  enhancePostalCodeAndAddress(formEl, country);
+
+  // 4. reCAPTCHA & Phone Validation & Button Enhancement (Dynamic Sitecore Edge Keys)
+  enhanceRecaptchaAndValidation(formEl, isCaptchaEnabled, siteName);
+}
+
+/**
+ * Resolves whether the current Sitecore context corresponds to Australia (AU) or Singapore (SG).
+ * Inspects:
+ * 1. URL search param: ?country=AU / ?site=au (for testing)
+ * 2. Component / Rendering Parameters in Sitecore Pages
+ * 3. Sitecore Context: siteName (via useSitecore().page.siteName or useSitecoreContext())
+ * 4. Sitecore Context: locale / itemLanguage (e.g. en-AU vs en-SG)
+ */
+export function resolveCountryFromSitecore(
+  sitecoreContext: any,
+  params?: Record<string, any>,
+  renderingParams?: Record<string, any>
+): 'AU' | 'SG' {
+  // 1. URL Query parameter override (for easy testing on local: ?country=AU or ?country=SG or ?site=au)
+  if (typeof window !== 'undefined') {
+    debugger;
+    const q = new URLSearchParams(window.location.search);
+    const countryParam = q.get('country') || q.get('site');
+    if (countryParam) {
+      const c = countryParam.toUpperCase();
+      if (c === 'AU' || c.includes('AU')) return 'AU';
+      if (c === 'SG' || c.includes('SG')) return 'SG';
+    }
+  }
+
+  // 2. Component / Rendering Parameters set by author in Sitecore Pages
+  const paramCountry = params?.country || renderingParams?.country;
+  if (paramCountry) {
+    const c = String(paramCountry).toUpperCase();
+    if (c === 'AU' || c.includes('AU')) return 'AU';
+    if (c === 'SG' || c.includes('SG')) return 'SG';
+  }
+
+  // 3. Sitecore Context: siteName
+  const siteName = (
+    sitecoreContext?.page?.siteName ||
+    sitecoreContext?.page?.layout?.sitecore?.context?.site?.name ||
+    sitecoreContext?.sitecoreContext?.site?.name ||
+    sitecoreContext?.site?.name ||
+    ''
+  ).toLowerCase();
+
+  if (siteName.includes('au') || siteName.includes('australia')) {
+    return 'AU';
+  }
+  if (siteName.includes('sg') || siteName.includes('singapore')) {
+    return 'SG';
+  }
+
+  // 4. Sitecore Context: Locale / Language
+  const locale = (
+    sitecoreContext?.page?.locale ||
+    sitecoreContext?.page?.layout?.sitecore?.route?.itemLanguage ||
+    sitecoreContext?.sitecoreContext?.language ||
+    ''
+  ).toLowerCase();
+
+  if (locale.includes('au') || locale === 'en-au') {
+    return 'AU';
+  }
+
+  // Default: Singapore
+  return 'SG';
+}
+
+/**
+ * Supports marking ANY form field as read-only directly from Sitecore Form Builder:
+ * 1. Placeholder containing `[readonly]` (e.g. "Address [readonly]") -> strips tag and sets readOnly = true
+ * 2. Field name or id ending with `_readonly` (e.g. "address_readonly") -> sets readOnly = true
+ * 3. CSS class `readonly` or `is-readonly` set on input -> sets readOnly = true
+ */
+function enhanceExplicitReadOnlyFields(formEl: HTMLFormElement) {
+  const fields = formEl.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea');
+  fields.forEach((field) => {
+    if (field.type === 'hidden' || field.type === 'submit' || field.type === 'button') return;
+
+    let shouldBeReadOnly = false;
+
+    // Check placeholder flag: e.g. "[readonly]" or "Address [readonly]"
+    if (field.placeholder && field.placeholder.includes('[readonly]')) {
+      field.placeholder = field.placeholder.replace(/\[readonly\]/gi, '').trim();
+      shouldBeReadOnly = true;
+    }
+
+    // Check field name, id, or data-label with _readonly suffix
+    const name = field.getAttribute('name') || '';
+    const id = field.getAttribute('id') || '';
+    const label = field.getAttribute('data-label') || '';
+    if (
+      name.toLowerCase().endsWith('_readonly') ||
+      id.toLowerCase().endsWith('_readonly') ||
+      label.toLowerCase().endsWith('_readonly')
+    ) {
+      shouldBeReadOnly = true;
+    }
+
+    // Check class names configured in Sitecore form designer
+    if (field.classList.contains('readonly') || field.classList.contains('is-readonly')) {
+      shouldBeReadOnly = true;
+    }
+
+    if (shouldBeReadOnly && !field.getAttribute('data-readonly-enhanced')) {
+      field.setAttribute('data-readonly-enhanced', 'true');
+      field.readOnly = true;
+      field.setAttribute('readonly', 'true');
+      field.classList.add('bg-slate-100', 'text-slate-700', 'cursor-not-allowed', 'border-slate-300');
+    }
+  });
+}
+
+/**
+ * Enhances Postal Code field with Global Country lookup (SG: OneMap, AU: Australia Post)
+ * and couples with Address field.
+ *
+ * NOTE: If the form DOES NOT have a Postal Code field, the Address field is left completely untouched (editable).
+ * Only when BOTH Postal Code and Address exist in the same form are they coupled.
+ */
+function enhancePostalCodeAndAddress(formEl: HTMLFormElement, country: 'AU' | 'SG' = 'SG') {
+  // 1. Check if this form actually has a Postal Code field
+  const postalInput = formEl.querySelector<HTMLInputElement>(
+    'input[name="postalcode" i], input[data-label*="postal" i], input[placeholder*="postal" i], input[name="postcode" i], input[data-label*="postcode" i], input[placeholder*="postcode" i]'
+  );
+
+  // If there is NO Postal Code field in this form, DO NOT touch address field!
+  // This ensures general forms with only address remain 100% editable.
+  if (!postalInput) return;
+
+  const isAU = country === 'AU';
+  const requiredLength = isAU ? 4 : 6;
+  const providerLabel = isAU ? 'Australia Post (digitalapi.auspost.com.au)' : 'OneMap Singapore';
+
+  // 2. Find Address input/textarea in the SAME form
+  const addressInput = formEl.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+    'input[name="address" i], textarea[name="address" i], input[data-label*="address" i], textarea[data-label*="address" i]'
+  );
+
+  // If both exist, couple them
+  if (addressInput && !addressInput.getAttribute('data-coupled-postal')) {
+    addressInput.setAttribute('data-coupled-postal', 'true');
+    addressInput.readOnly = true;
+    addressInput.setAttribute('readonly', 'true');
+    addressInput.classList.add('bg-slate-50', 'text-slate-700', 'border-slate-300', 'transition-colors');
+    if (!addressInput.placeholder) {
+      addressInput.placeholder = isAU
+        ? 'Suburb/Address will be auto-filled from Australia Post...'
+        : 'Address will be auto-filled from OneMap Postal Code...';
+    }
+
+    // Add helper hint + "Edit manually" toggle button
+    const addressParent = addressInput.closest('.component, .form-input-wrapper') || addressInput.parentElement;
+    if (addressParent && !addressParent.querySelector('.address-readonly-hint')) {
+      const hint = document.createElement('div');
+      hint.className = 'address-readonly-hint text-[11px] text-slate-500 mt-1 flex items-center justify-between font-medium';
+
+      const leftNote = document.createElement('span');
+      leftNote.className = 'flex items-center gap-1';
+      leftNote.innerHTML = `<span class="text-indigo-600">ℹ</span> Auto-filled from ${providerLabel}`;
+
+      const toggleBtn = document.createElement('button');
+      toggleBtn.type = 'button';
+      toggleBtn.className = 'text-indigo-600 hover:text-indigo-800 underline text-[11px] font-medium cursor-pointer ml-2 select-none';
+      toggleBtn.textContent = '✏️ Edit manually';
+      toggleBtn.title = 'Click to edit or add unit/floor number (#01-02)';
+
+      let isManual = false;
+      toggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        isManual = !isManual;
+        if (isManual) {
+          addressInput.readOnly = false;
+          addressInput.removeAttribute('readonly');
+          addressInput.classList.remove('bg-slate-50', 'cursor-not-allowed');
+          addressInput.classList.add('bg-white');
+          addressInput.focus();
+          toggleBtn.textContent = '🔒 Lock';
+          leftNote.innerHTML = '<span class="text-emerald-600">✓</span> Manual input enabled';
+        } else {
+          addressInput.readOnly = true;
+          addressInput.setAttribute('readonly', 'true');
+          addressInput.classList.add('bg-slate-50');
+          addressInput.classList.remove('bg-white');
+          toggleBtn.textContent = '✏️ Edit manually';
+          leftNote.innerHTML = `<span class="text-indigo-600">ℹ</span> Auto-filled from ${providerLabel}`;
+        }
+      });
+
+      hint.appendChild(leftNote);
+      hint.appendChild(toggleBtn);
+      addressParent.appendChild(hint);
+    }
+  }
+
+  // Check if already enhanced for this country
+  if (postalInput.getAttribute('data-postal-country') === country) return;
+  postalInput.setAttribute('data-postal-country', country);
+
+  // Enforce numeric only and country specific length
+  postalInput.setAttribute('maxlength', String(requiredLength));
+  postalInput.setAttribute('inputmode', 'numeric');
+  if (isAU) {
+    postalInput.placeholder = 'Enter 4-digit postcode (e.g. 2000, 3000)';
+  } else {
+    postalInput.placeholder = 'Enter 6-digit postal code (e.g. 049318)';
+  }
+
+  // Create status feedback element below Postal Code
+  const postalParent = postalInput.closest('.component, .form-input-wrapper') || postalInput.parentElement;
+  let statusEl: HTMLElement | null = null;
+  if (postalParent) {
+    statusEl = postalParent.querySelector('.postal-lookup-status');
+    if (!statusEl) {
+      statusEl = document.createElement('div');
+      statusEl.className = 'postal-lookup-status text-xs mt-1.5 font-medium transition-all';
+      statusEl.style.display = 'none';
+      postalParent.appendChild(statusEl);
+    }
+  }
+
+  let lastQueriedPostal = '';
+  let queryTimeout: any = null;
+
+  const performLookup = async (postal: string) => {
+    if (postal.length !== requiredLength || postal === lastQueriedPostal) return;
+    lastQueriedPostal = postal;
+
+    if (statusEl) {
+      statusEl.className = 'postal-lookup-status text-xs mt-1.5 font-medium text-indigo-600 flex items-center gap-1.5';
+      statusEl.innerHTML = `<span class="animate-spin inline-block">⏳</span> Looking up on ${providerLabel}...`;
+      statusEl.style.display = 'flex';
+    }
+
+    try {
+      const res = await fetch(`/api/address/lookup?postalCode=${encodeURIComponent(postal)}&country=${country}`);
+      const data = await res.json();
+
+      if (data.success && data.found && data.address) {
+        if (addressInput) {
+          addressInput.value = data.address;
+          // Trigger Sitecore change listeners so form state captures the value
+          addressInput.dispatchEvent(new Event('input', { bubbles: true }));
+          addressInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        if (statusEl) {
+          statusEl.className = 'postal-lookup-status text-xs mt-1.5 font-medium text-emerald-600 flex items-center gap-1.5';
+          const detailsSummary = isAU
+            ? `${data.details?.suburb || ''}, ${data.details?.state || ''}`
+            : `${data.details?.road || ''}${data.details?.building ? ` (${data.details.building})` : ''}`;
+          statusEl.innerHTML = `<span>✓</span> Address verified: ${detailsSummary}`;
+          statusEl.style.display = 'flex';
+        }
+      } else {
+        if (addressInput) {
+          addressInput.value = '';
+          addressInput.dispatchEvent(new Event('input', { bubbles: true }));
+          addressInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        if (statusEl) {
+          statusEl.className = 'postal-lookup-status text-xs mt-1.5 font-medium text-amber-600 flex items-center gap-1.5';
+          statusEl.innerHTML = `<span>⚠</span> No address found for ${isAU ? 'postcode' : 'postal code'} ${postal} on ${providerLabel}. Please verify.`;
+          statusEl.style.display = 'flex';
+        }
+      }
+    } catch (err: any) {
+      if (statusEl) {
+        statusEl.className = 'postal-lookup-status text-xs mt-1.5 font-medium text-rose-600 flex items-center gap-1.5';
+        statusEl.innerHTML = `<span>✗</span> Connection error with ${providerLabel}: ${err.message || 'Network error'}`;
+        statusEl.style.display = 'flex';
+      }
+    }
+  };
+
+  postalInput.addEventListener('input', () => {
+    // Only allow digits, max requiredLength
+    const cleaned = postalInput.value.replace(/[^0-9]/g, '').slice(0, requiredLength);
+    if (postalInput.value !== cleaned) {
+      postalInput.value = cleaned;
+    }
+
+    if (cleaned.length < requiredLength) {
+      lastQueriedPostal = '';
+      if (statusEl) statusEl.style.display = 'none';
+      if (addressInput) {
+        addressInput.value = '';
+        addressInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      return;
+    }
+
+    if (cleaned.length === requiredLength) {
+      clearTimeout(queryTimeout);
+      queryTimeout = setTimeout(() => {
+        void performLookup(cleaned);
+      }, 300);
+    }
+  });
+
+  postalInput.addEventListener('blur', () => {
+    const cleaned = postalInput.value.replace(/[^0-9]/g, '').slice(0, requiredLength);
+    if (cleaned.length === requiredLength && cleaned !== lastQueriedPostal) {
+      clearTimeout(queryTimeout);
+      void performLookup(cleaned);
+    }
+  });
+
+  // If pre-filled with valid length, trigger lookup immediately
+  const initialValue = postalInput.value.replace(/[^0-9]/g, '').slice(0, requiredLength);
+  if (initialValue.length === requiredLength) {
+    void performLookup(initialValue);
+  }
 }
 
 /**
@@ -350,13 +687,15 @@ function enhanceRatingField(formEl: HTMLFormElement) {
  *    via Next.js server route /api/forms/validate-captcha.
  * 4. When disabled: Form submits directly without captcha.
  */
-function enhanceRecaptchaAndValidation(formEl: HTMLFormElement, isCaptchaEnabled: boolean = false) {
+function enhanceRecaptchaAndValidation(
+  formEl: HTMLFormElement,
+  isCaptchaEnabled: boolean = false,
+  siteName: string = 'sai-sitecore'
+) {
   const submitButton =
     formEl.querySelector<HTMLButtonElement>('.submit-button') ||
     formEl.querySelector<HTMLButtonElement>('button[type="submit"]');
   if (!submitButton) return;
-
-  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
   // Always neutralize any broken native Sitecore reCAPTCHA elements in the form DOM
   const brokenElements = formEl.querySelectorAll<HTMLElement>(
@@ -368,9 +707,10 @@ function enhanceRecaptchaAndValidation(formEl: HTMLFormElement, isCaptchaEnabled
     el.remove();
   });
 
-  const shouldRenderRecaptcha = !!siteKey && isCaptchaEnabled;
+  const shouldRenderRecaptcha = isCaptchaEnabled;
+  let dynamicSiteKey = '';
 
-  // 1. Load Google reCAPTCHA v2 script only when reCAPTCHA is enabled
+  // 1. Load Google reCAPTCHA v2 script & fetch dynamic Site Key from Sitecore Edge
   if (shouldRenderRecaptcha && typeof window !== 'undefined') {
     if (!document.getElementById('google-recaptcha-v2-script')) {
       const script = document.createElement('script');
@@ -380,10 +720,58 @@ function enhanceRecaptchaAndValidation(formEl: HTMLFormElement, isCaptchaEnabled
       script.defer = true;
       document.body.appendChild(script);
     }
+
+    // Dynamically retrieve Site Key configured exclusively in Sitecore:
+    // /sitecore/content/{siteName}/{siteName}/Settings/Google reCAPTCHA
+    fetch(`/api/sitecore/recaptcha-settings?siteName=${encodeURIComponent(siteName)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.siteKey) {
+          dynamicSiteKey = data.siteKey;
+          tryRenderWidget();
+        } else {
+          console.error(
+            `[reCAPTCHA] No siteKey found in Sitecore path: /sitecore/content/${siteName}/${siteName}/Settings/Google reCAPTCHA`
+          );
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load Sitecore reCAPTCHA settings from Edge:', err);
+      });
   }
 
   // 2. Handle Custom reCAPTCHA Widget DOM
   let recaptchaWrapper = formEl.querySelector<HTMLElement>('#custom-recaptcha-wrapper');
+
+  const tryRenderWidget = () => {
+    if (!dynamicSiteKey) return;
+    const grecaptcha = (window as any).grecaptcha;
+    if (grecaptcha && typeof grecaptcha.render === 'function') {
+      try {
+        const widgetElem = document.getElementById('custom-recaptcha-widget-element');
+        if (widgetElem && !widgetElem.hasChildNodes()) {
+          (window as any)._customRecaptchaWidgetId = grecaptcha.render('custom-recaptcha-widget-element', {
+            sitekey: dynamicSiteKey,
+            callback: () => {
+              const err = document.getElementById('custom-recaptcha-error');
+              if (err) err.style.display = 'none';
+            },
+            'expired-callback': () => {
+              const err = document.getElementById('custom-recaptcha-error');
+              if (err) {
+                err.textContent = 'reCAPTCHA expired. Please verify again.';
+                err.style.display = 'block';
+              }
+            },
+          });
+        }
+      } catch (e) {
+        // Widget already rendered or element not ready
+      }
+    } else {
+      setTimeout(tryRenderWidget, 300);
+    }
+  };
 
   if (shouldRenderRecaptcha) {
     if (!recaptchaWrapper) {
@@ -410,35 +798,6 @@ function enhanceRecaptchaAndValidation(formEl: HTMLFormElement, isCaptchaEnabled
         submitButton.insertAdjacentElement('beforebegin', recaptchaWrapper);
       }
     }
-
-    const tryRenderWidget = () => {
-      const grecaptcha = (window as any).grecaptcha;
-      if (grecaptcha && typeof grecaptcha.render === 'function') {
-        try {
-          const widgetElem = document.getElementById('custom-recaptcha-widget-element');
-          if (widgetElem && !widgetElem.hasChildNodes()) {
-            (window as any)._customRecaptchaWidgetId = grecaptcha.render('custom-recaptcha-widget-element', {
-              sitekey: siteKey,
-              callback: () => {
-                const err = document.getElementById('custom-recaptcha-error');
-                if (err) err.style.display = 'none';
-              },
-              'expired-callback': () => {
-                const err = document.getElementById('custom-recaptcha-error');
-                if (err) {
-                  err.textContent = 'reCAPTCHA expired. Please verify again.';
-                  err.style.display = 'block';
-                }
-              },
-            });
-          }
-        } catch (e) {
-          // Widget already rendered or element not ready
-        }
-      } else {
-        setTimeout(tryRenderWidget, 300);
-      }
-    };
 
     (window as any).onCustomRecaptchaLoad = tryRenderWidget;
     tryRenderWidget();
@@ -590,7 +949,7 @@ function enhanceRecaptchaAndValidation(formEl: HTMLFormElement, isCaptchaEnabled
           const verifyRes = await fetch('/api/forms/validate-captcha', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token }),
+            body: JSON.stringify({ token, siteName }),
           });
 
           const verifyData = await verifyRes.json();

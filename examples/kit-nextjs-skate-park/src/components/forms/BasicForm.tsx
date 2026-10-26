@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { useSitecore } from '@sitecore-content-sdk/nextjs';
 import { checkIsCaptchaEnabled } from './CustomSitecoreForm';
 
 type FieldType =
@@ -78,27 +79,55 @@ export default function BasicForm(props: BasicFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const formRef = React.useRef<HTMLFormElement>(null);
 
+  let sitecoreContext: any = null;
+  try {
+    sitecoreContext = useSitecore();
+  } catch (e) {}
+
+  const siteName =
+    sitecoreContext?.page?.siteName ||
+    sitecoreContext?.page?.layout?.sitecore?.context?.site?.name ||
+    props?.params?.siteName ||
+    (props?.rendering as any)?.params?.siteName ||
+    process.env.NEXT_PUBLIC_DEFAULT_SITE_NAME ||
+    'sai-sitecore';
+
+  // Dynamic Site Key fetched exclusively from Sitecore path:
+  // /sitecore/content/{siteName}/{siteName}/Settings/Google reCAPTCHA
+  const [siteKey, setSiteKey] = useState<string>('');
+
   // Check if reCAPTCHA is enabled via Sitecore Pages Parameters (e.g. enableCaptcha=true) or URL (?captcha=1)
   const isCaptchaEnabled = useMemo(() => {
     return checkIsCaptchaEnabled(props.params, (props.rendering as any)?.params);
   }, [props.params, props.rendering]);
 
-  // Load Google reCAPTCHA script only if site key is configured AND captcha is enabled
+  // Load Google reCAPTCHA script and fetch dynamic Site Key from Sitecore
   useEffect(() => {
-    const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-    if (siteKey && isCaptchaEnabled && typeof window !== 'undefined') {
-      if (!document.getElementById('google-recaptcha-v2-script')) {
-        const script = document.createElement('script');
-        script.id = 'google-recaptcha-v2-script';
-        script.src = 'https://www.google.com/recaptcha/api.js';
-        script.async = true;
-        script.defer = true;
-        document.body.appendChild(script);
-      }
-    }
-  }, [isCaptchaEnabled]);
+    if (!isCaptchaEnabled) return;
 
-  // --- Helper để lấy giá trị field linh hoạt ---
+    fetch(`/api/sitecore/recaptcha-settings?siteName=${encodeURIComponent(siteName)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.siteKey) {
+          setSiteKey(data.siteKey);
+          if (typeof window !== 'undefined' && !document.getElementById('google-recaptcha-v2-script')) {
+            const script = document.createElement('script');
+            script.id = 'google-recaptcha-v2-script';
+            script.src = 'https://www.google.com/recaptcha/api.js';
+            script.async = true;
+            script.defer = true;
+            document.body.appendChild(script);
+          }
+        } else {
+          console.error(`[BasicForm] No reCAPTCHA siteKey found in Sitecore path for site "${siteName}".`);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load Sitecore reCAPTCHA settings for BasicForm:', err);
+      });
+  }, [isCaptchaEnabled, siteName]);
+
+  // --- Helper to extract field value dynamically ---
   const getFieldValue = (item: any, fieldName: string): any => {
     if (!item) return null;
 
@@ -237,12 +266,12 @@ export default function BasicForm(props: BasicFormProps) {
         setFormDef(def);
         setError(null);
       } else {
-        setError("Không thể đọc cấu trúc Form. Hãy kiểm tra lại Fields trong Sitecore.");
+        setError("Unable to parse form structure. Please check the Fields in Sitecore.");
       }
       setLoading(false);
     } else if (!dataSourceId) {
       setLoading(false);
-      setError("Thiếu DataSource cho BasicForm.");
+      setError("Missing DataSource for BasicForm.");
     }
   }, [initialFields, dataSourceId]);
 
@@ -252,11 +281,10 @@ export default function BasicForm(props: BasicFormProps) {
     if (e.defaultPrevented) return;
 
     // 1. Google reCAPTCHA Validation (Client & Server) - only if enabled
-    const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
     if (siteKey && isCaptchaEnabled) {
       const captchaToken = (window as any).grecaptcha?.getResponse();
       if (!captchaToken) {
-        setError('Vui lòng xác nhận bạn không phải người máy (reCAPTCHA) trước khi gửi.');
+        setError('Please verify you are not a robot (reCAPTCHA) before submitting.');
         return;
       }
 
@@ -268,18 +296,18 @@ export default function BasicForm(props: BasicFormProps) {
         const verifyRes = await fetch('/api/forms/validate-captcha', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: captchaToken }),
+          body: JSON.stringify({ token: captchaToken, siteName }),
         });
 
         const verifyData = await verifyRes.json();
         if (!verifyData.success) {
-          setError('Xác thực reCAPTCHA không thành công. Vui lòng thử lại.');
+          setError(verifyData.error || 'reCAPTCHA verification failed. Please try again.');
           (window as any).grecaptcha?.reset();
           setSubmitting(false);
           return;
         }
       } catch (captchaErr: any) {
-        setError('Lỗi khi kiểm tra reCAPTCHA: ' + captchaErr.message);
+        setError('Error verifying reCAPTCHA: ' + captchaErr.message);
         setSubmitting(false);
         return;
       }
@@ -313,7 +341,7 @@ export default function BasicForm(props: BasicFormProps) {
       if (formDef?.successRedirect) {
         window.location.href = formDef.successRedirect;
       } else {
-        alert("Cảm ơn bạn! Thông tin đã được gửi thành công.");
+        alert("Thank you! Your information has been submitted successfully.");
         if ((window as any).grecaptcha) {
           (window as any).grecaptcha.reset();
         }
@@ -332,7 +360,7 @@ export default function BasicForm(props: BasicFormProps) {
       <div className="p-6 bg-red-50 border border-red-200 rounded-xl text-red-600">
         <p className="font-bold mb-2">🛠 Form Debug Error:</p>
         <p className="text-sm">{error}</p>
-        <p className="mt-4 text-[10px] uppercase font-bold opacity-50">Dành cho Developer: Kiểm tra console để xem chi tiết Props.</p>
+        <p className="mt-4 text-[10px] uppercase font-bold opacity-50">Developer Note: Check console for props details.</p>
       </div>
     );
   }
@@ -340,7 +368,6 @@ export default function BasicForm(props: BasicFormProps) {
   if (!formDef) return null;
 
   const savedData = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem(`checkout_form_${formDef.name}`) || '{}') : {};
-  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
   return (
     <>
@@ -397,7 +424,7 @@ export default function BasicForm(props: BasicFormProps) {
                       defaultValue={val}
                       className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
                     >
-                      <option value="">{field.placeholder || 'Chọn...'}</option>
+                      <option value="">{field.placeholder || 'Select...'}</option>
                       {field.options?.map((opt) => (
                         <option key={opt.value} value={opt.value}>
                           {opt.label}
@@ -465,7 +492,7 @@ export default function BasicForm(props: BasicFormProps) {
                           <span className="text-gray-300 peer-checked:text-amber-400 hover:text-amber-300">★</span>
                         </label>
                       ))}
-                      <span className="text-xs text-gray-500 ml-2 font-medium">({field.placeholder || 'Chọn từ 1 đến 5 sao'})</span>
+                      <span className="text-xs text-gray-500 ml-2 font-medium">({field.placeholder || 'Rate 1 to 5 stars'})</span>
                     </div>
                   ) : field.type === 'phone' ? (
                     <input
@@ -475,7 +502,7 @@ export default function BasicForm(props: BasicFormProps) {
                       pattern="^0[0-9]{9}$"
                       maxLength={10}
                       minLength={10}
-                      title="Số điện thoại phải gồm đúng 10 chữ số (bắt đầu bằng số 0)"
+                      title="Phone number must be exactly 10 digits (starting with 0)"
                       placeholder={field.placeholder || '0901234567'}
                       className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                     />
