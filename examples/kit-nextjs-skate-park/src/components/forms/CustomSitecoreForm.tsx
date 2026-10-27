@@ -78,7 +78,7 @@ export function checkIsCaptchaEnabled(
       ) {
         return true;
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   // 3. Fallback env var if configured
@@ -142,7 +142,7 @@ export const CustomSitecoreForm: React.FC<CustomSitecoreFormProps> = ({ params, 
       setContent(serverData.formHtml);
       try {
         sessionStorage.setItem(`sai_form_${params.FormId}`, serverData.formHtml);
-      } catch (e) {}
+      } catch (e) { }
     }
   }, [serverData?.formHtml, params?.FormId]);
 
@@ -160,7 +160,7 @@ export const CustomSitecoreForm: React.FC<CustomSitecoreFormProps> = ({ params, 
           setContent(html);
           try {
             sessionStorage.setItem(`sai_form_${params.FormId}`, html);
-          } catch (e) {}
+          } catch (e) { }
         })
         .catch((err) => {
           if (isEditing) {
@@ -571,29 +571,20 @@ function enhancePostalCodeAndAddress(formEl: HTMLFormElement, country: 'AU' | 'S
  * Replaces raw 1-5 radio buttons with an interactive 5-star rating widget
  */
 function enhanceRatingField(formEl: HTMLFormElement) {
-  if (formEl.querySelector('.star-rating-custom-wrapper')) return;
+  const allRatingRadios = Array.from(
+    formEl.querySelectorAll<HTMLInputElement>('input[type="radio"][name*="rating_"]')
+  );
+  if (allRatingRadios.length === 0) return;
 
-  const ratingRadios = Array.from(formEl.querySelectorAll<HTMLInputElement>('input[type="radio"][name="rating"]'));
-  if (ratingRadios.length === 0) return;
-
-  const radioGroupContainer = ratingRadios[0].closest('.radio-group-container') || ratingRadios[0].parentElement;
-  if (!radioGroupContainer) return;
-
-  const radioGroupInput = formEl.querySelector<HTMLInputElement>('.radio-group-input[name="rating"]');
-
-  // Hide the raw radio buttons
-  (radioGroupContainer as HTMLElement).style.display = 'none';
-
-  // Create custom Star Rating Widget
-  const starWrapper = document.createElement('div');
-  starWrapper.className = 'star-rating-custom-wrapper';
-
-  const starsContainer = document.createElement('div');
-  starsContainer.className = 'stars-container';
-
-  const badge = document.createElement('span');
-  badge.className = 'star-rating-badge';
-  badge.style.display = 'none';
+  // 1. Ex: rating_1, rating_2
+  const radioGroups = new Map<string, HTMLInputElement[]>();
+  for (const radio of allRatingRadios) {
+    const groupName = radio.name;
+    if (!radioGroups.has(groupName)) {
+      radioGroups.set(groupName, []);
+    }
+    radioGroups.get(groupName)!.push(radio);
+  }
 
   const ratingDescriptions: Record<number, string> = {
     1: '★ 1/5 - Poor',
@@ -603,77 +594,108 @@ function enhanceRatingField(formEl: HTMLFormElement) {
     5: '★ 5/5 - Excellent! ⭐',
   };
 
-  let currentRating = 0;
+  // 2. Process each group separately (each group creates only 1 row of 5 stars)
+  radioGroups.forEach((groupRadios, groupName) => {
+    const firstRadio = groupRadios[0];
+    const radioGroupContainer =
+      firstRadio.closest('.radio-group-container') || firstRadio.parentElement;
+    if (!radioGroupContainer) return;
 
-  ratingRadios.forEach((r) => {
-    if (r.checked) {
-      currentRating = parseInt(r.value, 10) || 0;
+    //Check if a custom star rating wrapper already exists for this group
+    if (radioGroupContainer.parentElement?.querySelector(`.star-rating-custom-wrapper[data-group="${groupName}"]`)) {
+      return;
+    }
+
+    //Find the hidden input for the current group (by exact name)
+    const radioGroupInput = formEl.querySelector<HTMLInputElement>(
+      `.radio-group-input[name="${groupName}"]`
+    );
+
+    // Hide the original radio buttons for this group
+    (radioGroupContainer as HTMLElement).style.display = 'none';
+
+    // Create a wrapper for the star rating
+    const starWrapper = document.createElement('div');
+    starWrapper.className = 'star-rating-custom-wrapper';
+    starWrapper.setAttribute('data-group', groupName);
+
+    const starsContainer = document.createElement('div');
+    starsContainer.className = 'stars-container';
+
+    const badge = document.createElement('span');
+    badge.className = 'star-rating-badge';
+    badge.style.display = 'none';
+
+    let currentRating = 0;
+    groupRadios.forEach((r) => {
+      if (r.checked) {
+        currentRating = parseInt(r.value, 10) || 0;
+      }
+    });
+
+    const updateStarVisuals = (rating: number) => {
+      const starElements = starsContainer.querySelectorAll<HTMLElement>('.star-item');
+      starElements.forEach((starEl, index) => {
+        const starVal = index + 1;
+        if (starVal <= rating) {
+          starEl.classList.add('active');
+        } else {
+          starEl.classList.remove('active');
+        }
+      });
+
+      if (rating > 0 && ratingDescriptions[rating]) {
+        badge.textContent = ratingDescriptions[rating];
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    };
+
+    for (let i = 1; i <= 5; i++) {
+      const star = document.createElement('span');
+      star.className = 'star-item';
+      star.textContent = '★';
+      star.setAttribute('data-value', String(i));
+      star.title = `${i} stars`;
+
+      // Hover effect
+      star.addEventListener('mouseenter', () => updateStarVisuals(i));
+      star.addEventListener('mouseleave', () => updateStarVisuals(currentRating));
+
+      // Clicking a star sets the current rating, updates the visuals, 
+          // and checks the corresponding radio button in the group.
+      star.addEventListener('click', () => {
+        currentRating = i;
+        updateStarVisuals(i);
+
+        const targetRadio = groupRadios.find((r) => r.value === String(i));
+        if (targetRadio) {
+          targetRadio.checked = true;
+          targetRadio.dispatchEvent(new Event('change', { bubbles: true }));
+          targetRadio.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        if (radioGroupInput) {
+          radioGroupInput.value = String(i);
+          radioGroupInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      });
+
+      starsContainer.appendChild(star);
+    }
+
+    starsContainer.addEventListener('mouseleave', () => updateStarVisuals(currentRating));
+
+    starWrapper.appendChild(starsContainer);
+    starWrapper.appendChild(badge);
+
+    radioGroupContainer.parentNode?.insertBefore(starWrapper, radioGroupContainer);
+
+    if (currentRating > 0) {
+      updateStarVisuals(currentRating);
     }
   });
-
-  const updateStarVisuals = (rating: number) => {
-    const starElements = starsContainer.querySelectorAll<HTMLElement>('.star-item');
-    starElements.forEach((starEl, index) => {
-      const starVal = index + 1;
-      if (starVal <= rating) {
-        starEl.classList.add('active');
-      } else {
-        starEl.classList.remove('active');
-      }
-    });
-
-    if (rating > 0 && ratingDescriptions[rating]) {
-      badge.textContent = ratingDescriptions[rating];
-      badge.style.display = 'inline-block';
-    } else {
-      badge.style.display = 'none';
-    }
-  };
-
-  for (let i = 1; i <= 5; i++) {
-    const star = document.createElement('span');
-    star.className = 'star-item';
-    star.textContent = '★';
-    star.setAttribute('data-value', String(i));
-    star.title = `${i} stars`;
-
-    // Hover effect
-    star.addEventListener('mouseenter', () => updateStarVisuals(i));
-    star.addEventListener('mouseleave', () => updateStarVisuals(currentRating));
-
-    // Click effect: select radio and update Sitecore state
-    star.addEventListener('click', () => {
-      currentRating = i;
-      updateStarVisuals(i);
-
-      // Check the corresponding radio input
-      const targetRadio = ratingRadios.find((r) => r.value === String(i));
-      if (targetRadio) {
-        targetRadio.checked = true;
-        targetRadio.dispatchEvent(new Event('change', { bubbles: true }));
-        targetRadio.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-
-      // Update Sitecore hidden input if present
-      if (radioGroupInput) {
-        radioGroupInput.value = String(i);
-        radioGroupInput.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    });
-
-    starsContainer.appendChild(star);
-  }
-
-  starsContainer.addEventListener('mouseleave', () => updateStarVisuals(currentRating));
-
-  starWrapper.appendChild(starsContainer);
-  starWrapper.appendChild(badge);
-
-  radioGroupContainer.parentNode?.insertBefore(starWrapper, radioGroupContainer);
-
-  if (currentRating > 0) {
-    updateStarVisuals(currentRating);
-  }
 }
 
 /**
