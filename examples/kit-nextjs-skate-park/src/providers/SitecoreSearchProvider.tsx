@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { PageController, WidgetsProvider } from "@sitecore-search/react";
 import type { Environment } from "@sitecore-search/data";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import config from "src/lib/config";
 
 type SitecoreSearchProviderProps = {
@@ -51,8 +52,34 @@ export default function SitecoreSearchProvider({
     trackConsent,
   } = config.sitecoreSearch;
 
-  if (!isSearchEnvironment(env) || !customerKey || (!serviceHost && !apiKey)) {
-    return <>{children}</>;
+  const fallbackQueryClient = useMemo(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            retry: false,
+            refetchOnWindowFocus: false,
+          },
+        },
+      }),
+    []
+  );
+
+  const isValidEnv = isSearchEnvironment(env);
+  const isValidCustomerKey =
+    !!customerKey && customerKey !== "undefined" && customerKey !== "null" && customerKey.trim() !== "";
+  const isValidApiOrHost =
+    (!!serviceHost && serviceHost !== "undefined" && serviceHost.trim() !== "") ||
+    (!!apiKey && apiKey !== "undefined" && apiKey.trim() !== "");
+
+  const isConfigured = isValidEnv && isValidCustomerKey && isValidApiOrHost;
+
+  if (!isConfigured) {
+    return (
+      <QueryClientProvider client={fallbackQueryClient}>
+        {children}
+      </QueryClientProvider>
+    );
   }
 
   return (

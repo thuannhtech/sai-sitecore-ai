@@ -14,6 +14,7 @@ import type { PreviewSearchInitialState } from '@sitecore-search/react';
 import { WidgetDataType } from '@sitecore-search/data';
 import { normalizeSitecoreMediaUrl } from 'lib/sitecore-media-url';
 import sitecoreConfig from 'sitecore.config';
+import config from 'src/lib/config';
 
 const PREVIEW_SEARCH_RFK_ID = 'rfkid_65';
 const PREVIEW_RESULT_LIMIT = 4;
@@ -88,6 +89,19 @@ const ProductPreviewWidget = widget(
 export function SitecorePreviewSearch() {
   const locale = useLocale();
   const t = useTranslations(sitecoreConfig.defaultSite || undefined);
+  const { env, customerKey, serviceHost, apiKey } = config.sitecoreSearch;
+  const isSearchConfigured =
+    !!env &&
+    env !== 'undefined' &&
+    env !== 'null' &&
+    ['prod', 'prodEu', 'apse2'].includes(env) &&
+    !!customerKey &&
+    customerKey !== 'undefined' &&
+    customerKey !== 'null' &&
+    customerKey.trim() !== '' &&
+    ((!!serviceHost && serviceHost !== 'undefined' && serviceHost.trim() !== '') ||
+      (!!apiKey && apiKey !== 'undefined' && apiKey.trim() !== ''));
+
   const [keyphrase, setKeyphrase] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [blogResults, setBlogResults] = useState<PreviewResult[]>([]);
@@ -126,7 +140,7 @@ export function SitecorePreviewSearch() {
 
   // Track Widget Views whenever search results are displayed in the dropdown
   useEffect(() => {
-    if (!isOpen || !cleanKeyphrase || loading) return;
+    if (!isSearchConfigured || !isOpen || !cleanKeyphrase || loading) return;
 
     const currentKey = `${cleanKeyphrase}_${productResults.map((p) => p.id).join(',')}_${blogResults.map((b) => b.id).join(',')}`;
     if (lastTrackedViewKeyRef.current === currentKey) return;
@@ -265,18 +279,22 @@ export function SitecorePreviewSearch() {
         <span>{translation('HEADER_SEARCH', 'Search')}</span>
       </button>
 
-      <BlogPreviewWidget
-        rfkId={PREVIEW_SEARCH_RFK_ID}
-        locale={locale}
-        keyphrase={keyphrase}
-        onResults={handleResults}
-      />
-      <ProductPreviewWidget
-        rfkId={PREVIEW_SEARCH_RFK_ID}
-        locale={locale}
-        keyphrase={keyphrase}
-        onResults={handleResults}
-      />
+      {isSearchConfigured && (
+        <>
+          <BlogPreviewWidget
+            rfkId={PREVIEW_SEARCH_RFK_ID}
+            locale={locale}
+            keyphrase={keyphrase}
+            onResults={handleResults}
+          />
+          <ProductPreviewWidget
+            rfkId={PREVIEW_SEARCH_RFK_ID}
+            locale={locale}
+            keyphrase={keyphrase}
+            onResults={handleResults}
+          />
+        </>
+      )}
 
       {isOpen && (
         <div className="header-search-panel" id="header-search-panel">
